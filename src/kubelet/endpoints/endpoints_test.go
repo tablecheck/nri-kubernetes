@@ -12,22 +12,22 @@ type mockedClient struct {
 	mock.Mock
 }
 
-func (m mockedClient) findPodByName(name string) (*v1.PodList, error) {
+func (m mockedClient) FindPodByName(name string) (*v1.PodList, error) {
 	args := m.Called(name)
 	return args.Get(0).(*v1.PodList), args.Error(1)
 }
 
-func (m mockedClient) findPodsByHostname(hostname string) (*v1.PodList, error) {
+func (m mockedClient) FindPodsByHostname(hostname string) (*v1.PodList, error) {
 	args := m.Called(hostname)
 	return args.Get(0).(*v1.PodList), args.Error(1)
 }
 
-func (m mockedClient) findNode(name string) (*v1.NodeList, error) {
+func (m mockedClient) FindNode(name string) (*v1.NodeList, error) {
 	args := m.Called(name)
 	return args.Get(0).(*v1.NodeList), args.Error(1)
 }
 
-func (m mockedClient) isHTTPS(url string) bool {
+func (m mockedClient) IsHTTPS(url string) bool {
 	args := m.Called(url)
 	return args.Bool(0)
 }
@@ -35,10 +35,10 @@ func (m mockedClient) isHTTPS(url string) bool {
 func TestKubelet(t *testing.T) {
 	// Given a client
 	client := new(mockedClient)
-	client.On("findPodByName", mock.Anything).
+	client.On("FindPodByName", mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: "the-node-name"}}}}, nil)
-	client.On("isHTTPS", mock.Anything).Return(true)
-	client.On("findNode", "the-node-name").
+	client.On("IsHTTPS", mock.Anything).Return(true)
+	client.On("FindNode", "the-node-name").
 		Return(&v1.NodeList{Items: []v1.Node{{
 			Status: v1.NodeStatus{
 				Addresses: []v1.NodeAddress{
@@ -73,14 +73,14 @@ func TestKubelet_NotFoundByName(t *testing.T) {
 	// Given a client
 	client := new(mockedClient)
 	// That doesn't find the pod by name
-	client.On("findPodByName", mock.Anything).
+	client.On("FindPodByName", mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{}}, nil)
-	client.On("isHTTPS", mock.Anything).Return(true)
+	client.On("IsHTTPS", mock.Anything).Return(true)
 
 	// But finds it by hostname
-	client.On("findPodsByHostname", mock.Anything).
+	client.On("FindPodsByHostname", mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: "the-node-name"}}}}, nil)
-	client.On("findNode", "the-node-name").
+	client.On("FindNode", "the-node-name").
 		Return(&v1.NodeList{Items: []v1.Node{{
 			Status: v1.NodeStatus{
 				Addresses: []v1.NodeAddress{
@@ -114,9 +114,9 @@ func TestKubelet_NotFoundError(t *testing.T) {
 	// Given a client
 	client := new(mockedClient)
 	// That doesn't find the pod neither by name nor hostname
-	client.On("findPodByName", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
-	client.On("findPodsByHostname", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
-	client.On("findNode", "the-node-name").Return(&v1.NodeList{Items: []v1.Node{}}, nil)
+	client.On("FindPodByName", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
+	client.On("FindPodsByHostname", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
+	client.On("FindNode", "the-node-name").Return(&v1.NodeList{Items: []v1.Node{}}, nil)
 
 	endpoints := kubeletDiscoverer{
 		client: client,
@@ -131,10 +131,10 @@ func TestKubelet_NotFoundError(t *testing.T) {
 func TestKubelet_HTTP(t *testing.T) {
 	// Given a client
 	client := new(mockedClient)
-	client.On("findPodByName", mock.Anything).
+	client.On("FindPodByName", mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: "the-node-name"}}}}, nil)
-	client.On("isHTTPS", mock.Anything).Return(false)
-	client.On("findNode", "the-node-name").
+	client.On("IsHTTPS", mock.Anything).Return(false)
+	client.On("FindNode", "the-node-name").
 		Return(&v1.NodeList{Items: []v1.Node{{
 			Status: v1.NodeStatus{
 				Addresses: []v1.NodeAddress{

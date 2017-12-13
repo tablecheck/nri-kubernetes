@@ -11,41 +11,41 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// kubernetesClient provides an interface to common Kubernetes API operations
-type kubernetesClient interface {
-	// findPodsByName returns a PodList reference that should contain the pod whose name matches with the name argument
-	findPodByName(name string) (*v1.PodList, error)
-	// fundPodsByHostname returns a Podlist reference containing the pod or pods whose hostname matches the argument
-	findPodsByHostname(hostname string) (*v1.PodList, error)
-	// findNode returns a NodeList reference containing the pod named as the argument, if any
-	findNode(name string) (*v1.NodeList, error)
-	// isHTTPS checks whether a connection to a URL is secure or not
-	isHTTPS(url string) bool
+// KubernetesClient provides an interface to common Kubernetes API operations
+type KubernetesClient interface {
+	// FindPodsByName returns a PodList reference that should contain the pod whose name matches with the name argument
+	FindPodByName(name string) (*v1.PodList, error)
+	// FindPodsByHostname returns a Podlist reference containing the pod or pods whose hostname matches the argument
+	FindPodsByHostname(hostname string) (*v1.PodList, error)
+	// FindNode returns a NodeList reference containing the pod named as the argument, if any
+	FindNode(name string) (*v1.NodeList, error)
+	// IsHTTPS checks whether a connection to a URL is secure or not
+	IsHTTPS(url string) bool
 }
 
 type goClientImpl struct {
 	client *kubernetes.Clientset
 }
 
-func (ka goClientImpl) findPodByName(name string) (*v1.PodList, error) {
+func (ka goClientImpl) FindPodByName(name string) (*v1.PodList, error) {
 	return ka.client.CoreV1().Pods("").List(metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("metadata.name=%s", name),
 	})
 }
 
-func (ka goClientImpl) findPodsByHostname(hostname string) (*v1.PodList, error) {
+func (ka goClientImpl) FindPodsByHostname(hostname string) (*v1.PodList, error) {
 	return ka.client.CoreV1().Pods("").List(metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("spec.hostname=%s", hostname),
 	})
 }
 
-func (ka goClientImpl) findNode(name string) (*v1.NodeList, error) {
+func (ka goClientImpl) FindNode(name string) (*v1.NodeList, error) {
 	return ka.client.CoreV1().Nodes().List(metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("metadata.name=%s", name),
 	})
 }
 
-func (ka goClientImpl) isHTTPS(url string) bool {
+func (ka goClientImpl) IsHTTPS(url string) bool {
 	// We ignore certificates only for checking
 	netClient := &http.Client{
 		Transport: &http.Transport{
@@ -62,7 +62,8 @@ func (ka goClientImpl) isHTTPS(url string) bool {
 	return resp.TLS != nil
 }
 
-func newKubernetesClient() (kubernetesClient, error) {
+// NewKubernetesClient instantiates a Kubernetes API client
+func NewKubernetesClient() (KubernetesClient, error) {
 	var ka goClientImpl
 
 	config, err := rest.InClusterConfig()

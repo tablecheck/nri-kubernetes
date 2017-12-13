@@ -21,8 +21,8 @@ type argumentList struct {
 	sdkArgs.DefaultArgumentList
 	MetricsURL        string `default:"http://localhost:8080/metrics" help:"Kube-state-metrics URL."`
 	KubeletURL        string `help:"overrides kubelet schema://host:port URL parts (if not set, it will be self-discovered)"`
-	KubeletIgnoreCert bool   `default:"false" help:"disables kubelet HTTPS certificate verification"`
-	Timeout           int    `default:"1000" help:"Timeout in milliseconds for calling kubelet /stats/summary URL."`
+	IgnoreCerts       bool   `default:"false" help:"disables HTTPS certificate verification for metrics sources"`
+	Timeout           int    `default:"1000" help:"Timeout in milliseconds for calling metrics sources"`
 }
 
 const (
@@ -63,7 +63,7 @@ func main() {
 
 		kubeletURL.Path = statsSummaryPath
 
-		if args.KubeletIgnoreCert && kubeletURL.Scheme == "https" {
+		if args.IgnoreCerts && kubeletURL.Scheme == "https" {
 			netClient.Transport = &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			}

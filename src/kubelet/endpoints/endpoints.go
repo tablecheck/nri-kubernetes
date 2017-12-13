@@ -4,20 +4,12 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 )
-
-// Discoverer allows discovering the endpoints from different services in the Kubernetes ecosystem.
-// There is no guarantee that the implementations of this interface cache the endpoints from previous invocations of
-// their methods: every time the methods of this interface are invoked, the discovery process is completely repeated,
-// since services endpoints could change during the lifetime of an application.
-type Discoverer interface {
-	// Kubelet returns the Endpoint of the Kubelet service that is located in the same node as the invoking pod.
-	Discover() (url.URL, error)
-}
 
 // kubeletDiscoverer implements Discoverer interface by using official Kubernetes' Go client
 type kubeletDiscoverer struct {
-	client kubernetesClient
+	client endpoints.KubernetesClient
 }
 
 func (sd kubeletDiscoverer) Discover() (url.URL, error) {
@@ -28,14 +20,14 @@ func (sd kubeletDiscoverer) Discover() (url.URL, error) {
 	hostname, _ := os.Hostname()
 
 	// get current pod whose name is equal to hostname and get the Node name
-	pods, err := sd.client.findPodByName(hostname)
+	pods, err := sd.client.FindPodByName(hostname)
 	if err != nil {
 		return endpoint, err
 	}
 
 	// If not found by name, looking for the pod whose hostname annotation coincides (if unique in the cluster)
 	if len(pods.Items) == 0 {
-		pods, err = sd.client.findPodsByHostname(hostname)
+		pods, err = sd.client.FindPodsByHostname(hostname)
 		if err != nil {
 			return endpoint, err
 		}
@@ -50,7 +42,7 @@ func (sd kubeletDiscoverer) Discover() (url.URL, error) {
 	nodeName := pods.Items[0].Spec.NodeName
 
 	// Get the containing node and discover the InternalIP and Kubelet port
-	nodes, _ := sd.client.findNode(nodeName)
+	nodes, _ := sd.client.FindNode(nodeName)
 
 	if len(nodes.Items) == 0 {
 		return endpoint, fmt.Errorf("could not find node named %q", nodeName)
@@ -75,7 +67,7 @@ func (sd kubeletDiscoverer) Discover() (url.URL, error) {
 	// Guess whether the connection is HTTP or HTTPS
 	endpoint.Scheme = "https"
 
-	if !sd.client.isHTTPS(endpoint.String()) {
+	if !sd.client.IsHTTPS(endpoint.String()) {
 		endpoint.Scheme = "http"
 	}
 
@@ -83,11 +75,11 @@ func (sd kubeletDiscoverer) Discover() (url.URL, error) {
 }
 
 // NewKubeletDiscoverer instantiates a new Discoverer
-func NewKubeletDiscoverer() (Discoverer, error) {
+func NewKubeletDiscoverer() (endpoints.Discoverer, error) {
 	var discoverer kubeletDiscoverer
 	var err error
 
-	discoverer.client, err = newKubernetesClient()
+	discoverer.client, err = endpoints.NewKubernetesClient()
 	if err != nil {
 		return nil, err
 	}
