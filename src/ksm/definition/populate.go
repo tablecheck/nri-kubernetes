@@ -8,9 +8,6 @@ import (
 	"github.com/newrelic/infra-integrations-sdk/sdk"
 )
 
-// RawGroups are grouped raw metrics.
-type RawGroups map[string]map[string]RawMetrics
-
 // GuessFunc guesses from data.
 type GuessFunc func(groupLabel, entityID string, groups RawGroups) string
 
@@ -25,16 +22,26 @@ func FromGroupMetricSetEntitTypeGuessFunc(groupLabel, _ string, _ RawGroups) str
 }
 
 // PopulateFunc populates raw metric groups using your specs
-type PopulateFunc func(RawGroups, Specs) (bool, []error)
+type PopulateFunc func(RawGroups, SpecGroups) (bool, []error)
 
 // IntegrationProtocol2PopulateFunc populates an integration protocol v2 with the given metrics and definition.
 func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, msTypeGuesser, msEntityTypeGuesser GuessFunc) PopulateFunc {
-	return func(groups RawGroups, specs Specs) (bool, []error) {
+	return func(groups RawGroups, specs SpecGroups) (bool, []error) {
 		var populated bool
 		var errs []error
 		for groupLabel, entities := range groups {
 			for entityID := range entities {
-				e, err := i.Entity(entityID, msEntityTypeGuesser(groupLabel, entityID, groups))
+				msEntityID := entityID
+				if generator := specs[groupLabel].IDGenerator; generator != nil {
+					generatedEntityID, err := generator(groupLabel, entityID, groups)
+					if err != nil {
+						errs = append(errs, fmt.Errorf("error generating entity ID for: %s: %s", entityID, err))
+					}
+
+					msEntityID = generatedEntityID
+				}
+
+				e, err := i.Entity(msEntityID, msEntityTypeGuesser(groupLabel, entityID, groups))
 				if err != nil {
 					errs = append(errs, err)
 					continue
@@ -60,8 +67,8 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, msTypeGuesser
 }
 
 func metricSetPopulateFunc(ms metric.MetricSet, groupLabel, entityID string) PopulateFunc {
-	return func(groups RawGroups, specs Specs) (populated bool, errs []error) {
-		for _, ex := range specs[groupLabel] {
+	return func(groups RawGroups, specs SpecGroups) (populated bool, errs []error) {
+		for _, ex := range specs[groupLabel].Specs {
 			val, err := ex.ValueFunc(groupLabel, entityID, groups)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("error fetching value for metric %s. Error: %s", ex.Name, err))

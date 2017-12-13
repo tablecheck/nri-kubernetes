@@ -16,36 +16,47 @@ func K8sMetricSetTypeGuesser(groupLabel, _ string, _ definition.RawGroups) strin
 
 // K8sMetricSetTypeGuesser is the metric set entity type guesser for k8s integrations.
 func K8sMetricSetEntityTypeGuesser(groupLabel, _ string, _ definition.RawGroups) string {
+	if groupLabel == "container" {
+		return "k8s/pod"
+	}
+
 	return fmt.Sprintf("k8s/%s", groupLabel)
+}
+
+// FromPodEntityIDGenerator generates an entityID from the pod name. Used basically for containers.
+func FromPodEntityIDGenerator(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
+	v, err := FromPrometheusLabelValue("kube_pod_container_info", "pod")(groupLabel, rawEntityID, g)
+
+	return v.(string), err
 }
 
 // GroupPrometheusMetricsBySpec groups metrics coming from Prometheus by a given metric spec.
 // Example: grouping by K8s pod, container, etc.
-func GroupPrometheusMetricsBySpec(specs definition.Specs, families []prometheus.MetricFamily) (g definition.RawGroups, errs []error) {
+func GroupPrometheusMetricsBySpec(specs definition.SpecGroups, families []prometheus.MetricFamily) (g definition.RawGroups, errs []error) {
 	g = make(definition.RawGroups)
-	for label := range specs {
+	for groupLabel := range specs {
 		for _, f := range families {
 			for _, m := range f.Metrics {
-				if !m.Labels.Has(label) {
+				if !m.Labels.Has(groupLabel) {
 					continue
 				}
 
-				objectID := m.Labels[label]
+				rawEntityID := m.Labels[groupLabel]
 
-				if _, ok := g[label]; !ok {
-					g[label] = make(map[string]definition.RawMetrics)
+				if _, ok := g[groupLabel]; !ok {
+					g[groupLabel] = make(map[string]definition.RawMetrics)
 				}
 
-				if _, ok := g[label][objectID]; !ok {
-					g[label][objectID] = make(definition.RawMetrics)
+				if _, ok := g[groupLabel][rawEntityID]; !ok {
+					g[groupLabel][rawEntityID] = make(definition.RawMetrics)
 				}
 
-				g[label][objectID][f.Name] = m
+				g[groupLabel][rawEntityID][f.Name] = m
 			}
 		}
 
-		if len(g[label]) == 0 {
-			errs = append(errs, fmt.Errorf("no data found for %s object", label))
+		if len(g[groupLabel]) == 0 {
+			errs = append(errs, fmt.Errorf("no data found for %s object", groupLabel))
 			continue
 		}
 	}

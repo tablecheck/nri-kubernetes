@@ -154,8 +154,10 @@ var spec = []definition.Spec{
 	{"podInfo.pod", FromPrometheusLabelValue("kube_pod_info", "pod"), metric.ATTRIBUTE},
 }
 
-var specs = definition.Specs{
-	"pod": spec,
+var specs = definition.SpecGroups{
+	"pod": definition.Group{
+		Specs: spec,
+	},
 }
 
 // --------------- Populate ---------------
@@ -197,11 +199,13 @@ func TestPopulate_CorrectValue(t *testing.T) {
 }
 
 func TestPopulate_PartialResult(t *testing.T) {
-	var metricDefWithIncompatibleType = definition.Specs{
+	var metricDefWithIncompatibleType = definition.SpecGroups{
 		"pod": {
-			{"podStartTime", FromPrometheusValue("kube_pod_start_time"), metric.GAUGE},
-			{"podInfo.namespace", FromPrometheusLabelValue("kube_pod_info", "namespace"), metric.GAUGE}, // Source type not correct
-			{"podInfo.pod", FromPrometheusLabelValue("kube_pod_info", "pod"), metric.ATTRIBUTE},
+			Specs: []definition.Spec{
+				{"podStartTime", FromPrometheusValue("kube_pod_start_time"), metric.GAUGE},
+				{"podInfo.namespace", FromPrometheusLabelValue("kube_pod_info", "namespace"), metric.GAUGE}, // Source type not correct
+				{"podInfo.pod", FromPrometheusLabelValue("kube_pod_info", "pod"), metric.ATTRIBUTE},
+			},
 		},
 	}
 
@@ -280,9 +284,11 @@ func TestPopulate_EntitiesDataNotPopulated_ErrorSettingEntities(t *testing.T) {
 }
 
 func TestPopulate_MetricsSetsNotPopulated_OnlyEntity(t *testing.T) {
-	var metricDefIncorrect = definition.Specs{
+	var metricDefIncorrect = definition.SpecGroups{
 		"pod": {
-			{"podStartTime", FromPrometheusValue("foo"), metric.GAUGE},
+			Specs: []definition.Spec{
+				{"podStartTime", FromPrometheusValue("foo"), metric.GAUGE},
+			},
 		},
 	}
 
