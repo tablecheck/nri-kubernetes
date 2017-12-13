@@ -8,7 +8,7 @@ import (
 	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
 )
 
-var ksmAggregation = definition.Aggregation{
+var ksmAggregation = definition.Specs{
 	"pod": {
 		{"podCreated", metric.FromPrometheusValue("kube_pod_created"), sdkMetric.GAUGE},
 		{"podStartTime", metric.FromPrometheusValue("kube_pod_start_time"), sdkMetric.GAUGE},
@@ -23,7 +23,7 @@ var ksmAggregation = definition.Aggregation{
 		{"podStatusPhase", metric.FromPrometheusLabelValue("kube_pod_status_phase", "phase"), sdkMetric.ATTRIBUTE},
 		{"podStatusScheduled", metric.FromPrometheusLabelValue("kube_pod_status_scheduled", "condition"), sdkMetric.ATTRIBUTE},
 		{"podName", metric.FromPrometheusLabelValue("kube_pod_info", "pod"), sdkMetric.ATTRIBUTE},
-		{"label.*", metric.FromPrometheusMultipleLabels("kube_pod_labels"), sdkMetric.ATTRIBUTE},
+		{"label.*", metric.InheritAllPrometheusLabelsFrom("pod", "kube_pod_labels"), sdkMetric.ATTRIBUTE},
 	},
 
 	"replicaset": {
@@ -52,24 +52,27 @@ var ksmAggregation = definition.Aggregation{
 		{"podContainerStatusTerminated", metric.FromPrometheusValue("kube_pod_container_status_terminated"), sdkMetric.GAUGE},
 		{"podContainerStatusReady", metric.FromPrometheusValue("kube_pod_container_status_ready"), sdkMetric.GAUGE},
 		{"podContainerName", metric.FromPrometheusLabelValue("kube_pod_container_info", "container"), sdkMetric.ATTRIBUTE},
+
+		// Example of how to inherit labels from other metrics
+		//{"related.label.*", metric.InheritSpecificPrometheusLabelValuesFrom("pod", "kube_pod_info", map[string]string{"podIP": "pod_ip"}), sdkMetric.ATTRIBUTE},
 	},
 
 	"namespace": {
 		{"namespaceCreated", metric.FromPrometheusValue("kube_namespace_created"), sdkMetric.GAUGE},
 		{"namespaceName", metric.FromPrometheusLabelValue("kube_namespace_created", "namespace"), sdkMetric.ATTRIBUTE},
 		{"namespaceStatusPhase", metric.FromPrometheusLabelValue("kube_namespace_status_phase", "phase"), sdkMetric.ATTRIBUTE},
-		{"label.*", metric.FromPrometheusMultipleLabels("kube_namespace_labels"), sdkMetric.ATTRIBUTE},
+		{"label.*", metric.InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels"), sdkMetric.ATTRIBUTE},
 	},
 
 	"deployment": {
 		{"deploymentName", metric.FromPrometheusLabelValue("kube_deployment_labels", "deployment"), sdkMetric.ATTRIBUTE},
-		{"label.*", metric.FromPrometheusMultipleLabels("kube_deployment_labels"), sdkMetric.ATTRIBUTE},
 		{"deploymentCreated", metric.FromPrometheusValue("kube_deployment_created"), sdkMetric.GAUGE},
 		{"deploymentSpecReplicas", metric.FromPrometheusValue("kube_deployment_spec_replicas"), sdkMetric.GAUGE},
 		{"deploymentStatusReplicas", metric.FromPrometheusValue("kube_deployment_status_replicas"), sdkMetric.GAUGE},
 		{"deploymentStatusReplicasAvailable", metric.FromPrometheusValue("kube_deployment_status_replicas_available"), sdkMetric.GAUGE},
 		{"deploymentStatusReplicasUnavailable", metric.FromPrometheusValue("kube_deployment_status_replicas_unavailable"), sdkMetric.GAUGE},
 		{"deploymentStatusReplicasUpdated", metric.FromPrometheusValue("kube_deployment_status_replicas_updated"), sdkMetric.GAUGE},
+		{"label.*", metric.InheritAllPrometheusLabelsFrom("deployment", "kube_deployment_labels"), sdkMetric.ATTRIBUTE},
 	},
 }
 

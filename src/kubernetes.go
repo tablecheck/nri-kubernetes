@@ -2,10 +2,12 @@ package main
 
 import (
 	"crypto/tls"
+	"errors"
 	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/definition"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/endpoints"
@@ -40,7 +42,7 @@ func main() {
 
 	if args.All || args.Metrics {
 		// Kube State Metrics
-		populateKubeStateMetrics(integration)
+		populateKubeStateMetrics(args.MetricsURL, integration)
 
 		// Kubelet Metrics
 		netClient := &http.Client{
@@ -73,28 +75,31 @@ func main() {
 	fatalIfErr(integration.Publish())
 }
 
-func populateKubeStateMetrics(integration *sdk.IntegrationProtocol2) {
-	mFamily, err := prometheus.Do(args.MetricsURL, prometheusQueries)
-	log.Debug("Endpoint %s called for getting data from kube-state-metrics service", args.MetricsURL)
+func populateKubeStateMetrics(ksmMetricsURL string, integration *sdk.IntegrationProtocol2) {
+	mFamily, err := prometheus.Do(ksmMetricsURL, prometheusQueries)
+	log.Debug("Endpoint %s called for getting data from kube-state-metrics service", ksmMetricsURL)
 	fatalIfErr(err)
-	for identitySourceName, d := range ksmAggregation {
-		groups := metric.GroupPrometheusMetricsByLabel(identitySourceName, mFamily)
 
-		if len(groups) == 0 {
-			log.Debug("No data found for %s object", identitySourceName)
-			continue
-		}
+	groups, errs := metric.GroupPrometheusMetricsBySpec(ksmAggregation, mFamily)
+	for _, err := range errs {
+		log.Warn("%s", err)
+	}
 
-		populated, errs := metric.Populate(integration, d, groups)
-		if len(errs) > 0 {
-			for _, err := range errs {
-				log.Debug("%s", err)
-			}
+	if len(groups) == 0 {
+		log.Fatal(errors.New("no data was fetched"))
+	}
+
+	populator := definition.IntegrationProtocol2PopulateFunc(integration, metric.K8sMetricSetTypeGuesser, metric.K8sMetricSetEntityTypeGuesser)
+	ok, errs := populator(groups, ksmAggregation)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Debug("%s", err)
 		}
-		if !populated {
-			log.Warn("empty data for %s", identitySourceName)
-			continue
-		}
+	}
+
+	if !ok {
+		// TODO better error
+		log.Fatal(errors.New("no data was populated"))
 	}
 }
 
