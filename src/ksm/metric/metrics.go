@@ -188,3 +188,40 @@ func fetchPrometheusMetric(metricKey string) definition.FetchFunc {
 		return v, nil
 	}
 }
+
+// GetDeploymentNameForReplicaSet returns the name of the deployment has created
+// a ReplicaSet.
+func GetDeploymentNameForReplicaSet() definition.FetchFunc {
+	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
+		replicasetName, err := (FromPrometheusLabelValue("kube_replicaset_created", "replicaset"))(groupLabel, entityID, groups)
+		if err != nil {
+			return nil, err
+		}
+		return replicasetNameToDeploymentName(replicasetName.(string)), nil
+	}
+}
+
+// GetDeploymentNameForPod returns the name of the deployment has created a
+// Pod.  It returns an empty string if Pod hasn't been created by a deployment.
+func GetDeploymentNameForPod() definition.FetchFunc {
+	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
+		var deploymentName string
+		creatorKind, err := (FromPrometheusLabelValue("kube_pod_info", "created_by_kind"))(groupLabel, entityID, groups)
+		if err != nil {
+			return nil, err
+		}
+		creatorName, err := (FromPrometheusLabelValue("kube_pod_info", "created_by_name"))(groupLabel, entityID, groups)
+		if err != nil {
+			return nil, err
+		}
+		if creatorKind.(string) == "ReplicaSet" {
+			deploymentName = replicasetNameToDeploymentName(creatorName.(string))
+		}
+		return deploymentName, nil
+	}
+}
+
+func replicasetNameToDeploymentName(rsName string) string {
+	s := strings.Split(rsName, "-")
+	return strings.Join(s[:len(s)-1], "-")
+}
