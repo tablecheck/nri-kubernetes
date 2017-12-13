@@ -1,0 +1,44 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:  
+  name: newrelic-kubernetes
+spec:
+  replicas: 2
+  template:
+    metadata:     
+      labels:
+        app: newrelic-kubernetes
+    spec:
+      containers:
+        - name: newrelic-kubernetes
+          image: quay.io/newrelic/ohai-k8s:v1
+          securityContext:
+            capabilities:
+              add:
+              - SYS_PTRACE
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /host
+            name: host-volume
+            readOnly: true
+          - mountPath: /var/run/docker.sock
+            name: host-docker-socket
+            readOnly: true
+          env:
+          - name: NRIA_LICENSE_KEY
+            value: 37c93c96982606e8d11617619c88d8ee078de2d5
+          - name: NRIA_COLLECTOR_URL
+            value: https://staging-infra-api.newrelic.com
+          - name: NRIA_VERBOSE
+            value: "1"
+            
+      imagePullSecrets:
+      - name: regsecretquay
+      volumes:
+      - name: host-volume
+        hostPath:
+          path: /
+      - name: host-docker-socket
+        hostPath:
+          path: /var/run/docker.sock
