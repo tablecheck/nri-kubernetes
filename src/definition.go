@@ -30,7 +30,9 @@ var ksmAggregation = definition.Specs{
 		{"podsDesired", metric.FromPrometheusValue("kube_replicaset_spec_replicas"), sdkMetric.GAUGE},
 		{"podsReady", metric.FromPrometheusValue("kube_replicaset_status_ready_replicas"), sdkMetric.GAUGE},
 		{"podsAvailable", metric.FromPrometheusValue("kube_replicaset_status_replicas"), sdkMetric.GAUGE},
+		{"podsFullyLabeled", metric.FromPrometheusValue("kube_replicaset_status_fully_labeled_replicas"), sdkMetric.GAUGE},
 		{"replicasetName", metric.FromPrometheusLabelValue("kube_replicaset_created", "replicaset"), sdkMetric.ATTRIBUTE},
+		{"namespace", metric.FromPrometheusLabelValue("kube_replicaset_created", "namespace"), sdkMetric.ATTRIBUTE},
 	},
 
 	"container": {
@@ -49,6 +51,7 @@ var ksmAggregation = definition.Specs{
 		{"statusRunning", metric.FromPrometheusValue("kube_pod_container_status_running"), sdkMetric.GAUGE},
 		{"statusTerminated", metric.FromPrometheusValue("kube_pod_container_status_terminated"), sdkMetric.GAUGE},
 		{"statusReady", metric.FromPrometheusValue("kube_pod_container_status_ready"), sdkMetric.GAUGE},
+		{"statusWaitingReason", metric.FromPrometheusLabelValue("kube_pod_container_status_waiting_reason", "reason"), sdkMetric.ATTRIBUTE},
 		// Example of how to inherit labels from other metrics
 		//{"related.label.*", metric.InheritSpecificPrometheusLabelValuesFrom("pod", "kube_pod_info", map[string]string{"podIP": "pod_ip"}), sdkMetric.ATTRIBUTE},
 	},
@@ -68,6 +71,8 @@ var ksmAggregation = definition.Specs{
 		{"podsAvailable", metric.FromPrometheusValue("kube_deployment_status_replicas_available"), sdkMetric.GAUGE},
 		{"podsUnavailable", metric.FromPrometheusValue("kube_deployment_status_replicas_unavailable"), sdkMetric.GAUGE},
 		{"updatedAt", metric.FromPrometheusValue("kube_deployment_status_replicas_updated"), sdkMetric.GAUGE},
+		{"podsMaxUnavailable", metric.FromPrometheusValue("kube_deployment_spec_strategy_rollingupdate_max_unavailable"), sdkMetric.GAUGE},
+		{"namespace", metric.FromPrometheusLabelValue("kube_deployment_labels", "namespace"), sdkMetric.ATTRIBUTE},
 		{"deploymentName", metric.FromPrometheusLabelValue("kube_deployment_labels", "deployment"), sdkMetric.ATTRIBUTE},
 	},
 }
@@ -143,6 +148,10 @@ var prometheusQueries = []prometheus.Query{
 	},
 	{
 		MetricName: "kube_pod_container_status_ready",
+		Value:      prometheus.GaugeValue(1),
+	},
+	{
+		MetricName: "kube_pod_container_status_waiting_reason",
 		Value:      prometheus.GaugeValue(1),
 	},
 	{
