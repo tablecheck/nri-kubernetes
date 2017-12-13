@@ -193,7 +193,7 @@ func fetchPrometheusMetric(metricKey string) definition.FetchFunc {
 // a ReplicaSet.
 func GetDeploymentNameForReplicaSet() definition.FetchFunc {
 	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
-		replicasetName, err := (FromPrometheusLabelValue("kube_replicaset_created", "replicaset"))(groupLabel, entityID, groups)
+		replicasetName, err := FromPrometheusLabelValue("kube_replicaset_created", "replicaset")(groupLabel, entityID, groups)
 		if err != nil {
 			return nil, err
 		}
@@ -206,11 +206,11 @@ func GetDeploymentNameForReplicaSet() definition.FetchFunc {
 func GetDeploymentNameForPod() definition.FetchFunc {
 	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
 		var deploymentName string
-		creatorKind, err := (FromPrometheusLabelValue("kube_pod_info", "created_by_kind"))(groupLabel, entityID, groups)
+		creatorKind, err := FromPrometheusLabelValue("kube_pod_info", "created_by_kind")(groupLabel, entityID, groups)
 		if err != nil {
 			return nil, err
 		}
-		creatorName, err := (FromPrometheusLabelValue("kube_pod_info", "created_by_name"))(groupLabel, entityID, groups)
+		creatorName, err := FromPrometheusLabelValue("kube_pod_info", "created_by_name")(groupLabel, entityID, groups)
 		if err != nil {
 			return nil, err
 		}
