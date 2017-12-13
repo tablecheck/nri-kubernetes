@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/definition"
+	endpoints2 "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/endpoints"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/endpoints"
@@ -19,16 +20,17 @@ import (
 
 type argumentList struct {
 	sdkArgs.DefaultArgumentList
-	MetricsURL        string `default:"http://localhost:8080/metrics" help:"Kube-state-metrics URL."`
-	KubeletURL        string `help:"overrides kubelet schema://host:port URL parts (if not set, it will be self-discovered)"`
-	IgnoreCerts       bool   `default:"false" help:"disables HTTPS certificate verification for metrics sources"`
-	Timeout           int    `default:"1000" help:"Timeout in milliseconds for calling metrics sources"`
+	MetricsURL  string `help:"overrides Kube State Metrics schema://host:port URL parts (if not set, it will be self-discovered)."`
+	KubeletURL  string `help:"overrides kubelet schema://host:port URL parts (if not set, it will be self-discovered)"`
+	IgnoreCerts bool   `default:"false" help:"disables HTTPS certificate verification for metrics sources"`
+	Timeout     int    `default:"1000" help:"Timeout in milliseconds for calling metrics sources"`
 }
 
 const (
 	integrationName    = "com.newrelic.kubernetes"
 	integrationVersion = "0.1.0"
 	statsSummaryPath   = "/stats/summary"
+	metricsPath        = "/metrics"
 )
 
 var args argumentList
@@ -42,13 +44,23 @@ func main() {
 
 	if args.All || args.Metrics {
 		// Kube State Metrics
-		populateKubeStateMetrics(args.MetricsURL, integration)
-
-		// Kubelet Metrics
-		netClient := &http.Client{
-			Timeout: time.Millisecond * time.Duration(args.Timeout),
+		var ksmURL url.URL
+		if args.MetricsURL != "" {
+			pURL, err := url.Parse(args.MetricsURL)
+			fatalIfErr(err)
+			ksmURL = *pURL
+		} else {
+			ksm, err := endpoints2.NewKSMDiscoverer()
+			fatalIfErr(err)
+			ksmURL, err = ksm.Discover()
+			fatalIfErr(err)
 		}
 
+		ksmURL.Path = metricsPath
+
+		populateKubeStateMetrics(ksmURL.String(), integration)
+
+		// Kubelet Metrics
 		var kubeletURL url.URL
 		if args.KubeletURL != "" {
 			pURL, err := url.Parse(args.KubeletURL)
@@ -62,6 +74,10 @@ func main() {
 		}
 
 		kubeletURL.Path = statsSummaryPath
+
+		netClient := &http.Client{
+			Timeout: time.Millisecond * time.Duration(args.Timeout),
+		}
 
 		if args.IgnoreCerts && kubeletURL.Scheme == "https" {
 			netClient.Transport = &http.Transport{

@@ -13,18 +13,27 @@ import (
 
 // KubernetesClient provides an interface to common Kubernetes API operations
 type KubernetesClient interface {
-	// FindPodsByName returns a PodList reference that should contain the pod whose name matches with the name argument
+	// FindNode returns a NodeList reference containing the pod named as the argument, if any
+	FindNode(name string) (*v1.NodeList, error)
+	// FindPodByName returns a PodList reference that should contain the pod whose name matches with the name argument
 	FindPodByName(name string) (*v1.PodList, error)
 	// FindPodsByHostname returns a Podlist reference containing the pod or pods whose hostname matches the argument
 	FindPodsByHostname(hostname string) (*v1.PodList, error)
-	// FindNode returns a NodeList reference containing the pod named as the argument, if any
-	FindNode(name string) (*v1.NodeList, error)
+	// FindServiceByLabel returns a ServiceList containing the services that contains the labels coinciding with the
+	// name/value pairs
+	FindServiceByLabel(name, value string) (*v1.ServiceList, error)
 	// IsHTTPS checks whether a connection to a URL is secure or not
 	IsHTTPS(url string) bool
 }
 
 type goClientImpl struct {
 	client *kubernetes.Clientset
+}
+
+func (ka goClientImpl) FindNode(name string) (*v1.NodeList, error) {
+	return ka.client.CoreV1().Nodes().List(metav1.ListOptions{
+		FieldSelector: fmt.Sprintf("metadata.name=%s", name),
+	})
 }
 
 func (ka goClientImpl) FindPodByName(name string) (*v1.PodList, error) {
@@ -39,9 +48,9 @@ func (ka goClientImpl) FindPodsByHostname(hostname string) (*v1.PodList, error) 
 	})
 }
 
-func (ka goClientImpl) FindNode(name string) (*v1.NodeList, error) {
-	return ka.client.CoreV1().Nodes().List(metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("metadata.name=%s", name),
+func (ka goClientImpl) FindServiceByLabel(name, value string) (*v1.ServiceList, error) {
+	return ka.client.CoreV1().Services("").List(metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", name, value),
 	})
 }
 

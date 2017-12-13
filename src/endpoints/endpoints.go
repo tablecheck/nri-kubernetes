@@ -7,6 +7,6 @@ import "net/url"
 // their methods: every time the methods of this interface are invoked, the discovery process is completely repeated,
 // since services endpoints could change during the lifetime of an application.
 type Discoverer interface {
-	// Kubelet returns the Endpoint of the Kubelet service that is located in the same node as the invoking pod.
+	// Discover returns the Endpoint of the Kubelet service that is located in the same node as the invoking pod.
 	Discover() (url.URL, error)
 }
