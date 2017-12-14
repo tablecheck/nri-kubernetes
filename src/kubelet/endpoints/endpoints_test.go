@@ -144,7 +144,7 @@ func TestKubeletDiscovery_HTTP(t *testing.T) {
 	assert.Equal(t, "http", kurl.Scheme)
 }
 
-func TestKubeletDiscoverer_GetNodeIP(t *testing.T) {
+func TestKubeletDiscoverer_NodeIP(t *testing.T) {
 	// Given a client
 	client := new(endpoints.MockedClient)
 	client.On("FindPodByName", mock.Anything).
@@ -175,7 +175,7 @@ func TestKubeletDiscoverer_GetNodeIP(t *testing.T) {
 	}
 
 	// When retrieving the Kubelet Node IP
-	nodeIP, err := discoverer.GetNodeIP()
+	nodeIP, err := discoverer.NodeIP()
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered node IP is returned

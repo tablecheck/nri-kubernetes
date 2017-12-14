@@ -24,7 +24,7 @@ func (sd kubeletDiscoverer) Discover() (url.URL, error) {
 	return sd.endpoint, err
 }
 
-func (sd kubeletDiscoverer) GetNodeIP() (string, error) {
+func (sd kubeletDiscoverer) NodeIP() (string, error) {
 	var err error
 	if sd.nodeIP == "" {
 		err = sd.cacheData()

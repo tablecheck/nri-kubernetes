@@ -57,7 +57,7 @@ func (sd ksmDiscoverer) Discover() (url.URL, error) {
 	return endpoint, fmt.Errorf("could not guess the Kube State Metrics host/port")
 }
 
-func (sd ksmDiscoverer) GetNodeIP() (string, error) {
+func (sd ksmDiscoverer) NodeIP() (string, error) {
 	pods, err := sd.client.FindPodsByLabel(ksmAppLabelName, ksmAppLabelValue)
 	if err != nil {
 		return "", err

@@ -57,7 +57,7 @@ func main() {
 			fatalIfErr(err)
 			ksmURL, err = ksm.Discover()
 			fatalIfErr(err)
-			ksmNode, err = ksm.GetNodeIP()
+			ksmNode, err = ksm.NodeIP()
 			fatalIfErr(err)
 		}
 		ksmURL.Path = metricsPath
@@ -79,7 +79,7 @@ func main() {
 			fatalIfErr(err)
 			kubeletURL, err = kubelet.Discover()
 			fatalIfErr(err)
-			kubeletNode, err = kubelet.GetNodeIP()
+			kubeletNode, err = kubelet.NodeIP()
 			fatalIfErr(err)
 		}
 		kubeletURL.Path = statsSummaryPath
