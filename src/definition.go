@@ -40,7 +40,7 @@ var ksmAggregation = definition.SpecGroups{
 		},
 	},
 	"container": {
-		IDGenerator: metric.FromPodEntityIDGenerator,
+		IDGenerator: metric.FromPrometheusLabelValueEntityIDGenerator("kube_pod_container_info", "pod"),
 		Specs: []definition.Spec{
 			{"containerName", metric.FromPrometheusLabelValue("kube_pod_container_info", "container"), sdkMetric.ATTRIBUTE},
 			{"containerID", metric.FromPrometheusLabelValue("kube_pod_container_info", "container_id"), sdkMetric.ATTRIBUTE},

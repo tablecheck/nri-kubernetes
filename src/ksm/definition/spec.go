@@ -14,11 +14,11 @@ type Spec struct {
 	Type      sdk.SourceType
 }
 
-// Group represents a bunch of specifications with shared logic.
-type Group struct {
+// SpecGroup represents a bunch of specs that share logic.
+type SpecGroup struct {
 	IDGenerator MetricSetEntityIDGeneratorFunc
 	Specs       []Spec
 }
 
 // SpecGroups is a map of groups indexed by group name.
-type SpecGroups map[string]Group
+type SpecGroups map[string]SpecGroup

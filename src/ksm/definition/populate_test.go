@@ -32,7 +32,7 @@ var rawGroupsSample = RawGroups{
 }
 
 var specs = SpecGroups{
-	"test": Group{
+	"test": SpecGroup{
 		Specs: []Spec{
 
 			{"metric_1", FromRaw("raw_metric_name_1"), metric.GAUGE},
@@ -101,7 +101,7 @@ func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
 
 func TestIntegrationProtocol2PopulateFunc_PartialResult(t *testing.T) {
 	metricSpecsWithIncompatibleType := SpecGroups{
-		"test": Group{
+		"test": SpecGroup{
 			Specs: []Spec{
 				{"metric_1", FromRaw("raw_metric_name_1"), metric.GAUGE},
 				{"metric_2", FromRaw("raw_metric_name_2"), metric.GAUGE}, // Source type not correct
@@ -184,7 +184,7 @@ func TestIntegrationProtocol2PopulateFunc_EntitiesDataNotPopulated_ErrorSettingE
 
 func TestIntegrationProtocol2PopulateFunc_MetricsSetsNotPopulated_OnlyEntity(t *testing.T) {
 	var metricSpecsIncorrect = SpecGroups{
-		"test": Group{
+		"test": SpecGroup{
 			Specs: []Spec{
 				{"useless", FromRaw("nonExistentMetric"), metric.GAUGE},
 			},
@@ -209,8 +209,8 @@ func TestIntegrationProtocol2PopulateFunc_MetricsSetsNotPopulated_OnlyEntity(t *
 	assert.False(t, populated)
 	assert.Len(t, errs, 2)
 
-	assert.Contains(t, errs, errors.New("entity id: entity_id_1: error fetching value for metric useless. Error: FromRaw: metric not found. Group: test, EntityID: entity_id_1, Metric: nonExistentMetric"))
-	assert.Contains(t, errs, errors.New("entity id: entity_id_2: error fetching value for metric useless. Error: FromRaw: metric not found. Group: test, EntityID: entity_id_2, Metric: nonExistentMetric"))
+	assert.Contains(t, errs, errors.New("entity id: entity_id_1: error fetching value for metric useless. Error: FromRaw: metric not found. SpecGroup: test, EntityID: entity_id_1, Metric: nonExistentMetric"))
+	assert.Contains(t, errs, errors.New("entity id: entity_id_2: error fetching value for metric useless. Error: FromRaw: metric not found. SpecGroup: test, EntityID: entity_id_2, Metric: nonExistentMetric"))
 	assert.Contains(t, integration.Data, &expectedEntityData1)
 	assert.Contains(t, integration.Data, &expectedEntityData2)
 }
@@ -222,7 +222,7 @@ func TestIntegrationProtocol2PopulateFunc_EntityIDGenerator(t *testing.T) {
 	}
 
 	withGeneratorSpec := SpecGroups{
-		"test": Group{
+		"test": SpecGroup{
 			IDGenerator: generator,
 			Specs: []Spec{
 				{"metric_1", FromRaw("raw_metric_name_1"), metric.GAUGE},
