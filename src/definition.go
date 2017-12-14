@@ -23,7 +23,7 @@ var ksmAggregation = definition.SpecGroups{
 			{"podName", metric.FromPrometheusLabelValue("kube_pod_info", "pod"), sdkMetric.ATTRIBUTE},
 			{"isReady", metric.FromPrometheusLabelValue("kube_pod_status_ready", "condition"), sdkMetric.ATTRIBUTE},
 			{"status", metric.FromPrometheusLabelValue("kube_pod_status_phase", "phase"), sdkMetric.ATTRIBUTE},
-			{"statusScheduled", metric.FromPrometheusLabelValue("kube_pod_status_scheduled", "condition"), sdkMetric.ATTRIBUTE},
+			{"isScheduled", metric.FromPrometheusLabelValue("kube_pod_status_scheduled", "condition"), sdkMetric.ATTRIBUTE},
 			{"deploymentName", metric.GetDeploymentNameForPod(), sdkMetric.ATTRIBUTE},
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels"), sdkMetric.ATTRIBUTE},
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("deployment", "kube_deployment_labels"), sdkMetric.ATTRIBUTE},
@@ -38,6 +38,7 @@ var ksmAggregation = definition.SpecGroups{
 			{"podsReady", metric.FromPrometheusValue("kube_replicaset_status_ready_replicas"), sdkMetric.GAUGE},
 			{"podsAvailable", metric.FromPrometheusValue("kube_replicaset_status_replicas"), sdkMetric.GAUGE},
 			{"podsFullyLabeled", metric.FromPrometheusValue("kube_replicaset_status_fully_labeled_replicas"), sdkMetric.GAUGE},
+			{"observedGeneration", metric.FromPrometheusValue("kube_replicaset_status_observed_generation"), sdkMetric.GAUGE},
 			{"replicasetName", metric.FromPrometheusLabelValue("kube_replicaset_created", "replicaset"), sdkMetric.ATTRIBUTE},
 			{"namespace", metric.FromPrometheusLabelValue("kube_replicaset_created", "namespace"), sdkMetric.ATTRIBUTE},
 			{"deploymentName", metric.GetDeploymentNameForReplicaSet(), sdkMetric.ATTRIBUTE},
@@ -134,6 +135,9 @@ var prometheusQueries = []prometheus.Query{
 	},
 	{
 		MetricName: "kube_replicaset_status_fully_labeled_replicas",
+	},
+	{
+		MetricName: "kube_replicaset_status_observed_generation",
 	},
 	{
 		MetricName: "kube_replicaset_created",
