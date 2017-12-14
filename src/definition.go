@@ -36,7 +36,7 @@ var ksmAggregation = definition.SpecGroups{
 			{"createdAt", metric.FromPrometheusValue("kube_replicaset_created"), sdkMetric.GAUGE},
 			{"podsDesired", metric.FromPrometheusValue("kube_replicaset_spec_replicas"), sdkMetric.GAUGE},
 			{"podsReady", metric.FromPrometheusValue("kube_replicaset_status_ready_replicas"), sdkMetric.GAUGE},
-			{"podsAvailable", metric.FromPrometheusValue("kube_replicaset_status_replicas"), sdkMetric.GAUGE},
+			{"podsTotal", metric.FromPrometheusValue("kube_replicaset_status_replicas"), sdkMetric.GAUGE},
 			{"podsFullyLabeled", metric.FromPrometheusValue("kube_replicaset_status_fully_labeled_replicas"), sdkMetric.GAUGE},
 			{"observedGeneration", metric.FromPrometheusValue("kube_replicaset_status_observed_generation"), sdkMetric.GAUGE},
 			{"replicasetName", metric.FromPrometheusLabelValue("kube_replicaset_created", "replicaset"), sdkMetric.ATTRIBUTE},
@@ -84,7 +84,7 @@ var ksmAggregation = definition.SpecGroups{
 		Specs: []definition.Spec{
 			{"podsDesired", metric.FromPrometheusValue("kube_deployment_spec_replicas"), sdkMetric.GAUGE},
 			{"createdAt", metric.FromPrometheusValue("kube_deployment_created"), sdkMetric.GAUGE},
-			{"pods", metric.FromPrometheusValue("kube_deployment_status_replicas"), sdkMetric.GAUGE},
+			{"podsTotal", metric.FromPrometheusValue("kube_deployment_status_replicas"), sdkMetric.GAUGE},
 			{"podsAvailable", metric.FromPrometheusValue("kube_deployment_status_replicas_available"), sdkMetric.GAUGE},
 			{"podsUnavailable", metric.FromPrometheusValue("kube_deployment_status_replicas_unavailable"), sdkMetric.GAUGE},
 			{"updatedAt", metric.FromPrometheusValue("kube_deployment_status_replicas_updated"), sdkMetric.GAUGE},
