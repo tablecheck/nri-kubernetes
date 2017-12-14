@@ -497,3 +497,113 @@ func TestFromPrometheusLabelValueEntityIDGenerator_NotFound(t *testing.T) {
 	assert.Empty(t, fetchedValue)
 	assert.EqualError(t, err, "error generating metric set entity id from prometheus label value. Key: non-existent-metric-key, Label: pod")
 }
+
+// --------------- InheritSpecificPrometheusLabelValuesFrom ---------------
+
+func TestInheritSpecificPrometheusLabelValuesFrom(t *testing.T) {
+	raw := definition.RawGroups{
+		"pod": {
+			"kube-addon-manager-minikube": definition.RawMetrics{
+				"kube_pod_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1507117436),
+					Labels: map[string]string{
+						"pod":    "kube-addon-manager-minikube",
+						"pod_ip": "172.31.248.38",
+					},
+				},
+			},
+		},
+		"container": {
+			"kube-addon-manager-minikube": definition.RawMetrics{
+				"kube_pod_container_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"pod":          "kube-addon-manager-minikube",
+						"container_id": "docker://441e4dacbcfb2f012f2221d0f3768552ea1ccb53454da42b7b3eeaf17bbd240a",
+					},
+				},
+			},
+		},
+	}
+
+	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("pod", "kube_pod_info", map[string]string{"inherited-pod_ip": "pod_ip"})("container", "kube-addon-manager-minikube", raw)
+	assert.NoError(t, err)
+
+	expectedValue := definition.FetchedValues{"inherited-pod_ip": "172.31.248.38"}
+	assert.Equal(t, expectedValue, fetchedValue)
+}
+
+func TestInheritSpecificPrometheusLabelValuesFrom_NotFound(t *testing.T) {
+	raw := definition.RawGroups{
+		"pod": {},
+		"container": {
+			"kube-addon-manager-minikube": definition.RawMetrics{
+				"kube_pod_container_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"pod": "kube-addon-manager-minikube",
+					},
+				},
+			},
+		},
+	}
+
+	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("pod", "non_existent_metric_key", map[string]string{"inherited-pod_ip": "pod_ip"})("container", "kube-addon-manager-minikube", raw)
+	assert.EqualError(t, err, "related metric not found. Metric: non_existent_metric_key pod:kube-addon-manager-minikube")
+	assert.Empty(t, fetchedValue)
+}
+
+// --------------- InheritAllPrometheusLabelsFrom ---------------
+
+func TestInheritAllPrometheusLabelsFrom(t *testing.T) {
+	raw := definition.RawGroups{
+		"pod": {
+			"kube-addon-manager-minikube": definition.RawMetrics{
+				"kube_pod_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1507117436),
+					Labels: map[string]string{
+						"pod":    "kube-addon-manager-minikube",
+						"pod_ip": "172.31.248.38",
+					},
+				},
+			},
+		},
+		"container": {
+			"kube-addon-manager-minikube": definition.RawMetrics{
+				"kube_pod_container_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"pod":          "kube-addon-manager-minikube",
+						"container_id": "docker://441e4dacbcfb2f012f2221d0f3768552ea1ccb53454da42b7b3eeaf17bbd240a",
+					},
+				},
+			},
+		},
+	}
+
+	fetchedValue, err := InheritAllPrometheusLabelsFrom("pod", "kube_pod_info")("container", "kube-addon-manager-minikube", raw)
+	assert.NoError(t, err)
+
+	expectedValue := definition.FetchedValues{"label.pod_ip": "172.31.248.38", "label.pod": "kube-addon-manager-minikube"}
+	assert.Equal(t, expectedValue, fetchedValue)
+}
+
+func TestInheritAllPrometheusLabelsFrom_NotFound(t *testing.T) {
+	raw := definition.RawGroups{
+		"pod": {},
+		"container": {
+			"kube-addon-manager-minikube": definition.RawMetrics{
+				"kube_pod_container_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"pod": "kube-addon-manager-minikube",
+					},
+				},
+			},
+		},
+	}
+
+	fetchedValue, err := InheritAllPrometheusLabelsFrom("pod", "non_existent_metric_key")("container", "kube-addon-manager-minikube", raw)
+	assert.EqualError(t, err, "related metric not found. Metric: non_existent_metric_key pod:kube-addon-manager-minikube")
+	assert.Empty(t, fetchedValue)
+}
