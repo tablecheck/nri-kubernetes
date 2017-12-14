@@ -46,7 +46,12 @@ func GroupPrometheusMetricsBySpec(specs definition.SpecGroups, families []promet
 					continue
 				}
 
-				rawEntityID := m.Labels[groupLabel]
+				var rawEntityID string
+				if groupLabel == "container" {
+					rawEntityID = fmt.Sprintf("%v_%v", m.Labels[groupLabel], m.Labels["pod"])
+				} else {
+					rawEntityID = m.Labels[groupLabel]
+				}
 
 				if _, ok := g[groupLabel]; !ok {
 					g[groupLabel] = make(map[string]definition.RawMetrics)

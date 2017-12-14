@@ -83,6 +83,32 @@ var mFamily = []prometheus.MetricFamily{
 	},
 }
 
+var metricFamilyContainersWithTheSameName = []prometheus.MetricFamily{
+	{
+		Name: "kube_pod_container_info",
+		Metrics: []prometheus.Metric{
+			{
+				Value: prometheus.GaugeValue(1),
+				Labels: map[string]string{
+					"container": "kube-state-metrics",
+					"image":     "gcr.io/google_containers/kube-state-metrics:v1.1.0",
+					"namespace": "kube-system",
+					"pod":       "newrelic-infra-monitoring-3bxnh",
+				},
+			},
+			{
+				Value: prometheus.GaugeValue(1),
+				Labels: map[string]string{
+					"container": "kube-state-metrics",
+					"image":     "gcr.io/google_containers/kube-state-metrics:v1.1.0",
+					"namespace": "kube-system",
+					"pod":       "fluentd-elasticsearch-jnqb7",
+				},
+			},
+		},
+	},
+}
+
 var rawGroupsIncompatibleType = definition.RawGroups{
 	"pod": {
 		"fluentd-elasticsearch-jnqb7": definition.RawMetrics{
@@ -152,6 +178,17 @@ var spec = []definition.Spec{
 	{"podStartTime", FromPrometheusValue("kube_pod_start_time"), metric.GAUGE},
 	{"podInfo.namespace", FromPrometheusLabelValue("kube_pod_info", "namespace"), metric.ATTRIBUTE},
 	{"podInfo.pod", FromPrometheusLabelValue("kube_pod_info", "pod"), metric.ATTRIBUTE},
+}
+
+var containersSpec = definition.SpecGroups{
+	"container": definition.SpecGroup{
+		Specs: []definition.Spec{
+			{"container", FromPrometheusLabelValue("kube_pod_container_info", "container"), metric.ATTRIBUTE},
+			{"image", FromPrometheusLabelValue("kube_pod_container_info", "image"), metric.ATTRIBUTE},
+			{"namespace", FromPrometheusLabelValue("kube_pod_container_info", "namespace"), metric.ATTRIBUTE},
+			{"pod", FromPrometheusLabelValue("kube_pod_container_info", "pod"), metric.ATTRIBUTE},
+		},
+	},
 }
 
 var specs = definition.SpecGroups{
@@ -386,6 +423,38 @@ func TestGroupPrometheusMetricsBySpec_CorrectValue(t *testing.T) {
 	assert.Equal(t, expectedMetricGroup, metricGroup)
 }
 
+func TestGroupPrometheusMetricsBySpec_CorrectValue_ContainersWithTheSameName(t *testing.T) {
+	expectedMetricGroup := definition.RawGroups{
+		"container": {
+			"kube-state-metrics_fluentd-elasticsearch-jnqb7": definition.RawMetrics{
+				"kube_pod_container_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"container": "kube-state-metrics",
+						"image":     "gcr.io/google_containers/kube-state-metrics:v1.1.0",
+						"namespace": "kube-system",
+						"pod":       "fluentd-elasticsearch-jnqb7",
+					},
+				},
+			},
+			"kube-state-metrics_newrelic-infra-monitoring-3bxnh": definition.RawMetrics{
+				"kube_pod_container_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"container": "kube-state-metrics",
+						"image":     "gcr.io/google_containers/kube-state-metrics:v1.1.0",
+						"namespace": "kube-system",
+						"pod":       "newrelic-infra-monitoring-3bxnh",
+					},
+				},
+			},
+		},
+	}
+
+	metricGroup, errs := GroupPrometheusMetricsBySpec(containersSpec, metricFamilyContainersWithTheSameName)
+	assert.Empty(t, errs)
+	assert.Equal(t, expectedMetricGroup, metricGroup)
+}
 func TestGroupPrometheusMetricsBySpec_EmptyMetricFamily(t *testing.T) {
 	var emptyMetricFamily []prometheus.MetricFamily
 
