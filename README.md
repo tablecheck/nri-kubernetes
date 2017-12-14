@@ -35,21 +35,21 @@ push/pull images, you should be logged in:
 `$ docker login quay.io`
 
 - Build and tag docker image
-`$ docker build -f deploy/Dockerfile . --tag quay.io/newrelic/ohai-k8s-ksm:v1`
+`$ docker build . --tag quay.io/newrelic/ohai-k8s:v1`
 - Push image
-`$ docker push quay.io/newrelic/ohai-k8s-ksm:v1`
+`$ docker push quay.io/newrelic/ohai-k8s:v1`
 - Update tag in Kubernetes deployment definition
 ```
 ...
 containers:
   - name: newrelic-ksm
-    image: quay.io/newrelic/ohai-k8s-ksm:v1
+    image: quay.io/newrelic/ohai-k8s:v1
 ...
 ```
 - Update k8s deployment
 ```
-$ kubectl --namespace=your-namespace delete -f deploy/k8s/nri-ksm-integration.yml
-$ kubectl --namespace=your-namespace create -f deploy/k8s/nri-ksm-integration.yml
+$ kubectl --namespace=your-namespace delete -f deploy/nri-kubernetes-integration.yml
+$ kubectl --namespace=your-namespace create -f deploy/nri-kubernetes-integration.yml
 ```
 
 ## Compatibility

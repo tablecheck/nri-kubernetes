@@ -46,10 +46,10 @@ func TestFromRawErrorsOnNotFound(t *testing.T) {
 	assert.Nil(t, v)
 
 	v, err = FromRaw("metric_name_3")("group1", "nonExistingEntity", raw)
-	assert.EqualError(t, err, "FromRaw: entity not found. Group: group1, EntityID: nonExistingEntity")
+	assert.EqualError(t, err, "FromRaw: entity not found. SpecGroup: group1, EntityID: nonExistingEntity")
 	assert.Nil(t, v)
 
 	v, err = FromRaw("non_existing_metric")("group1", "entity2", raw)
-	assert.EqualError(t, err, "FromRaw: metric not found. Group: group1, EntityID: entity2, Metric: non_existing_metric")
+	assert.EqualError(t, err, "FromRaw: metric not found. SpecGroup: group1, EntityID: entity2, Metric: non_existing_metric")
 	assert.Nil(t, v)
 }

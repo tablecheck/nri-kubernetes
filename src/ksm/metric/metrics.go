@@ -16,36 +16,52 @@ func K8sMetricSetTypeGuesser(groupLabel, _ string, _ definition.RawGroups) strin
 
 // K8sMetricSetTypeGuesser is the metric set entity type guesser for k8s integrations.
 func K8sMetricSetEntityTypeGuesser(groupLabel, _ string, _ definition.RawGroups) string {
+	if groupLabel == "container" {
+		return "k8s/pod"
+	}
+
 	return fmt.Sprintf("k8s/%s", groupLabel)
+}
+
+// FromPrometheusLabelValueEntityIDGenerator generates an entityID from the pod name. It's only used for k8s containers.
+func FromPrometheusLabelValueEntityIDGenerator(key, label string) definition.MetricSetEntityIDGeneratorFunc {
+	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
+		v, err := FromPrometheusLabelValue(key, label)(groupLabel, rawEntityID, g)
+		if v == nil {
+			return "", fmt.Errorf("error generating metric set entity id from prometheus label value. Key: %v, Label: %v", key, label)
+		}
+
+		return v.(string), err
+	}
 }
 
 // GroupPrometheusMetricsBySpec groups metrics coming from Prometheus by a given metric spec.
 // Example: grouping by K8s pod, container, etc.
-func GroupPrometheusMetricsBySpec(specs definition.Specs, families []prometheus.MetricFamily) (g definition.RawGroups, errs []error) {
+func GroupPrometheusMetricsBySpec(specs definition.SpecGroups, families []prometheus.MetricFamily) (g definition.RawGroups, errs []error) {
 	g = make(definition.RawGroups)
-	for label := range specs {
+	for groupLabel := range specs {
 		for _, f := range families {
 			for _, m := range f.Metrics {
-				if !m.Labels.Has(label) {
+				if !m.Labels.Has(groupLabel) {
 					continue
 				}
 
-				objectID := m.Labels[label]
+				rawEntityID := m.Labels[groupLabel]
 
-				if _, ok := g[label]; !ok {
-					g[label] = make(map[string]definition.RawMetrics)
+				if _, ok := g[groupLabel]; !ok {
+					g[groupLabel] = make(map[string]definition.RawMetrics)
 				}
 
-				if _, ok := g[label][objectID]; !ok {
-					g[label][objectID] = make(definition.RawMetrics)
+				if _, ok := g[groupLabel][rawEntityID]; !ok {
+					g[groupLabel][rawEntityID] = make(definition.RawMetrics)
 				}
 
-				g[label][objectID][f.Name] = m
+				g[groupLabel][rawEntityID][f.Name] = m
 			}
 		}
 
-		if len(g[label]) == 0 {
-			errs = append(errs, fmt.Errorf("no data found for %s object", label))
+		if len(g[groupLabel]) == 0 {
+			errs = append(errs, fmt.Errorf("no data found for %s object", groupLabel))
 			continue
 		}
 	}
@@ -187,4 +203,41 @@ func fetchPrometheusMetric(metricKey string) definition.FetchFunc {
 
 		return v, nil
 	}
+}
+
+// GetDeploymentNameForReplicaSet returns the name of the deployment has created
+// a ReplicaSet.
+func GetDeploymentNameForReplicaSet() definition.FetchFunc {
+	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
+		replicasetName, err := FromPrometheusLabelValue("kube_replicaset_created", "replicaset")(groupLabel, entityID, groups)
+		if err != nil {
+			return nil, err
+		}
+		return replicasetNameToDeploymentName(replicasetName.(string)), nil
+	}
+}
+
+// GetDeploymentNameForPod returns the name of the deployment has created a
+// Pod.  It returns an empty string if Pod hasn't been created by a deployment.
+func GetDeploymentNameForPod() definition.FetchFunc {
+	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
+		var deploymentName string
+		creatorKind, err := FromPrometheusLabelValue("kube_pod_info", "created_by_kind")(groupLabel, entityID, groups)
+		if err != nil {
+			return nil, err
+		}
+		creatorName, err := FromPrometheusLabelValue("kube_pod_info", "created_by_name")(groupLabel, entityID, groups)
+		if err != nil {
+			return nil, err
+		}
+		if creatorKind.(string) == "ReplicaSet" {
+			deploymentName = replicasetNameToDeploymentName(creatorName.(string))
+		}
+		return deploymentName, nil
+	}
+}
+
+func replicasetNameToDeploymentName(rsName string) string {
+	s := strings.Split(rsName, "-")
+	return strings.Join(s[:len(s)-1], "-")
 }

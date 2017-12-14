@@ -20,6 +20,9 @@ type FetchedValues map[string]FetchedValue
 // Return FetchedValues if you want to prototype metrics.
 type FetchFunc func(groupLabel, entityID string, groups RawGroups) (FetchedValue, error)
 
+// RawGroups are grouped raw metrics.
+type RawGroups map[string]map[string]RawMetrics
+
 // FromRaw fetches metrics from raw metrics. Is the most simple use case.
 func FromRaw(metricKey string) FetchFunc {
 	return func(groupLabel, entityID string, groups RawGroups) (FetchedValue, error) {
@@ -30,12 +33,12 @@ func FromRaw(metricKey string) FetchFunc {
 
 		e, ok := g[entityID]
 		if !ok {
-			return nil, fmt.Errorf("FromRaw: entity not found. Group: %v, EntityID: %v", groupLabel, entityID)
+			return nil, fmt.Errorf("FromRaw: entity not found. SpecGroup: %v, EntityID: %v", groupLabel, entityID)
 		}
 
 		value, ok := e[metricKey]
 		if !ok {
-			return nil, fmt.Errorf("FromRaw: metric not found. Group: %v, EntityID: %v, Metric: %v", groupLabel, entityID, metricKey)
+			return nil, fmt.Errorf("FromRaw: metric not found. SpecGroup: %v, EntityID: %v, Metric: %v", groupLabel, entityID, metricKey)
 		}
 
 		return value, nil
