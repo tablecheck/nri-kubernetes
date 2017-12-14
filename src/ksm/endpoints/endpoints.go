@@ -57,6 +57,22 @@ func (sd ksmDiscoverer) Discover() (url.URL, error) {
 	return endpoint, fmt.Errorf("could not guess the Kube State Metrics host/port")
 }
 
+func (sd ksmDiscoverer) GetNodeIP() (string, error) {
+	pods, err := sd.client.FindPodsByLabel(ksmAppLabelName, ksmAppLabelValue)
+	if err != nil {
+		return "", err
+	}
+	if len(pods.Items) == 0 {
+		return "", fmt.Errorf("no pod found by label %s=%s", ksmAppLabelName, ksmAppLabelValue)
+	}
+	for _, pod := range pods.Items {
+		if pod.Status.HostIP != "" {
+			return pod.Status.HostIP, nil
+		}
+	}
+	return "", fmt.Errorf("no InternalIP address found for KSM node")
+}
+
 // NewKSMDiscoverer instantiates a new Discoverer
 func NewKSMDiscoverer() (endpoints.Discoverer, error) {
 	var discoverer ksmDiscoverer

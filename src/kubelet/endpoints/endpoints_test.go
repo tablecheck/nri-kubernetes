@@ -34,12 +34,12 @@ func TestKubeletDiscovery(t *testing.T) {
 		}}}, nil)
 
 	// and an Discoverer implementation
-	endpoints := kubeletDiscoverer{
+	discoverer := kubeletDiscoverer{
 		client: client,
 	}
 
 	// When retrieving the Kubelet URL
-	kurl, err := endpoints.Discover()
+	kurl, err := discoverer.Discover()
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the Kubelet is returned
@@ -75,12 +75,12 @@ func TestKubeletDiscovery_NotFoundByName(t *testing.T) {
 			},
 		}}}, nil)
 
-	endpoints := kubeletDiscoverer{
+	discoverer := kubeletDiscoverer{
 		client: client,
 	}
 
 	// When retrieving the Kubelet URL
-	kurl, err := endpoints.Discover()
+	kurl, err := discoverer.Discover()
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the Kubelet is returned
@@ -96,12 +96,12 @@ func TestKubeletDiscovery_NotFoundError(t *testing.T) {
 	client.On("FindPodsByHostname", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
 	client.On("FindNode", "the-node-name").Return(&v1.NodeList{Items: []v1.Node{}}, nil)
 
-	endpoints := kubeletDiscoverer{
+	discoverer := kubeletDiscoverer{
 		client: client,
 	}
 
 	// When retrieving the Kubelet URL
-	_, err := endpoints.Discover()
+	_, err := discoverer.Discover()
 	// The system returns an error
 	assert.NotNil(t, err, "should return error")
 }
@@ -110,7 +110,10 @@ func TestKubeletDiscovery_HTTP(t *testing.T) {
 	// Given a client
 	client := new(endpoints.MockedClient)
 	client.On("FindPodByName", mock.Anything).
-		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: "the-node-name"}}}}, nil)
+		Return(&v1.PodList{Items: []v1.Pod{{
+			Spec:   v1.PodSpec{NodeName: "the-node-name"},
+			Status: v1.PodStatus{HostIP: "5.5.5.5"},
+		}}}, nil)
 	client.On("IsHTTPS", mock.Anything).Return(false)
 	client.On("FindNode", "the-node-name").
 		Return(&v1.NodeList{Items: []v1.Node{{
@@ -128,15 +131,53 @@ func TestKubeletDiscovery_HTTP(t *testing.T) {
 				},
 			},
 		}}}, nil)
-	endpoints := kubeletDiscoverer{
+	discoverer := kubeletDiscoverer{
 		client: client,
 	}
 
 	// When retrieving the Kubelet URL for a non-secure discovered port
-	kurl, err := endpoints.Discover()
+	kurl, err := discoverer.Discover()
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the Kubelet is returned
 	assert.Equal(t, "11.2.3.4:4445", kurl.Host)
 	assert.Equal(t, "http", kurl.Scheme)
+}
+
+func TestKubeletDiscoverer_GetNodeIP(t *testing.T) {
+	// Given a client
+	client := new(endpoints.MockedClient)
+	client.On("FindPodByName", mock.Anything).
+		Return(&v1.PodList{Items: []v1.Pod{{
+			Spec: v1.PodSpec{NodeName: "the-node-name"},
+		}}}, nil)
+	client.On("IsHTTPS", mock.Anything).Return(true)
+	client.On("FindNode", "the-node-name").
+		Return(&v1.NodeList{Items: []v1.Node{{
+			Status: v1.NodeStatus{
+				Addresses: []v1.NodeAddress{
+					{
+						Type:    "InternalIP",
+						Address: "1.2.3.4",
+					},
+				},
+				DaemonEndpoints: v1.NodeDaemonEndpoints{
+					KubeletEndpoint: v1.DaemonEndpoint{
+						Port: 12345,
+					},
+				},
+			},
+		}}}, nil)
+
+	// and an Discoverer implementation
+	discoverer := kubeletDiscoverer{
+		client: client,
+	}
+
+	// When retrieving the Kubelet Node IP
+	nodeIP, err := discoverer.GetNodeIP()
+	// The call works correctly
+	assert.Nil(t, err, "should not return error")
+	// And the discovered node IP is returned
+	assert.Equal(t, "1.2.3.4", nodeIP)
 }

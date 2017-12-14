@@ -23,6 +23,7 @@ type argumentList struct {
 	MetricsURL  string `help:"overrides Kube State Metrics schema://host:port URL parts (if not set, it will be self-discovered)."`
 	KubeletURL  string `help:"overrides kubelet schema://host:port URL parts (if not set, it will be self-discovered)"`
 	IgnoreCerts bool   `default:"false" help:"disables HTTPS certificate verification for metrics sources"`
+	Ksm         string `default:"auto" help:"whether the Kube State Metrics must be reported or not (accepted values: true, false, auto)"`
 	Timeout     int    `default:"1000" help:"Timeout in milliseconds for calling metrics sources"`
 }
 
@@ -43,37 +44,47 @@ func main() {
 	fatalIfErr(err)
 
 	if args.All || args.Metrics {
-		// Kube State Metrics
+		// Kube State Metrics Discovery
 		var ksmURL url.URL
+		var ksmNode string
+
 		if args.MetricsURL != "" {
 			pURL, err := url.Parse(args.MetricsURL)
 			fatalIfErr(err)
 			ksmURL = *pURL
-		} else {
+		} else if args.Ksm != "false" {
 			ksm, err := endpoints2.NewKSMDiscoverer()
 			fatalIfErr(err)
 			ksmURL, err = ksm.Discover()
 			fatalIfErr(err)
+			ksmNode, err = ksm.GetNodeIP()
+			fatalIfErr(err)
 		}
-
 		ksmURL.Path = metricsPath
 
-		populateKubeStateMetrics(ksmURL.String(), integration)
+		log.Debug("KSM URL = %s", ksmURL.String())
+		log.Debug("KSM Node = %s", ksmNode)
 
-		// Kubelet Metrics
+		// Kubelet Discovery
 		var kubeletURL url.URL
+		var kubeletNode string
+
 		if args.KubeletURL != "" {
 			pURL, err := url.Parse(args.KubeletURL)
 			fatalIfErr(err)
 			kubeletURL = *pURL
+			kubeletNode = kubeletURL.Hostname()
 		} else {
 			kubelet, err := endpoints.NewKubeletDiscoverer()
 			fatalIfErr(err)
 			kubeletURL, err = kubelet.Discover()
 			fatalIfErr(err)
+			kubeletNode, err = kubelet.GetNodeIP()
+			fatalIfErr(err)
 		}
-
 		kubeletURL.Path = statsSummaryPath
+		log.Debug("Kubelet URL = %s", kubeletURL.String())
+		log.Debug("Kubelet Node = %s", kubeletNode)
 
 		netClient := &http.Client{
 			Timeout: time.Millisecond * time.Duration(args.Timeout),
@@ -83,6 +94,18 @@ func main() {
 			netClient.Transport = &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			}
+		}
+
+		// We populate KSM metrics in the next cases
+		// - If "ksm==true", metrics are always populated
+		// - If "ksm==false", metrics are never populated
+		// - If "ksm==auto", metrics are populated if:
+		//       . The user sets the MetricsURL argument
+		//       . The discovery mechanisms shows that Kubelet and KSM are in the same node
+		if args.Ksm == "true" ||
+			(args.Ksm != "false" && args.MetricsURL != "") ||
+			(args.Ksm == "auto" && kubeletNode == ksmNode) {
+			populateKubeStateMetrics(ksmURL.String(), integration)
 		}
 
 		populateKubeletMetrics(kubeletURL, netClient, integration)
@@ -120,8 +143,9 @@ func populateKubeStateMetrics(ksmMetricsURL string, integration *sdk.Integration
 }
 
 func populateKubeletMetrics(kubeletURL url.URL, netClient *http.Client, integration *sdk.IntegrationProtocol2) {
-	log.Debug("Getting metrics data from: %v", kubeletURL)
-	response, err := kubeletMetric.GetMetricsData(netClient, kubeletURL.String())
+	urlString := kubeletURL.String()
+	log.Debug("Getting metrics data from: %v", urlString)
+	response, err := kubeletMetric.GetMetricsData(netClient, urlString)
 	if err != nil {
 		log.Fatal(err)
 	}

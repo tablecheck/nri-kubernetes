@@ -69,3 +69,24 @@ func TestKSMDiscover_GuessTCPPort(t *testing.T) {
 	assert.Equal(t, "11.22.33.44:8081", kurl.Host)
 	assert.Equal(t, "http", kurl.Scheme)
 }
+
+func TestKsmDiscoverer_GetNodeIP(t *testing.T) {
+	// Given a client
+	client := new(endpoints2.MockedClient)
+	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
+		Return(&v1.PodList{Items: []v1.Pod{{
+			Status: v1.PodStatus{HostIP: "6.7.8.9"},
+		}}}, nil)
+
+	// and an Discoverer implementation
+	endpoints := ksmDiscoverer{
+		client: client,
+	}
+
+	// When getting the Node IP
+	nodeIP, err := endpoints.GetNodeIP()
+	// The call works correctly
+	assert.Nil(t, err, "should not return error")
+	// And the nodeIP is correctly returned
+	assert.Equal(t, "6.7.8.9", nodeIP)
+}
