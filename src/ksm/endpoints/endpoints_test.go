@@ -1,7 +1,10 @@
 package endpoints
 
 import (
+	"net"
 	"testing"
+
+	"fmt"
 
 	endpoints2 "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 	"github.com/stretchr/testify/assert"
@@ -9,7 +12,32 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-func TestKSMDiscover(t *testing.T) {
+func fakeLookupSRV(service, proto, name string) (cname string, addrs []*net.SRV, err error) {
+	return "cname", []*net.SRV{{Port: 11223}}, nil
+}
+
+func emptyLookupSRV(service, proto, name string) (cname string, addrs []*net.SRV, err error) {
+	return "cname", []*net.SRV{}, nil
+}
+
+func failingLookupSRV(service, proto, name string) (cname string, addrs []*net.SRV, err error) {
+	return "cname", nil, fmt.Errorf("patapum!")
+}
+
+func TestKSMDiscover_DNS(t *testing.T) {
+	// Given an Discoverer implementation
+	endpoints := ksmDiscoverer{lookupSRV: fakeLookupSRV}
+
+	// When retrieving the KSM URL
+	kurl, err := endpoints.Discover()
+	// The call works correctly
+	assert.Nil(t, err, "should not return error")
+	// And the discovered host:port of the KSM Service is returned
+	assert.Equal(t, fmt.Sprintf("%s:%v", ksmQualifiedName, 11223), kurl.Host)
+	assert.Equal(t, "http", kurl.Scheme)
+}
+
+func TestKSMDiscover_API(t *testing.T) {
 	// Given a client
 	client := new(endpoints2.MockedClient)
 	client.On("FindServiceByLabel", mock.Anything, mock.Anything).
@@ -24,9 +52,10 @@ func TestKSMDiscover(t *testing.T) {
 		},
 		}}, nil)
 
-	// and an Discoverer implementation
+	// and an Discoverer implementation whose DNS returns empty response
 	endpoints := ksmDiscoverer{
-		client: client,
+		lookupSRV: emptyLookupSRV,
+		client:    client,
 	}
 
 	// When retrieving the KSM URL
@@ -38,7 +67,37 @@ func TestKSMDiscover(t *testing.T) {
 	assert.Equal(t, "http", kurl.Scheme)
 }
 
-func TestKSMDiscover_GuessTCPPort(t *testing.T) {
+func TestKSMDiscover_API_afterError(t *testing.T) {
+	// Given a client
+	client := new(endpoints2.MockedClient)
+	client.On("FindServiceByLabel", mock.Anything, mock.Anything).
+		Return(&v1.ServiceList{Items: []v1.Service{{
+			Spec: v1.ServiceSpec{
+				ClusterIP: "1.2.3.4",
+				Ports: []v1.ServicePort{{
+					Name: ksmPortName,
+					Port: 8888,
+				}},
+			},
+		},
+		}}, nil)
+
+	// and an Discoverer implementation whose DNS returns an error
+	endpoints := ksmDiscoverer{
+		lookupSRV: failingLookupSRV,
+		client:    client,
+	}
+
+	// When retrieving the KSM URL
+	kurl, err := endpoints.Discover()
+	// The call works correctly
+	assert.Nil(t, err, "should not return error")
+	// And the discovered host:port of the KSM Service is returned
+	assert.Equal(t, "1.2.3.4:8888", kurl.Host)
+	assert.Equal(t, "http", kurl.Scheme)
+}
+
+func TestKSMDiscover_API_GuessTCPPort(t *testing.T) {
 	// Given a client
 	client := new(endpoints2.MockedClient)
 	client.On("FindServiceByLabel", mock.Anything, mock.Anything).
@@ -58,7 +117,8 @@ func TestKSMDiscover_GuessTCPPort(t *testing.T) {
 
 	// and an Discoverer implementation
 	endpoints := ksmDiscoverer{
-		client: client,
+		lookupSRV: emptyLookupSRV,
+		client:    client,
 	}
 
 	// When retrieving the KSM URL with no port named 'http-metrics'
