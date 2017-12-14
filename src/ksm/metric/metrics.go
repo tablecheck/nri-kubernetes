@@ -14,7 +14,7 @@ func K8sMetricSetTypeGuesser(groupLabel, _ string, _ definition.RawGroups) strin
 	return fmt.Sprintf("K8s%vSample", strings.Title(groupLabel))
 }
 
-// K8sMetricSetTypeGuesser is the metric set entity type guesser for k8s integrations.
+// K8sMetricSetEntityTypeGuesser is the metric set entity type guesser for k8s integrations.
 func K8sMetricSetEntityTypeGuesser(groupLabel, _ string, _ definition.RawGroups) string {
 	if groupLabel == "container" {
 		return "k8s/pod"
@@ -112,19 +112,11 @@ func FromPrometheusLabelValue(key, label string) definition.FetchFunc {
 // Related metric means tany metric you can get with the info that you have in your own metric.
 func InheritSpecificPrometheusLabelValuesFrom(group, relatedMetricKey string, labelsToRetrieve map[string]string) definition.FetchFunc {
 	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
-		var metricKey string
-		var m prometheus.Metric
-		for k, v := range groups[groupLabel][entityID] {
-			metricKey = k
-			pm, ok := v.(prometheus.Metric)
-			if !ok {
-				return nil, fmt.Errorf("incompatible metric type. Expected: prometheus.Metric. Got: %T", pm)
-			}
+		metricKey, r := getRandomMetric(groups[groupLabel][entityID])
+		m, ok := r.(prometheus.Metric)
 
-			m = pm
-
-			// We just get 1 randomly.
-			break
+		if !ok {
+			return "", fmt.Errorf("incompatible metric type. Expected: prometheus.Metric. Got: %T", m)
 		}
 
 		relatedMetricID, ok := m.Labels[group]
@@ -134,7 +126,7 @@ func InheritSpecificPrometheusLabelValuesFrom(group, relatedMetricKey string, la
 
 		parent, err := definition.FromRaw(relatedMetricKey)(group, relatedMetricID, groups)
 		if err != nil {
-			return nil, fmt.Errorf("parent metric not found. %s:%s", group, relatedMetricID)
+			return nil, fmt.Errorf("related metric not found. Metric: %s %s:%s", relatedMetricKey, group, relatedMetricID)
 		}
 
 		multiple := make(definition.FetchedValues)
@@ -154,19 +146,10 @@ func InheritSpecificPrometheusLabelValuesFrom(group, relatedMetricKey string, la
 // Related metric means tany metric you can get with the info that you have in your own metric.
 func InheritAllPrometheusLabelsFrom(parentGroupLabel, relatedMetricKey string) definition.FetchFunc {
 	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
-		var metricKey string
-		var m prometheus.Metric
-		for k, v := range groups[groupLabel][entityID] {
-			metricKey = k
-			pm, ok := v.(prometheus.Metric)
-			if !ok {
-				return nil, fmt.Errorf("incompatible metric type. Expected: prometheus.Metric. Got: %T", pm)
-			}
-
-			m = pm
-
-			// We just get 1 randomly.
-			break
+		metricKey, r := getRandomMetric(groups[groupLabel][entityID])
+		m, ok := r.(prometheus.Metric)
+		if !ok {
+			return "", fmt.Errorf("incompatible metric type. Expected: prometheus.Metric. Got: %T", m)
 		}
 
 		relatedMetricID, ok := m.Labels[parentGroupLabel]
@@ -176,7 +159,7 @@ func InheritAllPrometheusLabelsFrom(parentGroupLabel, relatedMetricKey string) d
 
 		parent, err := fetchPrometheusMetric(relatedMetricKey)(parentGroupLabel, relatedMetricID, groups)
 		if err != nil {
-			return nil, fmt.Errorf("parent metric not found. %s:%s", parentGroupLabel, relatedMetricID)
+			return nil, fmt.Errorf("related metric not found. Metric: %s %s:%s", relatedMetricKey, parentGroupLabel, relatedMetricID)
 		}
 
 		multiple := make(definition.FetchedValues)
@@ -186,6 +169,15 @@ func InheritAllPrometheusLabelsFrom(parentGroupLabel, relatedMetricKey string) d
 
 		return multiple, nil
 	}
+}
+
+func getRandomMetric(metrics definition.RawMetrics) (metricKey string, value definition.RawValue) {
+	for metricKey, value = range metrics {
+		// We just want 1.
+		break
+	}
+
+	return
 }
 
 func fetchPrometheusMetric(metricKey string) definition.FetchFunc {
