@@ -23,11 +23,16 @@ func K8sMetricSetEntityTypeGuesser(groupLabel, _ string, _ definition.RawGroups)
 	return fmt.Sprintf("k8s/%s", groupLabel)
 }
 
-// FromPodEntityIDGenerator generates an entityID from the pod name. Used basically for containers.
-func FromPodEntityIDGenerator(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
-	v, err := FromPrometheusLabelValue("kube_pod_container_info", "pod")(groupLabel, rawEntityID, g)
+// FromPrometheusLabelValueEntityIDGenerator generates an entityID from the pod name. Used basically for containers.
+func FromPrometheusLabelValueEntityIDGenerator(key, label string) definition.MetricSetEntityIDGeneratorFunc {
+	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
+		v, err := FromPrometheusLabelValue(key, label)(groupLabel, rawEntityID, g)
+		if v == nil {
+			return "", fmt.Errorf("error generating metric set entity id from prometheus label value. Key: %v, Label: %v", key, label)
+		}
 
-	return v.(string), err
+		return v.(string), err
+	}
 }
 
 // GroupPrometheusMetricsBySpec groups metrics coming from Prometheus by a given metric spec.

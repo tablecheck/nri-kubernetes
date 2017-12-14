@@ -155,7 +155,7 @@ var spec = []definition.Spec{
 }
 
 var specs = definition.SpecGroups{
-	"pod": definition.Group{
+	"pod": definition.SpecGroup{
 		Specs: spec,
 	},
 }
@@ -309,8 +309,8 @@ func TestPopulate_MetricsSetsNotPopulated_OnlyEntity(t *testing.T) {
 	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser)(rawGroups, metricDefIncorrect)
 	assert.False(t, populated)
 	assert.Len(t, errs, 2)
-	assert.Contains(t, errs, errors.New("entity id: fluentd-elasticsearch-jnqb7: error fetching value for metric podStartTime. Error: FromRaw: metric not found. Group: pod, EntityID: fluentd-elasticsearch-jnqb7, Metric: foo"))
-	assert.Contains(t, errs, errors.New("entity id: newrelic-infra-monitoring-cglrn: error fetching value for metric podStartTime. Error: FromRaw: metric not found. Group: pod, EntityID: newrelic-infra-monitoring-cglrn, Metric: foo"))
+	assert.Contains(t, errs, errors.New("entity id: fluentd-elasticsearch-jnqb7: error fetching value for metric podStartTime. Error: FromRaw: metric not found. SpecGroup: pod, EntityID: fluentd-elasticsearch-jnqb7, Metric: foo"))
+	assert.Contains(t, errs, errors.New("entity id: newrelic-infra-monitoring-cglrn: error fetching value for metric podStartTime. Error: FromRaw: metric not found. SpecGroup: pod, EntityID: newrelic-infra-monitoring-cglrn, Metric: foo"))
 	assert.Contains(t, integration.Data, &expectedEntityData1)
 	assert.Contains(t, integration.Data, &expectedEntityData2)
 
@@ -408,7 +408,7 @@ func TestFromRawPrometheusValue_RawMetricNotFound(t *testing.T) {
 
 	fetchedValue, err := FromPrometheusValue("foo")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Nil(t, fetchedValue)
-	assert.EqualError(t, err, "FromRaw: metric not found. Group: pod, EntityID: fluentd-elasticsearch-jnqb7, Metric: foo")
+	assert.EqualError(t, err, "FromRaw: metric not found. SpecGroup: pod, EntityID: fluentd-elasticsearch-jnqb7, Metric: foo")
 }
 
 func TestFromRawPrometheusValue_IncompatibleType(t *testing.T) {
@@ -431,7 +431,7 @@ func TestFromRawPrometheusLabelValue_RawMetricNotFound(t *testing.T) {
 
 	fetchedValue, err := FromPrometheusLabelValue("foo", "namespace")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Nil(t, fetchedValue)
-	assert.EqualError(t, err, "FromRaw: metric not found. Group: pod, EntityID: fluentd-elasticsearch-jnqb7, Metric: foo")
+	assert.EqualError(t, err, "FromRaw: metric not found. SpecGroup: pod, EntityID: fluentd-elasticsearch-jnqb7, Metric: foo")
 }
 
 func TestFromRawPrometheusLabelValue_IncompatibleType(t *testing.T) {
@@ -481,4 +481,19 @@ func TestGetDeploymentNameForPod_NotCreatedByReplicaSet(t *testing.T) {
 	fetchedValue, err := GetDeploymentNameForPod()("pod", podName, raw)
 	assert.Nil(t, err)
 	assert.Empty(t, fetchedValue)
+}
+
+// --------------- FromPrometheusLabelValueEntityIDGenerator ---------------
+func TestFromPrometheusLabelValueEntityIDGenerator(t *testing.T) {
+	expectedFetchedValue := "fluentd-elasticsearch-jnqb7"
+
+	fetchedValue, err := FromPrometheusLabelValueEntityIDGenerator("kube_pod_info", "pod")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedFetchedValue, fetchedValue)
+}
+
+func TestFromPrometheusLabelValueEntityIDGenerator_NotFound(t *testing.T) {
+	fetchedValue, err := FromPrometheusLabelValueEntityIDGenerator("non-existent-metric-key", "pod")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
+	assert.Empty(t, fetchedValue)
+	assert.EqualError(t, err, "error generating metric set entity id from prometheus label value. Key: non-existent-metric-key, Label: pod")
 }
