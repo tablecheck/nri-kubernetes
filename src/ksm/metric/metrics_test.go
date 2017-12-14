@@ -104,8 +104,8 @@ var rawGroups = definition.RawGroups{
 			"kube_pod_info": prometheus.Metric{
 				Value: prometheus.GaugeValue(1),
 				Labels: map[string]string{
-					"created_by_kind": "DaemonSet",
-					"created_by_name": "fluentd-elasticsearch",
+					"created_by_kind": "ReplicaSet",
+					"created_by_name": "fluentd-elasticsearch-fafnoa",
 					"namespace":       "kube-system",
 					"node":            "minikube",
 					"pod":             "fluentd-elasticsearch-jnqb7",
@@ -128,6 +128,20 @@ var rawGroups = definition.RawGroups{
 					"namespace":       "kube-system",
 					"node":            "minikube",
 					"pod":             "newrelic-infra-monitoring-cglrn",
+				},
+			},
+		},
+	},
+}
+
+var rawGroupWithReplicaSet = definition.RawGroups{
+	"replicaset": {
+		"kube-state-metrics-4044341274": definition.RawMetrics{
+			"kube_replicaset_created": prometheus.Metric{
+				Value: prometheus.GaugeValue(1507117436),
+				Labels: map[string]string{
+					"namespace":  "kube-system",
+					"replicaset": "kube-state-metrics-4044341274",
 				},
 			},
 		},
@@ -426,4 +440,39 @@ func TestFromRawPrometheusLabelValue_LabelNotFoundInRawMetric(t *testing.T) {
 	fetchedValue, err := FromPrometheusLabelValue("kube_pod_start_time", "foo")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Nil(t, fetchedValue)
 	assert.EqualError(t, err, "label 'foo' not found in prometheus metric")
+}
+
+func TestGetDeploymentNameForReplicaSet_ValidName(t *testing.T) {
+	expectedValue := "kube-state-metrics"
+	fetchedValue, err := GetDeploymentNameForReplicaSet()("replicaset", "kube-state-metrics-4044341274", rawGroupWithReplicaSet)
+	assert.Nil(t, err)
+	assert.Equal(t, expectedValue, fetchedValue)
+}
+
+func TestGetDeploymentNameForPod_CreatedByReplicaSet(t *testing.T) {
+	expectedValue := "fluentd-elasticsearch"
+	fetchedValue, err := GetDeploymentNameForPod()("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
+	assert.Nil(t, err)
+	assert.Equal(t, expectedValue, fetchedValue)
+}
+
+func TestGetDeploymentNameForPod_NotCreatedByReplicaSet(t *testing.T) {
+	podName := "kube-addon-manager-minikube"
+	raw := definition.RawGroups{
+		"pod": {
+			"kube-addon-manager-minikube": definition.RawMetrics{
+				"kube_pod_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1507117436),
+					Labels: map[string]string{
+						"created_by_kind": "<none>",
+						"created_by_name": "<none>",
+					},
+				},
+			},
+		},
+	}
+
+	fetchedValue, err := GetDeploymentNameForPod()("pod", podName, raw)
+	assert.Nil(t, err)
+	assert.Empty(t, fetchedValue)
 }
