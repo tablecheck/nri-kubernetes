@@ -21,7 +21,7 @@ func emptyLookupSRV(service, proto, name string) (cname string, addrs []*net.SRV
 }
 
 func failingLookupSRV(service, proto, name string) (cname string, addrs []*net.SRV, err error) {
-	return "cname", nil, fmt.Errorf("patapum!")
+	return "cname", nil, fmt.Errorf("patapum")
 }
 
 func TestKSMDiscover_DNS(t *testing.T) {

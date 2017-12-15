@@ -15,8 +15,8 @@ const (
 	ksmPortName      = "http-metrics"
 	k8sTCP           = "TCP"
 	ksmQualifiedName = "kube-state-metrics.kube-system.svc.cluster.local"
-	ksmDnsService    = "http-metrics"
-	ksmDnsProto      = "tcp"
+	ksmDNSService    = "http-metrics"
+	ksmDNSProto      = "tcp"
 )
 
 // ksmDiscoverer implements Discoverer interface by using official Kubernetes' Go client
@@ -43,7 +43,7 @@ func (sd ksmDiscoverer) Discover() (url.URL, error) {
 // dnsDiscover uses DNS to discover KSM
 func (sd ksmDiscoverer) dnsDiscover() (url.URL, error) {
 	var endpoint url.URL
-	_, addrs, err := sd.lookupSRV(ksmDnsService, ksmDnsProto, ksmQualifiedName)
+	_, addrs, err := sd.lookupSRV(ksmDNSService, ksmDNSProto, ksmQualifiedName)
 	if err == nil {
 		for _, addr := range addrs {
 			endpoint.Host = fmt.Sprintf("%v:%v", ksmQualifiedName, addr.Port)
