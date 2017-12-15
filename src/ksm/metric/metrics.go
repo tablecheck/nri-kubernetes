@@ -5,7 +5,7 @@ import (
 
 	"strings"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/definition"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
 )
 
@@ -47,10 +47,13 @@ func GroupPrometheusMetricsBySpec(specs definition.SpecGroups, families []promet
 				}
 
 				var rawEntityID string
-				if groupLabel == "container" {
-					rawEntityID = fmt.Sprintf("%v_%v", m.Labels[groupLabel], m.Labels["pod"])
-				} else {
+				switch groupLabel {
+				case "namespace":
 					rawEntityID = m.Labels[groupLabel]
+				case "container":
+					rawEntityID = fmt.Sprintf("%v_%v_%v", m.Labels["namespace"], m.Labels["pod"], m.Labels[groupLabel])
+				default:
+					rawEntityID = fmt.Sprintf("%v_%v", m.Labels["namespace"], m.Labels[groupLabel])
 				}
 
 				if _, ok := g[groupLabel]; !ok {

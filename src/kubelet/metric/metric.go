@@ -7,8 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/definition"
-	"github.com/newrelic/infra-integrations-sdk/sdk"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 )
 
 // Summary represents list of required data from /stats/summary endpoint
@@ -78,9 +77,9 @@ func GetMetricsData(netClient *http.Client, URL string) (*Summary, error) {
 }
 
 // GroupStatsSummary groups specific data for pods and containers
-func GroupStatsSummary(statsSummary *Summary) (definition.MetricGroups, []error) {
+func GroupStatsSummary(statsSummary *Summary) (definition.RawGroups, []error) {
 	var errs []error
-	g := definition.MetricGroups{
+	g := definition.RawGroups{
 		"pod":       {},
 		"container": {},
 	}
@@ -90,6 +89,7 @@ func GroupStatsSummary(statsSummary *Summary) (definition.MetricGroups, []error)
 			errs = append(errs, fmt.Errorf("empty pod identifier, fetching pod data skipped"))
 			continue
 		}
+		rawEntityID := fmt.Sprintf("%v_%v", pod.PodRef.Namespace, pod.PodRef.Name)
 		podData := definition.RawMetrics{
 			"podName":   pod.PodRef.Name,
 			"namespace": pod.PodRef.Namespace,
@@ -98,7 +98,7 @@ func GroupStatsSummary(statsSummary *Summary) (definition.MetricGroups, []error)
 			"errors":    pod.Network.RxErrors + pod.Network.TxErrors,
 		}
 
-		g["pod"][pod.PodRef.Name] = podData
+		g["pod"][rawEntityID] = podData
 
 		for _, container := range pod.Containers {
 			if container.Name == "" {
@@ -112,43 +112,36 @@ func GroupStatsSummary(statsSummary *Summary) (definition.MetricGroups, []error)
 				"namespace":      podData["namespace"],
 				"containerName":  container.Name,
 			}
-
-			g["container"][container.Name] = containerData
+			rawEntityID = fmt.Sprintf("%v_%v_%v", pod.PodRef.Namespace, pod.PodRef.Name, container.Name)
+			g["container"][rawEntityID] = containerData
 		}
 	}
 
 	return g, errs
 }
 
-// Populate populates an integration with the given metrics and definition.
-func Populate(i *sdk.IntegrationProtocol2, definitions []definition.Metric, groups definition.MetricGroups) (bool, []error) {
-	var populated bool
-	var errs []error
-	for entitySourceName, entities := range groups {
-		for entityID, r := range entities {
-			e, err := i.Entity(entityID, fmt.Sprintf("k8s/%s", entitySourceName))
-			if err != nil {
-				errs = append(errs, err)
-				continue
-			}
-
-			oneMetricSet, extractErrs := definition.OneMetricSetExtract(r)(definitions)
-			if len(extractErrs) != 0 {
-				for _, err := range extractErrs {
-					errs = append(errs, fmt.Errorf("entity id: %s: %s", entityID, err))
-				}
-			}
-
-			if len(oneMetricSet) > 0 {
-				ms := e.NewMetricSet(fmt.Sprintf("K8s%vSample", strings.Title(entitySourceName)))
-				for k, v := range oneMetricSet[0] {
-					ms[k] = v
-				}
-
-				populated = true
-			}
+// FromRawGroupsEntityIDGenerator generates an entityID from the pod name from kubelet. It's only used for k8s containers.
+func FromRawGroupsEntityIDGenerator(key string) definition.MetricSetEntityIDGeneratorFunc {
+	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
+		v, ok := g[groupLabel][rawEntityID][key]
+		if !ok {
+			return "", fmt.Errorf("error generating metric set entity id from kubelet raw data. Key: %v", key)
 		}
+		return v.(string), nil
 	}
+}
 
-	return populated, errs
+// FromRawEntityIDGroupEntityIDGenerator generates an entityID from the raw entity ID
+// which is composed of namespace and pod name. It's used only for k8s pods.
+func FromRawEntityIDGroupEntityIDGenerator(key string) definition.MetricSetEntityIDGeneratorFunc {
+	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
+		toRemove := g[groupLabel][rawEntityID][key]
+		v := strings.TrimPrefix(rawEntityID, fmt.Sprintf("%s_", toRemove))
+
+		if v == "" {
+			return "", fmt.Errorf("error generating metric set entity id from kubelet raw data")
+		}
+
+		return v, nil
+	}
 }

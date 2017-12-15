@@ -1,15 +1,16 @@
 package main
 
 import (
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/definition"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
-	kubeletDefinition "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/definition"
+	kubeletMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
 	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
 )
 
 var ksmAggregation = definition.SpecGroups{
 	"pod": {
+		IDGenerator: metric.FromPrometheusLabelValueEntityIDGenerator("kube_pod_info", "pod"),
 		Specs: []definition.Spec{
 			{"createdAt", metric.FromPrometheusValue("kube_pod_created"), sdkMetric.GAUGE},
 			{"startTime", metric.FromPrometheusValue("kube_pod_start_time"), sdkMetric.GAUGE},
@@ -28,6 +29,7 @@ var ksmAggregation = definition.SpecGroups{
 		},
 	},
 	"replicaset": {
+		IDGenerator: metric.FromPrometheusLabelValueEntityIDGenerator("kube_replicaset_created", "replicaset"),
 		Specs: []definition.Spec{
 			{"createdAt", metric.FromPrometheusValue("kube_replicaset_created"), sdkMetric.GAUGE},
 			{"podsDesired", metric.FromPrometheusValue("kube_replicaset_spec_replicas"), sdkMetric.GAUGE},
@@ -71,6 +73,7 @@ var ksmAggregation = definition.SpecGroups{
 		},
 	},
 	"deployment": {
+		IDGenerator: metric.FromPrometheusLabelValueEntityIDGenerator("kube_deployment_labels", "deployment"),
 		Specs: []definition.Spec{
 			{"podsDesired", metric.FromPrometheusValue("kube_deployment_spec_replicas"), sdkMetric.GAUGE},
 			{"createdAt", metric.FromPrometheusValue("kube_deployment_created"), sdkMetric.GAUGE},
@@ -201,20 +204,25 @@ var prometheusQueries = []prometheus.Query{
 	},
 }
 
-var kubeletAggregation = kubeletDefinition.Aggregation{
+var kubeletAggregation = definition.SpecGroups{
 	"pod": {
-		{"cluster.pod.name", kubeletDefinition.FromRaw("podName"), sdkMetric.ATTRIBUTE},
-		{"cluster.namespace", kubeletDefinition.FromRaw("namespace"), sdkMetric.ATTRIBUTE},
-		{"net.rxBytesPerSecond", kubeletDefinition.FromRaw("rxBytes"), sdkMetric.RATE},
-		{"net.txBytesPerSecond", kubeletDefinition.FromRaw("txBytes"), sdkMetric.RATE},
-		{"net.errorsPerSecond", kubeletDefinition.FromRaw("errors"), sdkMetric.RATE},
+		IDGenerator: kubeletMetric.FromRawEntityIDGroupEntityIDGenerator("namespace"),
+		Specs: []definition.Spec{
+			{"podName", definition.FromRaw("podName"), sdkMetric.ATTRIBUTE},
+			{"namespace", definition.FromRaw("namespace"), sdkMetric.ATTRIBUTE},
+			{"net.rxBytesPerSecond", definition.FromRaw("rxBytes"), sdkMetric.RATE},
+			{"net.txBytesPerSecond", definition.FromRaw("txBytes"), sdkMetric.RATE},
+			{"net.errorsPerSecond", definition.FromRaw("errors"), sdkMetric.RATE},
+		},
 	},
-
 	"container": {
-		{"cluster.container.name", kubeletDefinition.FromRaw("containerName"), sdkMetric.ATTRIBUTE},
-		{"cluster.container.memoryUsedBytes", kubeletDefinition.FromRaw("usageBytes"), sdkMetric.GAUGE},
-		{"cluster.container.cpuCoresUsed", kubeletDefinition.FromRaw("usageNanoCores"), sdkMetric.GAUGE},
-		{"cluster.pod.name", kubeletDefinition.FromRaw("podName"), sdkMetric.ATTRIBUTE},
-		{"cluster.namespace", kubeletDefinition.FromRaw("namespace"), sdkMetric.ATTRIBUTE},
+		IDGenerator: kubeletMetric.FromRawGroupsEntityIDGenerator("podName"),
+		Specs: []definition.Spec{
+			{"containerName", definition.FromRaw("containerName"), sdkMetric.ATTRIBUTE},
+			{"memoryUsedBytes", definition.FromRaw("usageBytes"), sdkMetric.GAUGE},
+			{"cpuUsedCores", definition.FromRaw("usageNanoCores"), sdkMetric.GAUGE},
+			{"podName", definition.FromRaw("podName"), sdkMetric.ATTRIBUTE},
+			{"namespace", definition.FromRaw("namespace"), sdkMetric.ATTRIBUTE},
+		},
 	},
 }

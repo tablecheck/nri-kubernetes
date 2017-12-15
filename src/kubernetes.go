@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/definition"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	endpoints2 "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/endpoints"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
@@ -150,28 +150,25 @@ func populateKubeletMetrics(kubeletURL url.URL, netClient *http.Client, integrat
 		log.Fatal(err)
 	}
 	groups, errs := kubeletMetric.GroupStatsSummary(response)
+	for _, err := range errs {
+		log.Warn("%s", err)
+	}
+
+	if len(groups) == 0 {
+		log.Fatal(errors.New("no data was fetched"))
+	}
+
+	populator := definition.IntegrationProtocol2PopulateFunc(integration, metric.K8sMetricSetTypeGuesser, metric.K8sMetricSetEntityTypeGuesser)
+	ok, errs := populator(groups, kubeletAggregation)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Debug("%s", err)
 		}
 	}
-	for entitySourceName, d := range kubeletAggregation {
-		if len(groups) == 0 {
-			log.Debug("No data found for %s object", entitySourceName)
-			continue
-		}
 
-		populated, errs := kubeletMetric.Populate(integration, d, groups)
-		if len(errs) > 0 {
-			for _, err := range errs {
-				log.Debug("%s", err)
-			}
-		}
-
-		if !populated {
-			log.Warn("empty metrics for %s", entitySourceName)
-			continue
-		}
+	if !ok {
+		// TODO better error
+		log.Fatal(errors.New("no data was populated"))
 	}
 }
 
