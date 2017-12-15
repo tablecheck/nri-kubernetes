@@ -571,43 +571,114 @@ func TestFromPrometheusLabelValueEntityIDGenerator_NotFound(t *testing.T) {
 // --------------- InheritSpecificPrometheusLabelValuesFrom ---------------
 
 func TestInheritSpecificPrometheusLabelValuesFrom(t *testing.T) {
+	containerRawEntityID := "kube-system_kube-addon-manager-minikube_kube-addon-manager"
 	raw := definition.RawGroups{
 		"pod": {
-			"kube-addon-manager-minikube": definition.RawMetrics{
+			"kube-system_kube-addon-manager-minikube": definition.RawMetrics{
 				"kube_pod_info": prometheus.Metric{
 					Value: prometheus.GaugeValue(1507117436),
 					Labels: map[string]string{
-						"pod":    "kube-addon-manager-minikube",
-						"pod_ip": "172.31.248.38",
+						"pod":       "kube-addon-manager-minikube",
+						"pod_ip":    "172.31.248.38",
+						"namespace": "kube-system",
 					},
 				},
 			},
 		},
 		"container": {
-			"kube-addon-manager-minikube": definition.RawMetrics{
+			containerRawEntityID: definition.RawMetrics{
 				"kube_pod_container_info": prometheus.Metric{
 					Value: prometheus.GaugeValue(1),
 					Labels: map[string]string{
 						"pod":          "kube-addon-manager-minikube",
 						"container_id": "docker://441e4dacbcfb2f012f2221d0f3768552ea1ccb53454da42b7b3eeaf17bbd240a",
+						"namespace":    "kube-system",
 					},
 				},
 			},
 		},
 	}
 
-	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("pod", "kube_pod_info", map[string]string{"inherited-pod_ip": "pod_ip"})("container", "kube-addon-manager-minikube", raw)
+	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("pod", "kube_pod_info", map[string]string{"inherited-pod_ip": "pod_ip"})("container", containerRawEntityID, raw)
 	assert.NoError(t, err)
 
 	expectedValue := definition.FetchedValues{"inherited-pod_ip": "172.31.248.38"}
 	assert.Equal(t, expectedValue, fetchedValue)
 }
 
-func TestInheritSpecificPrometheusLabelValuesFrom_NotFound(t *testing.T) {
+func TestInheritSpecificPrometheusLabelsFrom_Namespace(t *testing.T) {
+	podRawEntityID := "kube-system_kube-addon-manager-minikube"
+	raw := definition.RawGroups{
+		"namespace": {
+			"kube-system": definition.RawMetrics{
+				"kube_namespace_labels": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"namespace": "kube-system",
+					},
+				},
+			},
+		},
+		"pod": {
+			"kube-system_kube-addon-manager-minikube": definition.RawMetrics{
+				"kube_pod_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1507117436),
+					Labels: map[string]string{
+						"pod":       "kube-addon-manager-minikube",
+						"pod_ip":    "172.31.248.38",
+						"namespace": "kube-system",
+					},
+				},
+			},
+		},
+	}
+
+	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("namespace", "kube_namespace_labels", map[string]string{"inherited-namespace": "namespace"})("pod", podRawEntityID, raw)
+	assert.NoError(t, err)
+
+	expectedValue := definition.FetchedValues{"inherited-namespace": "kube-system"}
+	assert.Equal(t, expectedValue, fetchedValue)
+}
+func TestInheritSpecificPrometheusLabelValuesFrom_RelatedMetricNotFound(t *testing.T) {
+	containerRawEntityID := "kube-system_kube-addon-manager-minikube_kube-addon-manager"
 	raw := definition.RawGroups{
 		"pod": {},
 		"container": {
-			"kube-addon-manager-minikube": definition.RawMetrics{
+			containerRawEntityID: definition.RawMetrics{
+				"kube_pod_container_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"pod":       "kube-addon-manager-minikube",
+						"namespace": "kube-system",
+					},
+				},
+			},
+		},
+	}
+
+	expectedPodRawEntityID := "kube-system_kube-addon-manager-minikube"
+	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("pod", "non_existent_metric_key", map[string]string{"inherited-pod_ip": "pod_ip"})("container", containerRawEntityID, raw)
+	assert.EqualError(t, err, fmt.Sprintf("related metric not found. Metric: non_existent_metric_key pod:%v", expectedPodRawEntityID))
+	assert.Empty(t, fetchedValue)
+}
+
+func TestInheritSpecificPrometheusLabelValuesFrom_NamespaceNotFound(t *testing.T) {
+	containerRawEntityID := "kube-system_kube-addon-manager-minikube_kube-addon-manager"
+	raw := definition.RawGroups{
+		"pod": {
+			"kube-system_kube-addon-manager-minikube": definition.RawMetrics{
+				"kube_pod_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1507117436),
+					Labels: map[string]string{
+						"pod":       "kube-addon-manager-minikube",
+						"pod_ip":    "172.31.248.38",
+						"namespace": "kube-system",
+					},
+				},
+			},
+		},
+		"container": {
+			containerRawEntityID: definition.RawMetrics{
 				"kube_pod_container_info": prometheus.Metric{
 					Value: prometheus.GaugeValue(1),
 					Labels: map[string]string{
@@ -618,65 +689,200 @@ func TestInheritSpecificPrometheusLabelValuesFrom_NotFound(t *testing.T) {
 		},
 	}
 
-	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("pod", "non_existent_metric_key", map[string]string{"inherited-pod_ip": "pod_ip"})("container", "kube-addon-manager-minikube", raw)
-	assert.EqualError(t, err, "related metric not found. Metric: non_existent_metric_key pod:kube-addon-manager-minikube")
+	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("pod", "kube_pod_info", map[string]string{"inherited-pod_ip": "pod_ip"})("container", containerRawEntityID, raw)
+	assert.EqualError(t, err, "label not found. Label: 'namespace', Metric: kube_pod_container_info")
 	assert.Empty(t, fetchedValue)
 }
 
-// This function is incorrect. The way of grouping data has changed and the rawEntityID is composed of namespace and object ID. So we cannot identify the group to fetch data from.
-// --------------- InheritAllPrometheusLabelsFrom ---------------
-func TestInheritAllPrometheusLabelsFrom(t *testing.T) {
-	// podRawEntityID := "kube-system_kube-addon-manager-minikube"
-	// containerRawEntityID := "kube-system_kube-addon-manager-minikube_kube-addon-manager"
+func TestInheritSpecificPrometheusLabelValuesFrom_GroupNotFound(t *testing.T) {
+	incorrectContainerRawEntityID := "non-existing-ID"
 	raw := definition.RawGroups{
 		"pod": {
-			"kube-addon-manager-minikube": definition.RawMetrics{
+			"kube-system_kube-addon-manager-minikube": definition.RawMetrics{
 				"kube_pod_info": prometheus.Metric{
 					Value: prometheus.GaugeValue(1507117436),
 					Labels: map[string]string{
-						"pod":    "kube-addon-manager-minikube",
-						"pod_ip": "172.31.248.38",
+						"pod":       "kube-addon-manager-minikube",
+						"pod_ip":    "172.31.248.38",
+						"namespace": "kube-system",
 					},
 				},
 			},
 		},
 		"container": {
-			"kube-addon-manager-minikube": definition.RawMetrics{
+			"kube-system_kube-addon-manager-minikube_kube-system": definition.RawMetrics{
 				"kube_pod_container_info": prometheus.Metric{
 					Value: prometheus.GaugeValue(1),
 					Labels: map[string]string{
 						"pod":          "kube-addon-manager-minikube",
 						"container_id": "docker://441e4dacbcfb2f012f2221d0f3768552ea1ccb53454da42b7b3eeaf17bbd240a",
+						"namespace":    "kube-system",
 					},
 				},
 			},
 		},
 	}
 
-	fetchedValue, err := InheritAllPrometheusLabelsFrom("pod", "kube_pod_info")("container", "kube-addon-manager-minikube", raw)
-	assert.NoError(t, err)
-
-	expectedValue := definition.FetchedValues{"label.pod_ip": "172.31.248.38", "label.pod": "kube-addon-manager-minikube"}
-	assert.Equal(t, expectedValue, fetchedValue)
+	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("pod", "kube_pod_info", map[string]string{"inherited-pod_ip": "pod_ip"})("container", incorrectContainerRawEntityID, raw)
+	assert.EqualError(t, err, "metrics not found for container with entity ID: non-existing-ID")
+	assert.Empty(t, fetchedValue)
 }
 
-func TestInheritAllPrometheusLabelsFrom_NotFound(t *testing.T) {
+// --------------- InheritAllPrometheusLabelsFrom ---------------
+func TestInheritAllPrometheusLabelsFrom(t *testing.T) {
+	containerRawEntityID := "kube-system_kube-addon-manager-minikube_kube-addon-manager"
 	raw := definition.RawGroups{
-		"pod": {},
+		"pod": {
+			"kube-system_kube-addon-manager-minikube": definition.RawMetrics{
+				"kube_pod_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1507117436),
+					Labels: map[string]string{
+						"pod":       "kube-addon-manager-minikube",
+						"pod_ip":    "172.31.248.38",
+						"namespace": "kube-system",
+					},
+				},
+			},
+		},
 		"container": {
-			"kube-addon-manager-minikube": definition.RawMetrics{
+			containerRawEntityID: definition.RawMetrics{
 				"kube_pod_container_info": prometheus.Metric{
 					Value: prometheus.GaugeValue(1),
 					Labels: map[string]string{
-						"pod": "kube-addon-manager-minikube",
+						"pod":          "kube-addon-manager-minikube",
+						"container_id": "docker://441e4dacbcfb2f012f2221d0f3768552ea1ccb53454da42b7b3eeaf17bbd240a",
+						"namespace":    "kube-system",
 					},
 				},
 			},
 		},
 	}
 
-	fetchedValue, err := InheritAllPrometheusLabelsFrom("pod", "non_existent_metric_key")("container", "kube-addon-manager-minikube", raw)
-	assert.EqualError(t, err, "related metric not found. Metric: non_existent_metric_key pod:kube-addon-manager-minikube")
+	fetchedValue, err := InheritAllPrometheusLabelsFrom("pod", "kube_pod_info")("container", containerRawEntityID, raw)
+	assert.NoError(t, err)
+
+	expectedValue := definition.FetchedValues{"label.pod_ip": "172.31.248.38", "label.pod": "kube-addon-manager-minikube", "label.namespace": "kube-system"}
+	assert.Equal(t, expectedValue, fetchedValue)
+}
+
+func TestInheritAllPrometheusLabelsFrom_Namespace(t *testing.T) {
+	podRawEntityID := "kube-system_kube-addon-manager-minikube"
+	raw := definition.RawGroups{
+		"namespace": {
+			"kube-system": definition.RawMetrics{
+				"kube_namespace_labels": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"namespace": "kube-system",
+					},
+				},
+			},
+		},
+		"pod": {
+			"kube-system_kube-addon-manager-minikube": definition.RawMetrics{
+				"kube_pod_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1507117436),
+					Labels: map[string]string{
+						"pod":       "kube-addon-manager-minikube",
+						"pod_ip":    "172.31.248.38",
+						"namespace": "kube-system",
+					},
+				},
+			},
+		},
+	}
+
+	fetchedValue, err := InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels")("pod", podRawEntityID, raw)
+	assert.NoError(t, err)
+
+	expectedValue := definition.FetchedValues{"label.namespace": "kube-system"}
+	assert.Equal(t, expectedValue, fetchedValue)
+}
+
+func TestInheritAllPrometheusLabelsFrom_FromTheSameLabelGroup(t *testing.T) {
+	deploymentRawEntityID := "kube-public_newrelic-infra-monitoring"
+	raw := definition.RawGroups{
+		"deployment": {
+			deploymentRawEntityID: definition.RawMetrics{
+				"kube_deployment_labels": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"deployment": "newrelic-infra-monitoring",
+						"label_app":  "newrelic-infra-monitoring",
+						"namespace":  "kube-public",
+					},
+				},
+				"kube_deployment_spec_replicas": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"deployment": "newrelic-infra-monitoring",
+						"namespace":  "kube-public",
+					},
+				},
+			},
+		},
+	}
+
+	fetchedValue, err := InheritAllPrometheusLabelsFrom("deployment", "kube_deployment_labels")("deployment", deploymentRawEntityID, raw)
+	assert.NoError(t, err)
+
+	expectedValue := definition.FetchedValues{"label.deployment": "newrelic-infra-monitoring", "label.namespace": "kube-public", "label.label_app": "newrelic-infra-monitoring"}
+	assert.Equal(t, expectedValue, fetchedValue)
+}
+func TestInheritAllPrometheusLabelsFrom_LabelNotFound(t *testing.T) {
+	podRawEntityID := "kube-system_kube-addon-manager-minikube"
+	raw := definition.RawGroups{
+		"deployment": {
+			"newrelic-infra-monitoring": definition.RawMetrics{
+				"kube_deployment_labels": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"deployment": "newrelic-infra-monitoring",
+						"label_app":  "newrelic-infra-monitoring",
+						"namespace":  "kube-public",
+					},
+				},
+			},
+		},
+		"pod": {
+			"kube-system_kube-addon-manager-minikube": definition.RawMetrics{
+				"kube_pod_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1507117436),
+					Labels: map[string]string{
+						"pod":       "kube-addon-manager-minikube",
+						"pod_ip":    "172.31.248.38",
+						"namespace": "kube-system",
+					},
+				},
+			},
+		},
+	}
+
+	fetchedValue, err := InheritAllPrometheusLabelsFrom("deployment", "kube_deployment_labels")("pod", podRawEntityID, raw)
+	assert.Nil(t, fetchedValue)
+	assert.EqualError(t, err, fmt.Sprintf("label not found. Label: deployment, Metric: kube_pod_info"))
+}
+
+func TestInheritAllPrometheusLabelsFrom_RelatedMetricNotFound(t *testing.T) {
+	containerRawEntityID := "kube-system_kube-addon-manager-minikube_kube-addon-manager"
+	raw := definition.RawGroups{
+		"pod": {},
+		"container": {
+			containerRawEntityID: definition.RawMetrics{
+				"kube_pod_container_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"pod":       "kube-addon-manager-minikube",
+						"namespace": "kube-system",
+					},
+				},
+			},
+		},
+	}
+
+	expectedPodRawEntityID := "kube-system_kube-addon-manager-minikube"
+	fetchedValue, err := InheritAllPrometheusLabelsFrom("pod", "non_existent_metric_key")("container", containerRawEntityID, raw)
+	assert.EqualError(t, err, fmt.Sprintf("related metric not found. Metric: non_existent_metric_key pod:%v", expectedPodRawEntityID))
 	assert.Empty(t, fetchedValue)
 }
 
