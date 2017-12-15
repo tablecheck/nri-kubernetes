@@ -15,12 +15,15 @@ func K8sMetricSetTypeGuesser(groupLabel, _ string, _ definition.RawGroups) strin
 }
 
 // K8sMetricSetEntityTypeGuesser is the metric set entity type guesser for k8s integrations.
-func K8sMetricSetEntityTypeGuesser(groupLabel, _ string, _ definition.RawGroups) string {
+func K8sMetricSetEntityTypeGuesser(groupLabel, entityId string, groups definition.RawGroups) string {
 	if groupLabel == "container" {
-		return "k8s/pod"
+		groupLabel = "pod"
 	}
 
-	return fmt.Sprintf("k8s/%s", groupLabel)
+	if groupLabel == "namespace" {
+		return fmt.Sprintf("k8s:namespace")
+	}
+	return fmt.Sprintf("k8s:%s:%s", groups[groupLabel][entityId]["namespace"], groupLabel)
 }
 
 // FromPrometheusLabelValueEntityIDGenerator generates an entityID from the pod name. It's only used for k8s containers.
