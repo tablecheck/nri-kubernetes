@@ -25,6 +25,7 @@ var ksmAggregation = definition.SpecGroups{
 			{"status", metric.FromPrometheusLabelValue("kube_pod_status_phase", "phase"), sdkMetric.ATTRIBUTE},
 			{"isScheduled", metric.FromPrometheusLabelValue("kube_pod_status_scheduled", "condition"), sdkMetric.ATTRIBUTE},
 			{"deploymentName", metric.GetDeploymentNameForPod(), sdkMetric.ATTRIBUTE},
+			// Important: The order of these lines is important: we could have the same label in different entities, and we would like to keep the value closer to pod
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels"), sdkMetric.ATTRIBUTE},
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("deployment", "kube_deployment_labels"), sdkMetric.ATTRIBUTE},
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("pod", "kube_pod_labels"), sdkMetric.ATTRIBUTE},
@@ -66,6 +67,7 @@ var ksmAggregation = definition.SpecGroups{
 			{"statusTerminated", metric.FromPrometheusValue("kube_pod_container_status_terminated"), sdkMetric.GAUGE},
 			{"statusReady", metric.FromPrometheusValue("kube_pod_container_status_ready"), sdkMetric.GAUGE},
 			{"statusWaitingReason", metric.FromPrometheusLabelValue("kube_pod_container_status_waiting_reason", "reason"), sdkMetric.ATTRIBUTE},
+			// Important: The order of these lines is important: we could have the same label in different entities, and we would like to keep the value closer to container
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels"), sdkMetric.ATTRIBUTE},
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("deployment", "kube_deployment_labels"), sdkMetric.ATTRIBUTE},
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("pod", "kube_pod_labels"), sdkMetric.ATTRIBUTE},
@@ -91,6 +93,7 @@ var ksmAggregation = definition.SpecGroups{
 			{"podsMaxUnavailable", metric.FromPrometheusValue("kube_deployment_spec_strategy_rollingupdate_max_unavailable"), sdkMetric.GAUGE},
 			{"namespace", metric.FromPrometheusLabelValue("kube_deployment_labels", "namespace"), sdkMetric.ATTRIBUTE},
 			{"deploymentName", metric.FromPrometheusLabelValue("kube_deployment_labels", "deployment"), sdkMetric.ATTRIBUTE},
+			// Important: The order of these lines is important: we could have the same label in different entities, and we would like to keep the value closer to deployment
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels"), sdkMetric.ATTRIBUTE},
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("deployment", "kube_deployment_labels"), sdkMetric.ATTRIBUTE},
 		},
