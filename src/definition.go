@@ -8,9 +8,9 @@ import (
 	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
 )
 
-var ksmAggregation = definition.SpecGroups{
+var ksmPodAndContainerSpecs = definition.SpecGroups{
 	"pod": {
-		IDGenerator: metric.FromPrometheusLabelValueEntityIDGenerator("kube_pod_info", "pod"),
+		IDGenerator: metric.FromRawEntityIDGroupEntityIDGenerator("kube_pod_info", "namespace"),
 		Specs: []definition.Spec{
 			{"createdAt", metric.FromPrometheusValue("kube_pod_created"), sdkMetric.GAUGE},
 			{"startTime", metric.FromPrometheusValue("kube_pod_start_time"), sdkMetric.GAUGE},
@@ -28,20 +28,6 @@ var ksmAggregation = definition.SpecGroups{
 			// Important: The order of these lines is important: we could have the same label in different entities, and we would like to keep the value closer to pod
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels"), sdkMetric.ATTRIBUTE},
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("pod", "kube_pod_labels"), sdkMetric.ATTRIBUTE},
-		},
-	},
-	"replicaset": {
-		IDGenerator: metric.FromPrometheusLabelValueEntityIDGenerator("kube_replicaset_created", "replicaset"),
-		Specs: []definition.Spec{
-			{"createdAt", metric.FromPrometheusValue("kube_replicaset_created"), sdkMetric.GAUGE},
-			{"podsDesired", metric.FromPrometheusValue("kube_replicaset_spec_replicas"), sdkMetric.GAUGE},
-			{"podsReady", metric.FromPrometheusValue("kube_replicaset_status_ready_replicas"), sdkMetric.GAUGE},
-			{"podsTotal", metric.FromPrometheusValue("kube_replicaset_status_replicas"), sdkMetric.GAUGE},
-			{"podsFullyLabeled", metric.FromPrometheusValue("kube_replicaset_status_fully_labeled_replicas"), sdkMetric.GAUGE},
-			{"observedGeneration", metric.FromPrometheusValue("kube_replicaset_status_observed_generation"), sdkMetric.GAUGE},
-			{"replicasetName", metric.FromPrometheusLabelValue("kube_replicaset_created", "replicaset"), sdkMetric.ATTRIBUTE},
-			{"namespace", metric.FromPrometheusLabelValue("kube_replicaset_created", "namespace"), sdkMetric.ATTRIBUTE},
-			{"deploymentName", metric.GetDeploymentNameForReplicaSet(), sdkMetric.ATTRIBUTE},
 		},
 	},
 	"container": {
@@ -68,6 +54,23 @@ var ksmAggregation = definition.SpecGroups{
 			// Important: The order of these lines is important: we could have the same label in different entities, and we would like to keep the value closer to container
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels"), sdkMetric.ATTRIBUTE},
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("pod", "kube_pod_labels"), sdkMetric.ATTRIBUTE},
+		},
+	},
+}
+
+var ksmRestSpecs = definition.SpecGroups{
+	"replicaset": {
+		IDGenerator: metric.FromPrometheusLabelValueEntityIDGenerator("kube_replicaset_created", "replicaset"),
+		Specs: []definition.Spec{
+			{"createdAt", metric.FromPrometheusValue("kube_replicaset_created"), sdkMetric.GAUGE},
+			{"podsDesired", metric.FromPrometheusValue("kube_replicaset_spec_replicas"), sdkMetric.GAUGE},
+			{"podsReady", metric.FromPrometheusValue("kube_replicaset_status_ready_replicas"), sdkMetric.GAUGE},
+			{"podsTotal", metric.FromPrometheusValue("kube_replicaset_status_replicas"), sdkMetric.GAUGE},
+			{"podsFullyLabeled", metric.FromPrometheusValue("kube_replicaset_status_fully_labeled_replicas"), sdkMetric.GAUGE},
+			{"observedGeneration", metric.FromPrometheusValue("kube_replicaset_status_observed_generation"), sdkMetric.GAUGE},
+			{"replicasetName", metric.FromPrometheusLabelValue("kube_replicaset_created", "replicaset"), sdkMetric.ATTRIBUTE},
+			{"namespace", metric.FromPrometheusLabelValue("kube_replicaset_created", "namespace"), sdkMetric.ATTRIBUTE},
+			{"deploymentName", metric.GetDeploymentNameForReplicaSet(), sdkMetric.ATTRIBUTE},
 		},
 	},
 	"namespace": {
@@ -97,7 +100,7 @@ var ksmAggregation = definition.SpecGroups{
 	},
 }
 
-var prometheusQueries = []prometheus.Query{
+var prometheusPodsAndContainerQueries = []prometheus.Query{
 	{
 		MetricName: "kube_pod_info",
 		Value:      prometheus.GaugeValue(1),
@@ -123,24 +126,6 @@ var prometheusQueries = []prometheus.Query{
 	{
 		MetricName: "kube_pod_labels",
 		Value:      prometheus.GaugeValue(1),
-	},
-	{
-		MetricName: "kube_replicaset_spec_replicas",
-	},
-	{
-		MetricName: "kube_replicaset_status_ready_replicas",
-	},
-	{
-		MetricName: "kube_replicaset_status_replicas",
-	},
-	{
-		MetricName: "kube_replicaset_status_fully_labeled_replicas",
-	},
-	{
-		MetricName: "kube_replicaset_status_observed_generation",
-	},
-	{
-		MetricName: "kube_replicaset_created",
 	},
 	{
 		MetricName: "kube_pod_container_info",
@@ -176,6 +161,27 @@ var prometheusQueries = []prometheus.Query{
 	{
 		MetricName: "kube_pod_container_status_waiting_reason",
 		Value:      prometheus.GaugeValue(1),
+	},
+}
+
+var prometheusRestQueries = []prometheus.Query{
+	{
+		MetricName: "kube_replicaset_spec_replicas",
+	},
+	{
+		MetricName: "kube_replicaset_status_ready_replicas",
+	},
+	{
+		MetricName: "kube_replicaset_status_replicas",
+	},
+	{
+		MetricName: "kube_replicaset_status_fully_labeled_replicas",
+	},
+	{
+		MetricName: "kube_replicaset_status_observed_generation",
+	},
+	{
+		MetricName: "kube_replicaset_created",
 	},
 	{
 		MetricName: "kube_namespace_labels",
@@ -215,7 +221,9 @@ var prometheusQueries = []prometheus.Query{
 	},
 }
 
-var kubeletAggregation = definition.SpecGroups{
+var prometheusQueries = append(prometheusPodsAndContainerQueries, prometheusRestQueries...)
+
+var kubeletSpecs = definition.SpecGroups{
 	"pod": {
 		IDGenerator: kubeletMetric.FromRawEntityIDGroupEntityIDGenerator("namespace"),
 		Specs: []definition.Spec{
@@ -236,4 +244,23 @@ var kubeletAggregation = definition.SpecGroups{
 			{"namespace", definition.FromRaw("namespace"), sdkMetric.ATTRIBUTE},
 		},
 	},
+}
+
+var kubeletKSMPopulateSpecs = definition.SpecGroups{
+	"pod": {
+		IDGenerator: kubeletSpecs["pod"].IDGenerator,
+		Specs:       append(kubeletSpecs["pod"].Specs, ksmPodAndContainerSpecs["pod"].Specs...),
+	},
+	"container": {
+		IDGenerator: kubeletSpecs["container"].IDGenerator,
+		Specs:       append(kubeletSpecs["container"].Specs, ksmPodAndContainerSpecs["container"].Specs...),
+	},
+}
+
+var kubeletKSMAndRestPopulateSpecs = definition.SpecGroups{
+	"pod":        kubeletKSMPopulateSpecs["pod"],
+	"container":  kubeletKSMPopulateSpecs["container"],
+	"replicaset": ksmRestSpecs["replicaset"],
+	"namespace":  ksmRestSpecs["namespace"],
+	"deployment": ksmRestSpecs["deployment"],
 }
