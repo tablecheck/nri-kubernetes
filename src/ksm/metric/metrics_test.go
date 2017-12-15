@@ -2,6 +2,7 @@ package metric
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
@@ -677,4 +678,35 @@ func TestInheritAllPrometheusLabelsFrom_NotFound(t *testing.T) {
 	fetchedValue, err := InheritAllPrometheusLabelsFrom("pod", "non_existent_metric_key")("container", "kube-addon-manager-minikube", raw)
 	assert.EqualError(t, err, "related metric not found. Metric: non_existent_metric_key pod:kube-addon-manager-minikube")
 	assert.Empty(t, fetchedValue)
+}
+
+func TestStatusForContainer(t *testing.T) {
+	var raw definition.RawGroups
+	var statusTests = []struct {
+		s        string
+		expected string
+	}{
+		{"running", "Running"},
+		{"terminated", "Terminated"},
+		{"waiting", "Waiting"},
+		{"whatever", "Unknown"},
+	}
+
+	for _, tt := range statusTests {
+		raw = definition.RawGroups{
+			"container": {
+				"kube-addon-manager-minikube": definition.RawMetrics{
+					fmt.Sprintf("kube_pod_container_status_%s", tt.s): prometheus.Metric{
+						Value: prometheus.GaugeValue(1),
+						Labels: map[string]string{
+							"namespace": "kube-system",
+						},
+					},
+				},
+			},
+		}
+		actual, err := GetStatusForContainer()("container", "kube-addon-manager-minikube", raw)
+		assert.Equal(t, tt.expected, actual)
+		assert.NoError(t, err)
+	}
 }
