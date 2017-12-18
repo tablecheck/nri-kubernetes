@@ -27,7 +27,6 @@ var ksmAggregation = definition.SpecGroups{
 			{"deploymentName", metric.GetDeploymentNameForPod(), sdkMetric.ATTRIBUTE},
 			// Important: The order of these lines is important: we could have the same label in different entities, and we would like to keep the value closer to pod
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels"), sdkMetric.ATTRIBUTE},
-			{"label.*", metric.InheritAllPrometheusLabelsFrom("deployment", "kube_deployment_labels"), sdkMetric.ATTRIBUTE},
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("pod", "kube_pod_labels"), sdkMetric.ATTRIBUTE},
 		},
 	},
@@ -68,7 +67,6 @@ var ksmAggregation = definition.SpecGroups{
 			{"statusWaitingReason", metric.FromPrometheusLabelValue("kube_pod_container_status_waiting_reason", "reason"), sdkMetric.ATTRIBUTE},
 			// Important: The order of these lines is important: we could have the same label in different entities, and we would like to keep the value closer to container
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels"), sdkMetric.ATTRIBUTE},
-			{"label.*", metric.InheritAllPrometheusLabelsFrom("deployment", "kube_deployment_labels"), sdkMetric.ATTRIBUTE},
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("pod", "kube_pod_labels"), sdkMetric.ATTRIBUTE},
 		},
 	},

@@ -1,0 +1,46 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: newrelic-infra
+  namespace: kube-system
+  labels:
+    app: newrelic-infra
+spec:
+  selector:
+    matchLabels:
+      name: newrelic-infra
+  template:
+    metadata:
+      labels:
+        name: newrelic-infra
+    spec:
+      containers:
+        - name: newrelic-infra
+          image: newrelic/ohaik:0.0.1
+          resources:
+            limits:
+              memory: 100Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          volumeMounts:
+            - mountPath: /host
+              name: host-volume
+              readOnly: true
+            - mountPath: /var/run/docker.sock
+              name: host-docker-socket
+          env:
+            - name: NRIA_LICENSE_KEY
+              value: <YOUR_LICENSE_KEY>
+            - name: NRIA_DISPLAY_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+      volumes:
+        - name: host-volume
+          hostPath:
+            path: /
+        - name: host-docker-socket
+          hostPath:
+            path: /var/run/docker.sock
