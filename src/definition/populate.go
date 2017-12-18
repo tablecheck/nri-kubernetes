@@ -24,8 +24,11 @@ func FromGroupMetricSetEntitTypeGuessFunc(groupLabel, _ string, _ RawGroups) str
 // PopulateFunc populates raw metric groups using your specs
 type PopulateFunc func(RawGroups, SpecGroups) (bool, []error)
 
+// MetricsNamingFunc returns the metrics' displayName and entityName, given the entity.name and entity.type values
+type MetricsNamingFunc func(entityName, entityType string) (mDisplayName string, mEntityName string)
+
 // IntegrationProtocol2PopulateFunc populates an integration protocol v2 with the given metrics and definition.
-func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, msTypeGuesser, msEntityTypeGuesser GuessFunc) PopulateFunc {
+func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, msTypeGuesser, msEntityTypeGuesser GuessFunc, msNamer MetricsNamingFunc) PopulateFunc {
 	return func(groups RawGroups, specs SpecGroups) (bool, []error) {
 		var populated bool
 		var errs []error
@@ -47,8 +50,10 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, msTypeGuesser
 					continue
 				}
 
+				displayName, entityName := msNamer(e.Entity.Name, e.Entity.Type)
+
 				ms := metric.NewMetricSet(msTypeGuesser(groupLabel, entityID, groups))
-				wasPopulated, populateErrs := metricSetPopulateFunc(ms, groupLabel, entityID)(groups, specs)
+				wasPopulated, populateErrs := metricSetPopulateFunc(ms, groupLabel, entityID, displayName, entityName)(groups, specs)
 				if len(populateErrs) != 0 {
 					for _, err := range populateErrs {
 						errs = append(errs, fmt.Errorf("entity id: %s: %s", entityID, err))
@@ -66,8 +71,11 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, msTypeGuesser
 	}
 }
 
-func metricSetPopulateFunc(ms metric.MetricSet, groupLabel, entityID string) PopulateFunc {
+func metricSetPopulateFunc(ms metric.MetricSet, groupLabel, entityID, msDisplayName, msEntityName string) PopulateFunc {
 	return func(groups RawGroups, specs SpecGroups) (populated bool, errs []error) {
+		ms.SetMetric("displayName", msDisplayName, metric.ATTRIBUTE)
+		ms.SetMetric("entityName", msEntityName, metric.ATTRIBUTE)
+
 		for _, ex := range specs[groupLabel].Specs {
 			val, err := ex.ValueFunc(groupLabel, entityID, groups)
 			if err != nil {

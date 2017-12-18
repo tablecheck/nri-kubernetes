@@ -2,13 +2,11 @@ package definition
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/newrelic/infra-integrations-sdk/metric"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
-
-	"fmt"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,6 +57,10 @@ func fromMultiple(values FetchedValues) FetchFunc {
 	}
 }
 
+func metricsNamingGuesser(entityName, entityType string) (mDisplayName string, mEntityName string) {
+	return fmt.Sprintf("%s:%s", entityType, entityName), entityName
+}
+
 func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
 	integration, err := sdk.NewIntegrationProtocol2("nr.test", "1.0.0", new(struct{}))
 	if err != nil {
@@ -70,11 +72,13 @@ func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
 	}
 
 	expectedMetricSet1 := metric.MetricSet{
-		"event_type": "TestSample",
-		"metric_1":   1,
-		"metric_2":   "metric_value_2",
-		"multiple_1": "one",
-		"multiple_2": "two",
+		"event_type":  "TestSample",
+		"metric_1":    1,
+		"metric_2":    "metric_value_2",
+		"multiple_1":  "one",
+		"multiple_2":  "two",
+		"displayName": "test:entity_id_1",
+		"entityName":  "entity_id_1",
 	}
 	expectedEntityData1.Metrics = []metric.MetricSet{expectedMetricSet1}
 
@@ -83,15 +87,17 @@ func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
 		t.Fatal()
 	}
 	expectedMetricSet2 := metric.MetricSet{
-		"event_type": "TestSample",
-		"metric_1":   2,
-		"metric_2":   "metric_value_4",
-		"multiple_1": "one",
-		"multiple_2": "two",
+		"event_type":  "TestSample",
+		"metric_1":    2,
+		"metric_2":    "metric_value_4",
+		"multiple_1":  "one",
+		"multiple_2":  "two",
+		"displayName": "test:entity_id_2",
+		"entityName":  "entity_id_2",
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
-	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc)(rawGroupsSample, specs)
+	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingGuesser)(rawGroupsSample, specs)
 	assert.True(t, populated)
 	assert.Empty(t, errs)
 
@@ -119,8 +125,10 @@ func TestIntegrationProtocol2PopulateFunc_PartialResult(t *testing.T) {
 	}
 
 	expectedMetricSet1 := metric.MetricSet{
-		"event_type": "TestSample",
-		"metric_1":   1,
+		"event_type":  "TestSample",
+		"metric_1":    1,
+		"displayName": "test:entity_id_1",
+		"entityName":  "entity_id_1",
 	}
 	expectedEntityData1.Metrics = []metric.MetricSet{expectedMetricSet1}
 
@@ -129,12 +137,14 @@ func TestIntegrationProtocol2PopulateFunc_PartialResult(t *testing.T) {
 		t.Fatal()
 	}
 	expectedMetricSet2 := metric.MetricSet{
-		"event_type": "TestSample",
-		"metric_1":   2,
+		"event_type":  "TestSample",
+		"metric_1":    2,
+		"displayName": "test:entity_id_2",
+		"entityName":  "entity_id_2",
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
-	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc)(rawGroupsSample, metricSpecsWithIncompatibleType)
+	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingGuesser)(rawGroupsSample, metricSpecsWithIncompatibleType)
 	assert.True(t, populated)
 	assert.Contains(t, integration.Data, &expectedEntityData1)
 	assert.Contains(t, integration.Data, &expectedEntityData2)
@@ -151,7 +161,7 @@ func TestIntegrationProtocol2PopulateFunc_EntitiesDataNotPopulated_EmptyMetricGr
 	}
 	expectedData := make([]*sdk.EntityData, 0)
 
-	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc)(metricGroupEmpty, specs)
+	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingGuesser)(metricGroupEmpty, specs)
 	assert.False(t, populated)
 	assert.Nil(t, errs)
 	assert.Equal(t, expectedData, integration.Data)
@@ -176,7 +186,7 @@ func TestIntegrationProtocol2PopulateFunc_EntitiesDataNotPopulated_ErrorSettingE
 	}
 	expectedData := []*sdk.EntityData{}
 
-	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc)(metricGroupEmptyEntityID, specs)
+	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingGuesser)(metricGroupEmptyEntityID, specs)
 	assert.False(t, populated)
 	assert.EqualError(t, errs[0], "entity name and type are required when defining one")
 	assert.Equal(t, expectedData, integration.Data)
@@ -205,7 +215,7 @@ func TestIntegrationProtocol2PopulateFunc_MetricsSetsNotPopulated_OnlyEntity(t *
 		t.Fatal()
 	}
 
-	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc)(rawGroupsSample, metricSpecsIncorrect)
+	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingGuesser)(rawGroupsSample, metricSpecsIncorrect)
 	assert.False(t, populated)
 	assert.Len(t, errs, 2)
 
@@ -255,9 +265,11 @@ func TestIntegrationProtocol2PopulateFunc_EntityIDGenerator(t *testing.T) {
 	}
 
 	expectedMetricSet1 := metric.MetricSet{
-		"event_type": "TestSample",
-		"metric_1":   1,
-		"metric_2":   2,
+		"event_type":  "TestSample",
+		"metric_1":    1,
+		"metric_2":    2,
+		"displayName": "test:testEntity1-generated",
+		"entityName":  "testEntity1-generated",
 	}
 	expectedEntityData1.Metrics = []metric.MetricSet{expectedMetricSet1}
 
@@ -267,13 +279,15 @@ func TestIntegrationProtocol2PopulateFunc_EntityIDGenerator(t *testing.T) {
 	}
 
 	expectedMetricSet2 := metric.MetricSet{
-		"event_type": "TestSample",
-		"metric_1":   3,
-		"metric_2":   4,
+		"event_type":  "TestSample",
+		"metric_1":    3,
+		"metric_2":    4,
+		"displayName": "test:testEntity2-generated",
+		"entityName":  "testEntity2-generated",
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
-	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc)(raw, withGeneratorSpec)
+	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingGuesser)(raw, withGeneratorSpec)
 
 	assert.True(t, populated)
 	assert.Empty(t, errs)

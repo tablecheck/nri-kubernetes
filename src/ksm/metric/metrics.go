@@ -59,6 +59,14 @@ func K8sMetricSetEntityTypeGuesser(nsFetch namespaceFetcher) func(groupLabel, en
 	}
 }
 
+// K8sMetricsNamingGuesser returns the metrics set displayName and entityName, taken from the entity.name and entity.type
+// properties
+func K8sMetricsNamingGuesser(entityName, entityType string) (mDisplayName string, mEntityName string) {
+	mDisplayName = entityName
+	mEntityName = fmt.Sprintf("%s:%s", entityType, entityName)
+	return
+}
+
 // FromPrometheusLabelValueEntityIDGenerator generates an entityID from the pod name. It's only used for k8s containers.
 func FromPrometheusLabelValueEntityIDGenerator(key, label string) definition.MetricSetEntityIDGeneratorFunc {
 	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
