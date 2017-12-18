@@ -120,35 +120,10 @@ func FromPrometheusLabelValue(key, label string) definition.FetchFunc {
 // Related metric means any metric you can get with the info that you have in your own metric.
 func InheritSpecificPrometheusLabelValuesFrom(parentGroupLabel, relatedMetricKey string, labelsToRetrieve map[string]string) definition.FetchFunc {
 	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
-		group, ok := groups[groupLabel][entityID]
-		if !ok {
-			return "", fmt.Errorf("metrics not found for %v with entity ID: %v", groupLabel, entityID)
+		rawEntityID, err := getRawEntityID(parentGroupLabel, relatedMetricKey, groupLabel, entityID, groups)
+		if err != nil {
+			return nil, fmt.Errorf("cannot retrieve the entity ID of metrics to inherit value from, got error: %v", err)
 		}
-		metricKey, r := getRandomMetric(group)
-		m, ok := r.(prometheus.Metric)
-
-		if !ok {
-			return "", fmt.Errorf("incompatible metric type. Expected: prometheus.Metric. Got: %T", r)
-		}
-
-		namespaceID, ok := m.Labels["namespace"]
-		if !ok {
-			return nil, fmt.Errorf("label not found. Label: 'namespace', Metric: %s", metricKey)
-		}
-
-		var rawEntityID string
-		switch parentGroupLabel {
-		case "namespace":
-			rawEntityID = namespaceID
-		default:
-			relatedMetricID, ok := m.Labels[parentGroupLabel]
-			if !ok {
-				return nil, fmt.Errorf("label not found. Label: %s, Metric: %s", parentGroupLabel, metricKey)
-			}
-
-			rawEntityID = fmt.Sprintf("%v_%v", namespaceID, relatedMetricID)
-		}
-
 		parent, err := definition.FromRaw(relatedMetricKey)(parentGroupLabel, rawEntityID, groups)
 		if err != nil {
 			return nil, fmt.Errorf("related metric not found. Metric: %s %s:%s", relatedMetricKey, parentGroupLabel, rawEntityID)
@@ -171,32 +146,9 @@ func InheritSpecificPrometheusLabelValuesFrom(parentGroupLabel, relatedMetricKey
 // Related metric means any metric you can get with the info that you have in your own metric.
 func InheritAllPrometheusLabelsFrom(parentGroupLabel, relatedMetricKey string) definition.FetchFunc {
 	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
-		group, ok := groups[groupLabel][entityID]
-		if !ok {
-			return "", fmt.Errorf("metrics not found for %v with entity ID: %v", groupLabel, entityID)
-		}
-		metricKey, r := getRandomMetric(group)
-		m, ok := r.(prometheus.Metric)
-		if !ok {
-			return "", fmt.Errorf("incompatible metric type. Expected: prometheus.Metric. Got: %T", r)
-		}
-
-		namespaceID, ok := m.Labels["namespace"]
-		if !ok {
-			return nil, fmt.Errorf("label not found. Label: 'namespace', Metric: %s", metricKey)
-		}
-		var rawEntityID string
-
-		switch parentGroupLabel {
-		case "namespace":
-			rawEntityID = namespaceID
-		default:
-			relatedMetricID, ok := m.Labels[parentGroupLabel]
-			if !ok {
-				return nil, fmt.Errorf("label not found. Label: %s, Metric: %s", parentGroupLabel, metricKey)
-			}
-
-			rawEntityID = fmt.Sprintf("%v_%v", namespaceID, relatedMetricID)
+		rawEntityID, err := getRawEntityID(parentGroupLabel, relatedMetricKey, groupLabel, entityID, groups)
+		if err != nil {
+			return nil, fmt.Errorf("cannot retrieve the entity ID of metrics to inherit labels from, got error: %v", err)
 		}
 
 		parent, err := fetchPrometheusMetric(relatedMetricKey)(parentGroupLabel, rawEntityID, groups)
@@ -211,6 +163,37 @@ func InheritAllPrometheusLabelsFrom(parentGroupLabel, relatedMetricKey string) d
 
 		return multiple, nil
 	}
+}
+
+func getRawEntityID(parentGroupLabel, relatedMetricKey, groupLabel, entityID string, groups definition.RawGroups) (string, error) {
+	group, ok := groups[groupLabel][entityID]
+	if !ok {
+		return "", fmt.Errorf("metrics not found for %v with entity ID: %v", groupLabel, entityID)
+	}
+	metricKey, r := getRandomMetric(group)
+	m, ok := r.(prometheus.Metric)
+
+	if !ok {
+		return "", fmt.Errorf("incompatible metric type. Expected: prometheus.Metric. Got: %T", r)
+	}
+
+	namespaceID, ok := m.Labels["namespace"]
+	if !ok {
+		return "", fmt.Errorf("label not found. Label: 'namespace', Metric: %s", metricKey)
+	}
+
+	var rawEntityID string
+	switch parentGroupLabel {
+	case "namespace":
+		rawEntityID = namespaceID
+	default:
+		relatedMetricID, ok := m.Labels[parentGroupLabel]
+		if !ok {
+			return "", fmt.Errorf("label not found. Label: %s, Metric: %s", parentGroupLabel, metricKey)
+		}
+		rawEntityID = fmt.Sprintf("%v_%v", namespaceID, relatedMetricID)
+	}
+	return rawEntityID, nil
 }
 
 func getRandomMetric(metrics definition.RawMetrics) (metricKey string, value definition.RawValue) {

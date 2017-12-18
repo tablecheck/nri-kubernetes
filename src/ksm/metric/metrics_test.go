@@ -690,7 +690,7 @@ func TestInheritSpecificPrometheusLabelValuesFrom_NamespaceNotFound(t *testing.T
 	}
 
 	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("pod", "kube_pod_info", map[string]string{"inherited-pod_ip": "pod_ip"})("container", containerRawEntityID, raw)
-	assert.EqualError(t, err, "label not found. Label: 'namespace', Metric: kube_pod_container_info")
+	assert.EqualError(t, err, "cannot retrieve the entity ID of metrics to inherit value from, got error: label not found. Label: 'namespace', Metric: kube_pod_container_info")
 	assert.Empty(t, fetchedValue)
 }
 
@@ -724,7 +724,7 @@ func TestInheritSpecificPrometheusLabelValuesFrom_GroupNotFound(t *testing.T) {
 	}
 
 	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("pod", "kube_pod_info", map[string]string{"inherited-pod_ip": "pod_ip"})("container", incorrectContainerRawEntityID, raw)
-	assert.EqualError(t, err, "metrics not found for container with entity ID: non-existing-ID")
+	assert.EqualError(t, err, "cannot retrieve the entity ID of metrics to inherit value from, got error: metrics not found for container with entity ID: non-existing-ID")
 	assert.Empty(t, fetchedValue)
 }
 
@@ -860,7 +860,7 @@ func TestInheritAllPrometheusLabelsFrom_LabelNotFound(t *testing.T) {
 
 	fetchedValue, err := InheritAllPrometheusLabelsFrom("deployment", "kube_deployment_labels")("pod", podRawEntityID, raw)
 	assert.Nil(t, fetchedValue)
-	assert.EqualError(t, err, fmt.Sprintf("label not found. Label: deployment, Metric: kube_pod_info"))
+	assert.EqualError(t, err, fmt.Sprintf("cannot retrieve the entity ID of metrics to inherit labels from, got error: label not found. Label: deployment, Metric: kube_pod_info"))
 }
 
 func TestInheritAllPrometheusLabelsFrom_RelatedMetricNotFound(t *testing.T) {
