@@ -14,45 +14,48 @@ func K8sMetricSetTypeGuesser(groupLabel, _ string, _ definition.RawGroups) strin
 	return fmt.Sprintf("K8s%vSample", strings.Title(groupLabel))
 }
 
-type namespaceFetcher func(groupLabel, entityId string, groups definition.RawGroups) string
+type namespaceFetcher func(groupLabel, entityId string, groups definition.RawGroups) interface{}
 
 // KubeletNamespaceFetcher fetches the namespace from a Kubelet RawGroups information
-func KubeletNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) string {
-	namespace := groups[groupLabel][entityId]["namespace"]
-	if namespace == nil {
-		return ""
-	}
-	return namespace.(string)
+func KubeletNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) interface{} {
+	return groups[groupLabel][entityId]["namespace"]
+}
+
+var nsKeyForGroup = map[string]string{
+	"pod":        "kube_pod_info",
+	"replicaset": "kube_replicaset_created",
+	"container":  "kube_pod_container_info",
+	"namespace":  "kube_namespace_created",
+	"deployment": "kube_deployment_labels",
 }
 
 // KSMNamespaceFetcher fetches the namespace from a KSM RawGroups information
-func KSMNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) string {
-	ns, _ := FromPrometheusLabelValue("kube_deployment_labels", "namespace")(groupLabel, entityId, groups)
-	return ns.(string)
-}
-
-func K8sMetricSetEntityTypeGuesserMalo(groupLabel, entityId string, groups definition.RawGroups) string {
-	if groupLabel == "container" {
-		groupLabel = "pod"
+func KSMNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) interface{} {
+	ns, err := FromPrometheusLabelValue(nsKeyForGroup[groupLabel], "namespace")(groupLabel, entityId, groups)
+	if err == nil && ns != nil {
+		return ns
 	}
-
-	if groupLabel == "namespace" {
-		return fmt.Sprintf("k8s:namespace")
-	}
-	return fmt.Sprintf("k8s:%s:%s", groups[groupLabel][entityId]["namespace"], groupLabel)
+	return nil
 }
 
 // K8sMetricSetEntityTypeGuesser guesses the Entity Type given a group name, entity Id and a namespace fetcher function
-func K8sMetricSetEntityTypeGuesser(fetcher namespaceFetcher) func(groupLabel, entityId string, groups definition.RawGroups) string {
+func K8sMetricSetEntityTypeGuesser(nsFetch namespaceFetcher) func(groupLabel, entityId string, groups definition.RawGroups) string {
 	return func(groupLabel, entityId string, groups definition.RawGroups) string {
+		var actualGroupLabel string
 		if groupLabel == "container" {
-			groupLabel = "pod"
+			actualGroupLabel = "pod"
+		} else {
+			actualGroupLabel = groupLabel
 		}
 
 		if groupLabel == "namespace" {
 			return fmt.Sprintf("k8s:namespace")
 		}
-		return fmt.Sprintf("k8s:%s:%s", fetcher(groupLabel, entityId, groups), groupLabel)
+		namespace := nsFetch(groupLabel, entityId, groups)
+		if namespace == nil {
+			return ""
+		}
+		return fmt.Sprintf("k8s:%s:%s", namespace.(string), actualGroupLabel)
 	}
 }
 
@@ -235,6 +238,22 @@ func fetchPrometheusMetric(metricKey string) definition.FetchFunc {
 		}
 
 		return v, nil
+	}
+}
+
+// GetStatusForContainer returns the status of a container
+func GetStatusForContainer() definition.FetchFunc {
+	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
+		queryValue := prometheus.GaugeValue(1)
+		s := []string{"running", "waiting", "terminated"}
+		for _, k := range s {
+			v, _ := FromPrometheusValue(fmt.Sprintf("kube_pod_container_status_%s", k))(groupLabel, entityID, groups)
+			if v == queryValue {
+				return strings.Title(k), nil
+			}
+		}
+
+		return "Unknown", nil
 	}
 }
 

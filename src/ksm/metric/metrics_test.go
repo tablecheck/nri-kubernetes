@@ -2,6 +2,7 @@ package metric
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
@@ -204,7 +205,7 @@ func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
 	if err != nil {
 		t.Fatal()
 	}
-	expectedEntityData1, err := sdk.NewEntityData("kube-system_fluentd-elasticsearch-jnqb7", "k8s/pod")
+	expectedEntityData1, err := sdk.NewEntityData("kube-system_fluentd-elasticsearch-jnqb7", "k8s:kube-system:pod")
 	if err != nil {
 		t.Fatal()
 	}
@@ -216,7 +217,7 @@ func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
 	}
 	expectedEntityData1.Metrics = []metric.MetricSet{expectedMetricSet1}
 
-	expectedEntityData2, err := sdk.NewEntityData("kube-system_newrelic-infra-monitoring-cglrn", "k8s/pod")
+	expectedEntityData2, err := sdk.NewEntityData("kube-system_newrelic-infra-monitoring-cglrn", "k8s:kube-system:pod")
 	if err != nil {
 		t.Fatal()
 	}
@@ -228,7 +229,7 @@ func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
-	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesserMalo)(rawGroups, specs)
+	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser(KSMNamespaceFetcher))(rawGroups, specs)
 	assert.True(t, populated)
 	assert.Empty(t, errs)
 	assert.Contains(t, integration.Data, &expectedEntityData1)
@@ -250,7 +251,7 @@ func TestIntegrationProtocol2PopulateFunc_PartialResult(t *testing.T) {
 	if err != nil {
 		t.Fatal()
 	}
-	expectedEntityData1, err := sdk.NewEntityData("kube-system_fluentd-elasticsearch-jnqb7", "k8s/pod")
+	expectedEntityData1, err := sdk.NewEntityData("kube-system_fluentd-elasticsearch-jnqb7", "k8s:kube-system:pod")
 	if err != nil {
 		t.Fatal()
 	}
@@ -261,7 +262,7 @@ func TestIntegrationProtocol2PopulateFunc_PartialResult(t *testing.T) {
 	}
 	expectedEntityData1.Metrics = []metric.MetricSet{expectedMetricSet1}
 
-	expectedEntityData2, err := sdk.NewEntityData("kube-system_newrelic-infra-monitoring-cglrn", "k8s/pod")
+	expectedEntityData2, err := sdk.NewEntityData("kube-system_newrelic-infra-monitoring-cglrn", "k8s:kube-system:pod")
 	if err != nil {
 		t.Fatal()
 	}
@@ -272,7 +273,7 @@ func TestIntegrationProtocol2PopulateFunc_PartialResult(t *testing.T) {
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
-	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser(KubeletNamespaceFetcher))(rawGroups, metricDefWithIncompatibleType)
+	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser(KSMNamespaceFetcher))(rawGroups, metricDefWithIncompatibleType)
 	assert.True(t, populated)
 	assert.Len(t, errs, 2)
 	assert.Contains(t, integration.Data, &expectedEntityData1)
@@ -288,7 +289,7 @@ func TestIntegrationProtocol2PopulateFunc_EntitiesDataNotPopulated_EmptyMetricGr
 	}
 	expectedData := []*sdk.EntityData{}
 
-	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser(KubeletNamespaceFetcher))(metricGroupEmpty, specs)
+	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser(KSMNamespaceFetcher))(metricGroupEmpty, specs)
 	assert.False(t, populated)
 	assert.Nil(t, errs)
 	assert.Equal(t, expectedData, integration.Data)
@@ -302,6 +303,13 @@ func TestIntegrationProtocol2PopulateFunc_EntitiesDataNotPopulated_ErrorSettingE
 	var metricGroupEmptyEntityID = definition.RawGroups{
 		"pod": {
 			"": definition.RawMetrics{
+				"kube_pod_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"namespace": "kube-system",
+						"pod":       "fluentd-elasticsearch-jnqb7",
+					},
+				},
 				"kube_pod_start_time": prometheus.Metric{
 					Value: prometheus.GaugeValue(1507117436),
 					Labels: map[string]string{
@@ -314,7 +322,7 @@ func TestIntegrationProtocol2PopulateFunc_EntitiesDataNotPopulated_ErrorSettingE
 	}
 	expectedData := []*sdk.EntityData{}
 
-	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser(KubeletNamespaceFetcher))(metricGroupEmptyEntityID, specs)
+	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser(KSMNamespaceFetcher))(metricGroupEmptyEntityID, specs)
 	assert.False(t, populated)
 	assert.EqualError(t, errs[0], "entity name and type are required when defining one")
 	assert.Equal(t, expectedData, integration.Data)
@@ -334,16 +342,16 @@ func TestIntegrationProtocol2PopulateFunc_MetricsSetsNotPopulated_OnlyEntity(t *
 		t.Fatal()
 	}
 
-	expectedEntityData1, err := sdk.NewEntityData("kube-system_fluentd-elasticsearch-jnqb7", "k8s/pod")
+	expectedEntityData1, err := sdk.NewEntityData("kube-system_fluentd-elasticsearch-jnqb7", "k8s:kube-system:pod")
 	if err != nil {
 		t.Fatal()
 	}
-	expectedEntityData2, err := sdk.NewEntityData("kube-system_newrelic-infra-monitoring-cglrn", "k8s/pod")
+	expectedEntityData2, err := sdk.NewEntityData("kube-system_newrelic-infra-monitoring-cglrn", "k8s:kube-system:pod")
 	if err != nil {
 		t.Fatal()
 	}
 
-	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser(KubeletNamespaceFetcher))(rawGroups, metricDefIncorrect)
+	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser(KSMNamespaceFetcher))(rawGroups, metricDefIncorrect)
 	assert.False(t, populated)
 	assert.Len(t, errs, 2)
 	assert.Contains(t, errs, errors.New("entity id: kube-system_fluentd-elasticsearch-jnqb7: error fetching value for metric podStartTime. Error: FromRaw: metric not found. SpecGroup: pod, EntityID: kube-system_fluentd-elasticsearch-jnqb7, Metric: foo"))
@@ -677,4 +685,35 @@ func TestInheritAllPrometheusLabelsFrom_NotFound(t *testing.T) {
 	fetchedValue, err := InheritAllPrometheusLabelsFrom("pod", "non_existent_metric_key")("container", "kube-addon-manager-minikube", raw)
 	assert.EqualError(t, err, "related metric not found. Metric: non_existent_metric_key pod:kube-addon-manager-minikube")
 	assert.Empty(t, fetchedValue)
+}
+
+func TestStatusForContainer(t *testing.T) {
+	var raw definition.RawGroups
+	var statusTests = []struct {
+		s        string
+		expected string
+	}{
+		{"running", "Running"},
+		{"terminated", "Terminated"},
+		{"waiting", "Waiting"},
+		{"whatever", "Unknown"},
+	}
+
+	for _, tt := range statusTests {
+		raw = definition.RawGroups{
+			"container": {
+				"kube-addon-manager-minikube": definition.RawMetrics{
+					fmt.Sprintf("kube_pod_container_status_%s", tt.s): prometheus.Metric{
+						Value: prometheus.GaugeValue(1),
+						Labels: map[string]string{
+							"namespace": "kube-system",
+						},
+					},
+				},
+			},
+		}
+		actual, err := GetStatusForContainer()("container", "kube-addon-manager-minikube", raw)
+		assert.Equal(t, tt.expected, actual)
+		assert.NoError(t, err)
+	}
 }

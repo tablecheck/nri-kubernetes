@@ -20,11 +20,11 @@ import (
 
 type argumentList struct {
 	sdkArgs.DefaultArgumentList
-	MetricsURL  string `help:"overrides Kube State Metrics schema://host:port URL parts (if not set, it will be self-discovered)."`
-	KubeletURL  string `help:"overrides kubelet schema://host:port URL parts (if not set, it will be self-discovered)"`
-	IgnoreCerts bool   `default:"false" help:"disables HTTPS certificate verification for metrics sources"`
-	Ksm         string `default:"auto" help:"whether the Kube State Metrics must be reported or not (accepted values: true, false, auto)"`
-	Timeout     int    `default:"1000" help:"Timeout in milliseconds for calling metrics sources"`
+	KubeStateMetricsURL string `help:"overrides Kube State Metrics schema://host:port URL parts (if not set, it will be self-discovered)."`
+	KubeletURL          string `help:"overrides kubelet schema://host:port URL parts (if not set, it will be self-discovered)"`
+	IgnoreCerts         bool   `default:"false" help:"disables HTTPS certificate verification for metrics sources"`
+	Ksm                 string `default:"auto" help:"whether the Kube State Metrics must be reported or not (accepted values: true, false, auto)"`
+	Timeout             int    `default:"1000" help:"Timeout in milliseconds for calling metrics sources"`
 }
 
 const (
@@ -48,8 +48,8 @@ func main() {
 		var ksmURL url.URL
 		var ksmNode string
 
-		if args.MetricsURL != "" {
-			pURL, err := url.Parse(args.MetricsURL)
+		if args.KubeStateMetricsURL != "" {
+			pURL, err := url.Parse(args.KubeStateMetricsURL)
 			fatalIfErr(err)
 			ksmURL = *pURL
 		} else if args.Ksm != "false" {
@@ -100,10 +100,10 @@ func main() {
 		// - If "ksm==true", metrics are always populated
 		// - If "ksm==false", metrics are never populated
 		// - If "ksm==auto", metrics are populated if:
-		//       . The user sets the MetricsURL argument
+		//       . The user sets the KubeStateMetricsURL argument
 		//       . The discovery mechanisms shows that Kubelet and KSM are in the same node
 		if args.Ksm == "true" ||
-			(args.Ksm != "false" && args.MetricsURL != "") ||
+			(args.Ksm != "false" && args.KubeStateMetricsURL != "") ||
 			(args.Ksm == "auto" && kubeletNode == ksmNode) {
 			populateKubeStateMetrics(ksmURL.String(), integration)
 		}
@@ -128,7 +128,7 @@ func populateKubeStateMetrics(ksmMetricsURL string, integration *sdk.Integration
 		log.Fatal(errors.New("no data was fetched"))
 	}
 
-	populator := definition.IntegrationProtocol2PopulateFunc(integration, metric.K8sMetricSetTypeGuesser, metric.MetricSetEntityTypeGuesser(metric.KSMNamespaceFetcher))
+	populator := definition.IntegrationProtocol2PopulateFunc(integration, metric.K8sMetricSetTypeGuesser, metric.K8sMetricSetEntityTypeGuesser(metric.KSMNamespaceFetcher))
 	ok, errs := populator(groups, ksmAggregation)
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -158,7 +158,7 @@ func populateKubeletMetrics(kubeletURL url.URL, netClient *http.Client, integrat
 		log.Fatal(errors.New("no data was fetched"))
 	}
 
-	populator := definition.IntegrationProtocol2PopulateFunc(integration, metric.K8sMetricSetTypeGuesser, metric.MetricSetEntityTypeGuesser(metric.KubeletNamespaceFetcher))
+	populator := definition.IntegrationProtocol2PopulateFunc(integration, metric.K8sMetricSetTypeGuesser, metric.K8sMetricSetEntityTypeGuesser(metric.KubeletNamespaceFetcher))
 	ok, errs := populator(groups, kubeletAggregation)
 	if len(errs) > 0 {
 		for _, err := range errs {
