@@ -1,15 +1,8 @@
-integration_name: com.newrelic.kube-state-metrics
+integration_name: com.newrelic.kubernetes
 
 instances:
   - name: <INSTANCE IDENTIFIER>
     command: metrics
-    arguments:
-      arg1: <ARG_VALUE>
-    labels:
-      key1: <LABEL_VALUE>
-
-  - name: <OTHER INSTANCE IDENTIFIER>
-    command: inventory
     arguments:
       arg1: <ARG_VALUE>
     labels:
