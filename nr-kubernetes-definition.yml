@@ -1,18 +1,11 @@
-name: com.newrelic.kube-state-metrics
-description: Reports status and metrics for kube-state-metrics service
-protocol_version: 1
+name: com.newrelic.kubernetes
+description: New Relic Infrastructure’s Integration for collecting metrics for your Kubernetes objects.
+protocol_version: 2
 os: linux
 
 commands:
   metrics:
     command:
-      - ./bin/nr-kube-state-metrics
+      - ./bin/nr-kubernetes
       - --metrics
-    interval: 15
-
-  inventory:
-    command:
-      - ./bin/nr-kube-state-metrics
-      - --inventory
-    prefix: config/nr-kube-state-metrics
     interval: 15
