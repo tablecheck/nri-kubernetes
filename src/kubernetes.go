@@ -8,10 +8,11 @@ import (
 	"time"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
-	endpoints2 "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/endpoints"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
+	ksmEndpoints "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/endpoints"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/endpoints"
+	kubeletEndpoints "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/endpoints"
 	kubeletMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
 	sdkArgs "github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/newrelic/infra-integrations-sdk/log"
@@ -43,6 +44,8 @@ func main() {
 	log.Debug("Integration '%s' with version %s started", integrationName, integrationVersion)
 	fatalIfErr(err)
 
+	var ksmDiscoverer endpoints.Discoverer
+
 	if args.All || args.Metrics {
 		// Kube State Metrics Discovery
 		var ksmURL url.URL
@@ -53,17 +56,16 @@ func main() {
 			fatalIfErr(err)
 			ksmURL = *pURL
 		} else if args.Ksm != "false" {
-			ksm, err := endpoints2.NewKSMDiscoverer()
-			fatalIfErr(err)
-			ksmURL, err = ksm.Discover()
-			fatalIfErr(err)
-			ksmNode, err = ksm.NodeIP()
-			fatalIfErr(err)
+			ksmDiscoverer, err = ksmEndpoints.NewKSMDiscoverer()
+			if err == nil {
+				ksmNode, err = ksmDiscoverer.NodeIP()
+			}
+			if err == nil {
+				log.Debug("KSM Node = %s", ksmNode)
+			} else {
+				log.Debug("can't get Kube State Metrics node: %q", err.Error())
+			}
 		}
-		ksmURL.Path = metricsPath
-
-		log.Debug("KSM URL = %s", ksmURL.String())
-		log.Debug("KSM Node = %s", ksmNode)
 
 		// Kubelet Discovery
 		var kubeletURL url.URL
@@ -75,7 +77,7 @@ func main() {
 			kubeletURL = *pURL
 			kubeletNode = kubeletURL.Hostname()
 		} else {
-			kubelet, err := endpoints.NewKubeletDiscoverer()
+			kubelet, err := kubeletEndpoints.NewKubeletDiscoverer()
 			fatalIfErr(err)
 			kubeletURL, err = kubelet.Discover()
 			fatalIfErr(err)
@@ -105,7 +107,16 @@ func main() {
 		if args.Ksm == "true" ||
 			(args.Ksm != "false" && args.KubeStateMetricsURL != "") ||
 			(args.Ksm == "auto" && kubeletNode == ksmNode) {
-			populateKubeStateMetrics(ksmURL.String(), integration)
+
+			ksmURL, err = ksmDiscoverer.Discover()
+			ksmURL.Path = metricsPath
+
+			log.Debug("KSM URL = %s", ksmURL.String())
+
+			fatalIfErr(err)
+			if err == nil {
+				populateKubeStateMetrics(ksmURL.String(), integration)
+			}
 		}
 
 		populateKubeletMetrics(kubeletURL, netClient, integration)
