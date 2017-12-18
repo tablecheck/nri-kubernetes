@@ -78,75 +78,11 @@ func main() {
 	var ksmDiscoverer endpoints.Discoverer
 
 	if args.All || args.Metrics {
-		// Kube State Metrics Discovery
-		//var ksmURL url.URL
-		//var ksmNode string
+		kubeletURL, err := url.Parse(args.KubeletURL)
+		fatalIfErr(err)
 
-		//if args.KubeStateMetricsURL != "" {
-		//	pURL, err := url.Parse(args.KubeStateMetricsURL)
-		//	fatalIfErr(err)
-		//	ksmURL = *pURL
-		//} else if args.Ksm != "false" {
-		//	ksmDiscoverer, err = ksmEndpoints.NewKSMDiscoverer()
-		//	if err == nil {
-		//		ksmNode, err = ksmDiscoverer.NodeIP()
-		//	}
-		//	if err == nil {
-		//		log.Debug("KSM Node = %s", ksmNode)
-		//	} else {
-		//		log.Debug("can't get Kube State Metrics node: %q", err.Error())
-		//	}
-		//}
-		//ksmURL.Path = metricsPath
-
-		//log.Debug("KSM URL = %s", ksmURL.String())
-		//log.Debug("KSM Node = %s", ksmNode)
-
-		// Kubelet Discovery
-
-		logger := logrus.New()
-		// TODO decide role using autodiscovery mechanism.
-		//
-		//if args.KubeletURL != "" {
-		//	pURL, err := url.Parse(args.KubeletURL)
-		//	fatalIfErr(err)
-		//	kubeletURL = *pURL
-		//	kubeletNode = kubeletURL.Hostname()
-		//} else {
-		//	kubelet, err := kubeletEndpoints.NewKubeletDiscoverer()
-		//	fatalIfErr(err)
-		//	kubeletURL, err = kubelet.Discover()
-		//	fatalIfErr(err)
-		//	kubeletNode, err = kubelet.NodeIP()
-		//	fatalIfErr(err)
-		//}
-		//kubeletURL.Path = statsSummaryPath
-		//log.Debug("Kubelet URL = %s", kubeletURL.String())
-		//log.Debug("Kubelet Node = %s", kubeletNode)
-
-		// We populate KSM metrics in the next cases
-		// - If "ksm==true", metrics are always populated
-		// - If "ksm==false", metrics are never populated
-		// - If "ksm==auto", metrics are populated if:
-		//       . The user sets the MetricsURL argument
-		//       . The discovery mechanisms shows that Kubelet and KSM are in the same node
-		//if args.Ksm == "true" ||
-		//	(args.Ksm != "false" && args.MetricsURL != "") ||
-		//	(args.Ksm == "auto" && kubeletNode == ksmNode) {
-		//
-		//	ksmURL, err = ksmDiscoverer.Discover()
-		//	ksmURL.Path = metricsPath
-		//
-		//	log.Debug("KSM URL = %s", ksmURL.String())
-		//
-		//	fatalIfErr(err)
-		//	if err == nil {
-		//		populateKubeStateMetrics(ksmURL.String(), integration)
-		//	}
-		//}
-
-		var kubeletURL url.URL
-		var ksmURL url.URL
+		ksmURL, err := url.Parse(args.KubeStateMetricsURL)
+		fatalIfErr(err)
 
 		role := args.Role
 		if role == "" {
@@ -155,9 +91,9 @@ func main() {
 			kubeletDiscoverer, err := kubeletEndpoints.NewKubeletDiscoverer()
 			fatalIfErr(err)
 
-			kubeletURL, err = kubeletDiscoverer.Discover()
+			discoveredKubeletURL, err := kubeletDiscoverer.Discover()
 			fatalIfErr(err)
-			log.Debug("Kubelet URL = %s", kubeletURL.String())
+			kubeletURL = &discoveredKubeletURL
 
 			kubeletNodeIP, err := kubeletDiscoverer.NodeIP()
 			fatalIfErr(err)
@@ -171,11 +107,9 @@ func main() {
 
 			log.Debug("KSM Node = %s", ksmNodeIP)
 
-			discoveredKubeletURL, err := ksmDiscoverer.Discover()
+			discoveredKSMURL, err := ksmDiscoverer.Discover()
 			fatalIfErr(err)
-			log.Debug("KSM URL = %s", ksmNodeIP)
-
-			kubeletURL = discoveredKubeletURL
+			ksmURL = &discoveredKSMURL
 
 			// setting role by auto discovery
 			if kubeletNodeIP == ksmNodeIP {
@@ -193,6 +127,12 @@ func main() {
 			log.Fatal(errors.New("kubelet_url should be provided"))
 		}
 
+		kubeletURL.Path = statsSummaryPath
+		ksmURL.Path = metricsPath
+
+		log.Debug("Kubelet URL = %s", kubeletURL)
+		log.Debug("KSM URL = %s", ksmURL)
+
 		netClient := &http.Client{
 			Timeout: time.Millisecond * time.Duration(args.Timeout),
 		}
@@ -203,13 +143,12 @@ func main() {
 			}
 		}
 
-		kubeletURL.Path = statsSummaryPath
-		ksmURL.Path = metricsPath
+		logger := logrus.New()
 
 		// todo fix pointers indirection stuff
 		kubeletKSMGrouper := data.NewKubeletKSMGrouper(
-			&kubeletURL,
-			&ksmURL,
+			kubeletURL,
+			ksmURL,
 			netClient,
 			prometheusPodsAndContainerQueries,
 			ksmPodAndContainerSpecs,
@@ -219,11 +158,10 @@ func main() {
 		switch role {
 		case "kubelet-ksm-rest":
 			// todo fix pointers indirection stuff
-			kubeletKSMAndRest(kubeletKSMGrouper, &ksmURL, integration, logger)
+			kubeletKSMAndRest(kubeletKSMGrouper, ksmURL, integration, logger)
 		case "kubelet-ksm":
 			kubeletKSM(kubeletKSMGrouper, integration, logger)
 		}
-
 	}
 
 	fatalIfErr(integration.Publish())
