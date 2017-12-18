@@ -112,7 +112,7 @@ var metricFamilyContainersWithTheSameName = []prometheus.MetricFamily{
 
 var rawGroupsIncompatibleType = definition.RawGroups{
 	"pod": {
-		"kube-system_fluentd-elasticsearch-jnqb7": definition.RawMetrics{
+		"fluentd-elasticsearch-jnqb7": definition.RawMetrics{
 			"kube_pod_start_time": "foo",
 		},
 	},
@@ -120,7 +120,7 @@ var rawGroupsIncompatibleType = definition.RawGroups{
 
 var rawGroups = definition.RawGroups{
 	"pod": {
-		"kube-system_fluentd-elasticsearch-jnqb7": definition.RawMetrics{
+		"fluentd-elasticsearch-jnqb7": definition.RawMetrics{
 			"kube_pod_start_time": prometheus.Metric{
 				Value: prometheus.GaugeValue(1507117436),
 				Labels: map[string]string{
@@ -139,7 +139,7 @@ var rawGroups = definition.RawGroups{
 				},
 			},
 		},
-		"kube-system_newrelic-infra-monitoring-cglrn": definition.RawMetrics{
+		"newrelic-infra-monitoring-cglrn": definition.RawMetrics{
 			"kube_pod_start_time": prometheus.Metric{
 				Value: prometheus.GaugeValue(1510579152),
 				Labels: map[string]string{
@@ -163,7 +163,7 @@ var rawGroups = definition.RawGroups{
 
 var rawGroupWithReplicaSet = definition.RawGroups{
 	"replicaset": {
-		"kube-system_kube-state-metrics-4044341274": definition.RawMetrics{
+		"kube-state-metrics-4044341274": definition.RawMetrics{
 			"kube_replicaset_created": prometheus.Metric{
 				Value: prometheus.GaugeValue(1507117436),
 				Labels: map[string]string{
@@ -205,7 +205,7 @@ func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
 	if err != nil {
 		t.Fatal()
 	}
-	expectedEntityData1, err := sdk.NewEntityData("kube-system_fluentd-elasticsearch-jnqb7", "k8s:kube-system:pod")
+	expectedEntityData1, err := sdk.NewEntityData("fluentd-elasticsearch-jnqb7", "k8s:kube-system:pod")
 	if err != nil {
 		t.Fatal()
 	}
@@ -214,12 +214,12 @@ func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
 		"podStartTime":      prometheus.GaugeValue(1507117436),
 		"podInfo.namespace": "kube-system",
 		"podInfo.pod":       "fluentd-elasticsearch-jnqb7",
-		"displayName":       "kube-system_fluentd-elasticsearch-jnqb7",
-		"entityName":        "k8s:kube-system:pod:kube-system_fluentd-elasticsearch-jnqb7",
+		"displayName":       "fluentd-elasticsearch-jnqb7",
+		"entityName":        "k8s:kube-system:pod:fluentd-elasticsearch-jnqb7",
 	}
 	expectedEntityData1.Metrics = []metric.MetricSet{expectedMetricSet1}
 
-	expectedEntityData2, err := sdk.NewEntityData("kube-system_newrelic-infra-monitoring-cglrn", "k8s:kube-system:pod")
+	expectedEntityData2, err := sdk.NewEntityData("newrelic-infra-monitoring-cglrn", "k8s:kube-system:pod")
 	if err != nil {
 		t.Fatal()
 	}
@@ -228,8 +228,8 @@ func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
 		"podStartTime":      prometheus.GaugeValue(1510579152),
 		"podInfo.namespace": "kube-system",
 		"podInfo.pod":       "newrelic-infra-monitoring-cglrn",
-		"displayName":       "kube-system_newrelic-infra-monitoring-cglrn",
-		"entityName":        "k8s:kube-system:pod:kube-system_newrelic-infra-monitoring-cglrn",
+		"displayName":       "newrelic-infra-monitoring-cglrn",
+		"entityName":        "k8s:kube-system:pod:newrelic-infra-monitoring-cglrn",
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
@@ -255,7 +255,7 @@ func TestIntegrationProtocol2PopulateFunc_PartialResult(t *testing.T) {
 	if err != nil {
 		t.Fatal()
 	}
-	expectedEntityData1, err := sdk.NewEntityData("kube-system_fluentd-elasticsearch-jnqb7", "k8s:kube-system:pod")
+	expectedEntityData1, err := sdk.NewEntityData("fluentd-elasticsearch-jnqb7", "k8s:kube-system:pod")
 	if err != nil {
 		t.Fatal()
 	}
@@ -263,12 +263,12 @@ func TestIntegrationProtocol2PopulateFunc_PartialResult(t *testing.T) {
 		"event_type":   "K8sPodSample",
 		"podStartTime": prometheus.GaugeValue(1507117436),
 		"podInfo.pod":  "fluentd-elasticsearch-jnqb7",
-		"displayName":  "kube-system_fluentd-elasticsearch-jnqb7",
-		"entityName":   "k8s:kube-system:pod:kube-system_fluentd-elasticsearch-jnqb7",
+		"displayName":  "fluentd-elasticsearch-jnqb7",
+		"entityName":   "k8s:kube-system:pod:fluentd-elasticsearch-jnqb7",
 	}
 	expectedEntityData1.Metrics = []metric.MetricSet{expectedMetricSet1}
 
-	expectedEntityData2, err := sdk.NewEntityData("kube-system_newrelic-infra-monitoring-cglrn", "k8s:kube-system:pod")
+	expectedEntityData2, err := sdk.NewEntityData("newrelic-infra-monitoring-cglrn", "k8s:kube-system:pod")
 	if err != nil {
 		t.Fatal()
 	}
@@ -276,8 +276,8 @@ func TestIntegrationProtocol2PopulateFunc_PartialResult(t *testing.T) {
 		"event_type":   "K8sPodSample",
 		"podStartTime": prometheus.GaugeValue(1510579152),
 		"podInfo.pod":  "newrelic-infra-monitoring-cglrn",
-		"displayName":  "kube-system_newrelic-infra-monitoring-cglrn",
-		"entityName":   "k8s:kube-system:pod:kube-system_newrelic-infra-monitoring-cglrn",
+		"displayName":  "newrelic-infra-monitoring-cglrn",
+		"entityName":   "k8s:kube-system:pod:newrelic-infra-monitoring-cglrn",
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
@@ -350,11 +350,11 @@ func TestIntegrationProtocol2PopulateFunc_MetricsSetsNotPopulated_OnlyEntity(t *
 		t.Fatal()
 	}
 
-	expectedEntityData1, err := sdk.NewEntityData("kube-system_fluentd-elasticsearch-jnqb7", "k8s:kube-system:pod")
+	expectedEntityData1, err := sdk.NewEntityData("fluentd-elasticsearch-jnqb7", "k8s:kube-system:pod")
 	if err != nil {
 		t.Fatal()
 	}
-	expectedEntityData2, err := sdk.NewEntityData("kube-system_newrelic-infra-monitoring-cglrn", "k8s:kube-system:pod")
+	expectedEntityData2, err := sdk.NewEntityData("newrelic-infra-monitoring-cglrn", "k8s:kube-system:pod")
 	if err != nil {
 		t.Fatal()
 	}
@@ -362,8 +362,8 @@ func TestIntegrationProtocol2PopulateFunc_MetricsSetsNotPopulated_OnlyEntity(t *
 	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser(KSMNamespaceFetcher), K8sMetricsNamingGuesser)(rawGroups, metricDefIncorrect)
 	assert.False(t, populated)
 	assert.Len(t, errs, 2)
-	assert.Contains(t, errs, errors.New("entity id: kube-system_fluentd-elasticsearch-jnqb7: error fetching value for metric podStartTime. Error: FromRaw: metric not found. SpecGroup: pod, EntityID: kube-system_fluentd-elasticsearch-jnqb7, Metric: foo"))
-	assert.Contains(t, errs, errors.New("entity id: kube-system_newrelic-infra-monitoring-cglrn: error fetching value for metric podStartTime. Error: FromRaw: metric not found. SpecGroup: pod, EntityID: kube-system_newrelic-infra-monitoring-cglrn, Metric: foo"))
+	assert.Contains(t, errs, errors.New("entity id: fluentd-elasticsearch-jnqb7: error fetching value for metric podStartTime. Error: FromRaw: metric not found. SpecGroup: pod, EntityID: fluentd-elasticsearch-jnqb7, Metric: foo"))
+	assert.Contains(t, errs, errors.New("entity id: newrelic-infra-monitoring-cglrn: error fetching value for metric podStartTime. Error: FromRaw: metric not found. SpecGroup: pod, EntityID: newrelic-infra-monitoring-cglrn, Metric: foo"))
 	assert.Contains(t, integration.Data, &expectedEntityData1)
 	assert.Contains(t, integration.Data, &expectedEntityData2)
 
@@ -484,21 +484,21 @@ func TestGroupPrometheusMetricsBySpec_EmptyMetricFamily(t *testing.T) {
 func TestFromRawPrometheusValue_CorrectValue(t *testing.T) {
 	expectedFetchedValue := prometheus.GaugeValue(1507117436)
 
-	fetchedValue, err := FromPrometheusValue("kube_pod_start_time")("pod", "kube-system_fluentd-elasticsearch-jnqb7", rawGroups)
+	fetchedValue, err := FromPrometheusValue("kube_pod_start_time")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Equal(t, expectedFetchedValue, fetchedValue)
 	assert.NoError(t, err)
 }
 
 func TestFromRawPrometheusValue_RawMetricNotFound(t *testing.T) {
 
-	fetchedValue, err := FromPrometheusValue("foo")("pod", "kube-system_fluentd-elasticsearch-jnqb7", rawGroups)
+	fetchedValue, err := FromPrometheusValue("foo")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Nil(t, fetchedValue)
-	assert.EqualError(t, err, "FromRaw: metric not found. SpecGroup: pod, EntityID: kube-system_fluentd-elasticsearch-jnqb7, Metric: foo")
+	assert.EqualError(t, err, "FromRaw: metric not found. SpecGroup: pod, EntityID: fluentd-elasticsearch-jnqb7, Metric: foo")
 }
 
 func TestFromRawPrometheusValue_IncompatibleType(t *testing.T) {
 
-	fetchedValue, err := FromPrometheusValue("kube_pod_start_time")("pod", "kube-system_fluentd-elasticsearch-jnqb7", rawGroupsIncompatibleType)
+	fetchedValue, err := FromPrometheusValue("kube_pod_start_time")("pod", "fluentd-elasticsearch-jnqb7", rawGroupsIncompatibleType)
 	assert.Nil(t, fetchedValue)
 	assert.EqualError(t, err, "incompatible metric type. Expected: prometheus.Metric. Got: string")
 }
@@ -507,51 +507,51 @@ func TestFromRawPrometheusValue_IncompatibleType(t *testing.T) {
 func TestFromRawPrometheusLabelValue_CorrectValue(t *testing.T) {
 	expectedFetchedValue := "kube-system"
 
-	fetchedValue, err := FromPrometheusLabelValue("kube_pod_start_time", "namespace")("pod", "kube-system_fluentd-elasticsearch-jnqb7", rawGroups)
+	fetchedValue, err := FromPrometheusLabelValue("kube_pod_start_time", "namespace")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Equal(t, expectedFetchedValue, fetchedValue)
 	assert.NoError(t, err)
 }
 
 func TestFromRawPrometheusLabelValue_RawMetricNotFound(t *testing.T) {
 
-	fetchedValue, err := FromPrometheusLabelValue("foo", "namespace")("pod", "kube-system_fluentd-elasticsearch-jnqb7", rawGroups)
+	fetchedValue, err := FromPrometheusLabelValue("foo", "namespace")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Nil(t, fetchedValue)
-	assert.EqualError(t, err, "FromRaw: metric not found. SpecGroup: pod, EntityID: kube-system_fluentd-elasticsearch-jnqb7, Metric: foo")
+	assert.EqualError(t, err, "FromRaw: metric not found. SpecGroup: pod, EntityID: fluentd-elasticsearch-jnqb7, Metric: foo")
 }
 
 func TestFromRawPrometheusLabelValue_IncompatibleType(t *testing.T) {
 
-	fetchedValue, err := FromPrometheusLabelValue("kube_pod_start_time", "namespace")("pod", "kube-system_fluentd-elasticsearch-jnqb7", rawGroupsIncompatibleType)
+	fetchedValue, err := FromPrometheusLabelValue("kube_pod_start_time", "namespace")("pod", "fluentd-elasticsearch-jnqb7", rawGroupsIncompatibleType)
 	assert.Nil(t, fetchedValue)
 	assert.EqualError(t, err, "incompatible metric type. Expected: prometheus.Metric. Got: string")
 }
 
 func TestFromRawPrometheusLabelValue_LabelNotFoundInRawMetric(t *testing.T) {
 
-	fetchedValue, err := FromPrometheusLabelValue("kube_pod_start_time", "foo")("pod", "kube-system_fluentd-elasticsearch-jnqb7", rawGroups)
+	fetchedValue, err := FromPrometheusLabelValue("kube_pod_start_time", "foo")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Nil(t, fetchedValue)
 	assert.EqualError(t, err, "label 'foo' not found in prometheus metric")
 }
 
 func TestGetDeploymentNameForReplicaSet_ValidName(t *testing.T) {
 	expectedValue := "kube-state-metrics"
-	fetchedValue, err := GetDeploymentNameForReplicaSet()("replicaset", "kube-system_kube-state-metrics-4044341274", rawGroupWithReplicaSet)
+	fetchedValue, err := GetDeploymentNameForReplicaSet()("replicaset", "kube-state-metrics-4044341274", rawGroupWithReplicaSet)
 	assert.Nil(t, err)
 	assert.Equal(t, expectedValue, fetchedValue)
 }
 
 func TestGetDeploymentNameForPod_CreatedByReplicaSet(t *testing.T) {
 	expectedValue := "fluentd-elasticsearch"
-	fetchedValue, err := GetDeploymentNameForPod()("pod", "kube-system_fluentd-elasticsearch-jnqb7", rawGroups)
+	fetchedValue, err := GetDeploymentNameForPod()("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Nil(t, err)
 	assert.Equal(t, expectedValue, fetchedValue)
 }
 
 func TestGetDeploymentNameForPod_NotCreatedByReplicaSet(t *testing.T) {
-	rawEntityID := "kube-system_kube-addon-manager-minikube"
+	rawEntityID := "kube-addon-manager-minikube"
 	raw := definition.RawGroups{
 		"pod": {
-			"kube-system_kube-addon-manager-minikube": definition.RawMetrics{
+			"kube-addon-manager-minikube": definition.RawMetrics{
 				"kube_pod_info": prometheus.Metric{
 					Value: prometheus.GaugeValue(1507117436),
 					Labels: map[string]string{
@@ -572,13 +572,13 @@ func TestGetDeploymentNameForPod_NotCreatedByReplicaSet(t *testing.T) {
 func TestFromPrometheusLabelValueEntityIDGenerator(t *testing.T) {
 	expectedFetchedValue := "fluentd-elasticsearch-jnqb7"
 
-	fetchedValue, err := FromPrometheusLabelValueEntityIDGenerator("kube_pod_info", "pod")("pod", "kube-system_fluentd-elasticsearch-jnqb7", rawGroups)
+	fetchedValue, err := FromPrometheusLabelValueEntityIDGenerator("kube_pod_info", "pod")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedFetchedValue, fetchedValue)
 }
 
 func TestFromPrometheusLabelValueEntityIDGenerator_NotFound(t *testing.T) {
-	fetchedValue, err := FromPrometheusLabelValueEntityIDGenerator("non-existent-metric-key", "pod")("pod", "kube-system_fluentd-elasticsearch-jnqb7", rawGroups)
+	fetchedValue, err := FromPrometheusLabelValueEntityIDGenerator("non-existent-metric-key", "pod")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Empty(t, fetchedValue)
 	assert.EqualError(t, err, "error generating metric set entity id from prometheus label value. Key: non-existent-metric-key, Label: pod")
 }
@@ -622,7 +622,7 @@ func TestInheritSpecificPrometheusLabelValuesFrom(t *testing.T) {
 }
 
 func TestInheritSpecificPrometheusLabelsFrom_Namespace(t *testing.T) {
-	podRawEntityID := "kube-system_kube-addon-manager-minikube"
+	podRawEntityID := "kube-addon-manager-minikube"
 	raw := definition.RawGroups{
 		"namespace": {
 			"kube-system": definition.RawMetrics{
@@ -635,7 +635,7 @@ func TestInheritSpecificPrometheusLabelsFrom_Namespace(t *testing.T) {
 			},
 		},
 		"pod": {
-			"kube-system_kube-addon-manager-minikube": definition.RawMetrics{
+			"kube-addon-manager-minikube": definition.RawMetrics{
 				"kube_pod_info": prometheus.Metric{
 					Value: prometheus.GaugeValue(1507117436),
 					Labels: map[string]string{
@@ -681,7 +681,7 @@ func TestInheritSpecificPrometheusLabelValuesFrom_NamespaceNotFound(t *testing.T
 	containerRawEntityID := "kube-system_kube-addon-manager-minikube_kube-addon-manager"
 	raw := definition.RawGroups{
 		"pod": {
-			"kube-system_kube-addon-manager-minikube": definition.RawMetrics{
+			"kube-addon-manager-minikube": definition.RawMetrics{
 				"kube_pod_info": prometheus.Metric{
 					Value: prometheus.GaugeValue(1507117436),
 					Labels: map[string]string{
@@ -713,7 +713,7 @@ func TestInheritSpecificPrometheusLabelValuesFrom_GroupNotFound(t *testing.T) {
 	incorrectContainerRawEntityID := "non-existing-ID"
 	raw := definition.RawGroups{
 		"pod": {
-			"kube-system_kube-addon-manager-minikube": definition.RawMetrics{
+			"kube-addon-manager-minikube": definition.RawMetrics{
 				"kube_pod_info": prometheus.Metric{
 					Value: prometheus.GaugeValue(1507117436),
 					Labels: map[string]string{
@@ -725,7 +725,7 @@ func TestInheritSpecificPrometheusLabelValuesFrom_GroupNotFound(t *testing.T) {
 			},
 		},
 		"container": {
-			"kube-system_kube-addon-manager-minikube_kube-system": definition.RawMetrics{
+			"kube-addon-manager-minikube_kube-system": definition.RawMetrics{
 				"kube_pod_container_info": prometheus.Metric{
 					Value: prometheus.GaugeValue(1),
 					Labels: map[string]string{
@@ -781,7 +781,7 @@ func TestInheritAllPrometheusLabelsFrom(t *testing.T) {
 }
 
 func TestInheritAllPrometheusLabelsFrom_Namespace(t *testing.T) {
-	podRawEntityID := "kube-system_kube-addon-manager-minikube"
+	podRawEntityID := "kube-addon-manager-minikube"
 	raw := definition.RawGroups{
 		"namespace": {
 			"kube-system": definition.RawMetrics{
@@ -794,7 +794,7 @@ func TestInheritAllPrometheusLabelsFrom_Namespace(t *testing.T) {
 			},
 		},
 		"pod": {
-			"kube-system_kube-addon-manager-minikube": definition.RawMetrics{
+			"kube-addon-manager-minikube": definition.RawMetrics{
 				"kube_pod_info": prometheus.Metric{
 					Value: prometheus.GaugeValue(1507117436),
 					Labels: map[string]string{

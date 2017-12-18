@@ -7,6 +7,7 @@ import (
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
+	"github.com/newrelic/infra-integrations-sdk/metric"
 )
 
 // K8sMetricSetTypeGuesser is the metric set type guesser for k8s integrations.
@@ -61,10 +62,9 @@ func K8sMetricSetEntityTypeGuesser(nsFetch namespaceFetcher) func(groupLabel, en
 
 // K8sMetricsNamingGuesser returns the metrics set displayName and entityName, taken from the entity.name and entity.type
 // properties
-func K8sMetricsNamingGuesser(entityName, entityType string) (mDisplayName string, mEntityName string) {
-	mDisplayName = entityName
-	mEntityName = fmt.Sprintf("%s:%s", entityType, entityName)
-	return
+func K8sMetricsNamingGuesser(entityName, entityType string, ms metric.MetricSet) {
+	ms.SetMetric("displayName", entityName, metric.ATTRIBUTE)
+	ms.SetMetric("entityName", fmt.Sprintf("%s:%s", entityType, entityName), metric.ATTRIBUTE)
 }
 
 // FromPrometheusLabelValueEntityIDGenerator generates an entityID from the pod name. It's only used for k8s containers.

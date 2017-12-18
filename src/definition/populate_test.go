@@ -57,8 +57,9 @@ func fromMultiple(values FetchedValues) FetchFunc {
 	}
 }
 
-func metricsNamingGuesser(entityName, entityType string) (mDisplayName string, mEntityName string) {
-	return fmt.Sprintf("%s:%s", entityType, entityName), entityName
+func metricsNamingGuesser(entityName, entityType string, ms metric.MetricSet) {
+	ms.SetMetric("displayName", entityName, metric.ATTRIBUTE)
+	ms.SetMetric("entityName", fmt.Sprintf("%s:%s", entityType, entityName), metric.ATTRIBUTE)
 }
 
 func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
@@ -77,8 +78,8 @@ func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
 		"metric_2":    "metric_value_2",
 		"multiple_1":  "one",
 		"multiple_2":  "two",
-		"displayName": "test:entity_id_1",
-		"entityName":  "entity_id_1",
+		"entityName":  "test:entity_id_1",
+		"displayName": "entity_id_1",
 	}
 	expectedEntityData1.Metrics = []metric.MetricSet{expectedMetricSet1}
 
@@ -92,8 +93,8 @@ func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
 		"metric_2":    "metric_value_4",
 		"multiple_1":  "one",
 		"multiple_2":  "two",
-		"displayName": "test:entity_id_2",
-		"entityName":  "entity_id_2",
+		"entityName":  "test:entity_id_2",
+		"displayName": "entity_id_2",
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
@@ -127,8 +128,8 @@ func TestIntegrationProtocol2PopulateFunc_PartialResult(t *testing.T) {
 	expectedMetricSet1 := metric.MetricSet{
 		"event_type":  "TestSample",
 		"metric_1":    1,
-		"displayName": "test:entity_id_1",
-		"entityName":  "entity_id_1",
+		"entityName":  "test:entity_id_1",
+		"displayName": "entity_id_1",
 	}
 	expectedEntityData1.Metrics = []metric.MetricSet{expectedMetricSet1}
 
@@ -139,8 +140,8 @@ func TestIntegrationProtocol2PopulateFunc_PartialResult(t *testing.T) {
 	expectedMetricSet2 := metric.MetricSet{
 		"event_type":  "TestSample",
 		"metric_1":    2,
-		"displayName": "test:entity_id_2",
-		"entityName":  "entity_id_2",
+		"entityName":  "test:entity_id_2",
+		"displayName": "entity_id_2",
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
@@ -268,8 +269,8 @@ func TestIntegrationProtocol2PopulateFunc_EntityIDGenerator(t *testing.T) {
 		"event_type":  "TestSample",
 		"metric_1":    1,
 		"metric_2":    2,
-		"displayName": "test:testEntity1-generated",
-		"entityName":  "testEntity1-generated",
+		"entityName":  "test:testEntity1-generated",
+		"displayName": "testEntity1-generated",
 	}
 	expectedEntityData1.Metrics = []metric.MetricSet{expectedMetricSet1}
 
@@ -282,8 +283,8 @@ func TestIntegrationProtocol2PopulateFunc_EntityIDGenerator(t *testing.T) {
 		"event_type":  "TestSample",
 		"metric_1":    3,
 		"metric_2":    4,
-		"displayName": "test:testEntity2-generated",
-		"entityName":  "testEntity2-generated",
+		"entityName":  "test:testEntity2-generated",
+		"displayName": "testEntity2-generated",
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
