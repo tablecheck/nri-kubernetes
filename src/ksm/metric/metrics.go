@@ -14,8 +14,24 @@ func K8sMetricSetTypeGuesser(groupLabel, _ string, _ definition.RawGroups) strin
 	return fmt.Sprintf("K8s%vSample", strings.Title(groupLabel))
 }
 
-// K8sMetricSetEntityTypeGuesser is the metric set entity type guesser for k8s integrations.
-func K8sMetricSetEntityTypeGuesser(groupLabel, entityId string, groups definition.RawGroups) string {
+type namespaceFetcher func(groupLabel, entityId string, groups definition.RawGroups) string
+
+// KubeletNamespaceFetcher fetches the namespace from a Kubelet RawGroups information
+func KubeletNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) string {
+	namespace := groups[groupLabel][entityId]["namespace"]
+	if namespace == nil {
+		return ""
+	}
+	return namespace.(string)
+}
+
+// KSMNamespaceFetcher fetches the namespace from a KSM RawGroups information
+func KSMNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) string {
+	ns, _ := FromPrometheusLabelValue("kube_deployment_labels", "namespace")(groupLabel, entityId, groups)
+	return ns.(string)
+}
+
+func K8sMetricSetEntityTypeGuesserMalo(groupLabel, entityId string, groups definition.RawGroups) string {
 	if groupLabel == "container" {
 		groupLabel = "pod"
 	}
@@ -24,6 +40,20 @@ func K8sMetricSetEntityTypeGuesser(groupLabel, entityId string, groups definitio
 		return fmt.Sprintf("k8s:namespace")
 	}
 	return fmt.Sprintf("k8s:%s:%s", groups[groupLabel][entityId]["namespace"], groupLabel)
+}
+
+// K8sMetricSetEntityTypeGuesser guesses the Entity Type given a group name, entity Id and a namespace fetcher function
+func K8sMetricSetEntityTypeGuesser(fetcher namespaceFetcher) func(groupLabel, entityId string, groups definition.RawGroups) string {
+	return func(groupLabel, entityId string, groups definition.RawGroups) string {
+		if groupLabel == "container" {
+			groupLabel = "pod"
+		}
+
+		if groupLabel == "namespace" {
+			return fmt.Sprintf("k8s:namespace")
+		}
+		return fmt.Sprintf("k8s:%s:%s", fetcher(groupLabel, entityId, groups), groupLabel)
+	}
 }
 
 // FromPrometheusLabelValueEntityIDGenerator generates an entityID from the pod name. It's only used for k8s containers.
