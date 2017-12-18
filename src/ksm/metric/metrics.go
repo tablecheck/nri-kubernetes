@@ -15,11 +15,15 @@ func K8sMetricSetTypeGuesser(groupLabel, _ string, _ definition.RawGroups) strin
 	return fmt.Sprintf("K8s%vSample", strings.Title(groupLabel))
 }
 
-type namespaceFetcher func(groupLabel, entityId string, groups definition.RawGroups) interface{}
+type namespaceFetcher func(groupLabel, entityId string, groups definition.RawGroups) string
 
 // KubeletNamespaceFetcher fetches the namespace from a Kubelet RawGroups information
-func KubeletNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) interface{} {
-	return groups[groupLabel][entityId]["namespace"]
+func KubeletNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) string {
+	ns, found := groups[groupLabel][entityId]["namespace"]
+	if !found {
+		return ""
+	}
+	return ns.(string)
 }
 
 var nsKeyForGroup = map[string]string{
@@ -31,12 +35,12 @@ var nsKeyForGroup = map[string]string{
 }
 
 // KSMNamespaceFetcher fetches the namespace from a KSM RawGroups information
-func KSMNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) interface{} {
+func KSMNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) string {
 	ns, err := FromPrometheusLabelValue(nsKeyForGroup[groupLabel], "namespace")(groupLabel, entityId, groups)
 	if err == nil && ns != nil {
-		return ns
+		return ns.(string)
 	}
-	return nil
+	return ""
 }
 
 // K8sMetricSetEntityTypeGuesser guesses the Entity Type given a group name, entity Id and a namespace fetcher function
@@ -52,11 +56,7 @@ func K8sMetricSetEntityTypeGuesser(nsFetch namespaceFetcher) func(groupLabel, en
 		if groupLabel == "namespace" {
 			return fmt.Sprintf("k8s:namespace")
 		}
-		namespace := nsFetch(groupLabel, entityId, groups)
-		if namespace == nil {
-			return ""
-		}
-		return fmt.Sprintf("k8s:%s:%s", namespace.(string), actualGroupLabel)
+		return fmt.Sprintf("k8s:%s:%s", nsFetch(groupLabel, entityId, groups), actualGroupLabel)
 	}
 }
 
