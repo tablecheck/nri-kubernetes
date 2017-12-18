@@ -63,9 +63,8 @@ var ksmAggregation = definition.SpecGroups{
 			{"cpuLimitCores", metric.FromPrometheusValue("kube_pod_container_resource_limits_cpu_cores"), sdkMetric.GAUGE},
 			{"memoryRequestedBytes", metric.FromPrometheusValue("kube_pod_container_resource_requests_memory_bytes"), sdkMetric.GAUGE},
 			{"memoryLimitBytes", metric.FromPrometheusValue("kube_pod_container_resource_limits_memory_bytes"), sdkMetric.GAUGE},
-			{"statusRunning", metric.FromPrometheusValue("kube_pod_container_status_running"), sdkMetric.GAUGE},
-			{"statusTerminated", metric.FromPrometheusValue("kube_pod_container_status_terminated"), sdkMetric.GAUGE},
-			{"statusReady", metric.FromPrometheusValue("kube_pod_container_status_ready"), sdkMetric.GAUGE},
+			{"status", metric.GetStatusForContainer(), sdkMetric.ATTRIBUTE},
+			{"isReady", metric.FromPrometheusValue("kube_pod_container_status_ready"), sdkMetric.GAUGE},
 			{"statusWaitingReason", metric.FromPrometheusLabelValue("kube_pod_container_status_waiting_reason", "reason"), sdkMetric.ATTRIBUTE},
 			// Important: The order of these lines is important: we could have the same label in different entities, and we would like to keep the value closer to container
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels"), sdkMetric.ATTRIBUTE},

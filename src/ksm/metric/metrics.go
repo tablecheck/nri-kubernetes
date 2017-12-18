@@ -205,6 +205,22 @@ func fetchPrometheusMetric(metricKey string) definition.FetchFunc {
 	}
 }
 
+// GetStatusForContainer returns the status of a container
+func GetStatusForContainer() definition.FetchFunc {
+	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
+		queryValue := prometheus.GaugeValue(1)
+		s := []string{"running", "waiting", "terminated"}
+		for _, k := range s {
+			v, _ := FromPrometheusValue(fmt.Sprintf("kube_pod_container_status_%s", k))(groupLabel, entityID, groups)
+			if v == queryValue {
+				return strings.Title(k), nil
+			}
+		}
+
+		return "Unknown", nil
+	}
+}
+
 // GetDeploymentNameForReplicaSet returns the name of the deployment has created
 // a ReplicaSet.
 func GetDeploymentNameForReplicaSet() definition.FetchFunc {
