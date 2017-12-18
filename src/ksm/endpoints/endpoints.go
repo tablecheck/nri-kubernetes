@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/url"
 
+	"net"
+
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 )
 
@@ -12,15 +14,47 @@ const (
 	ksmAppLabelValue = "kube-state-metrics"
 	ksmPortName      = "http-metrics"
 	k8sTCP           = "TCP"
+	ksmQualifiedName = "kube-state-metrics.kube-system.svc.cluster.local"
+	ksmDNSService    = "http-metrics"
+	ksmDNSProto      = "tcp"
 )
 
 // ksmDiscoverer implements Discoverer interface by using official Kubernetes' Go client
 type ksmDiscoverer struct {
-	client endpoints.KubernetesClient
+	lookupSRV func(service, proto, name string) (cname string, addrs []*net.SRV, err error)
+	client    endpoints.KubernetesClient
 }
 
 // Discover returns the schema://host:port URL part of Kube State Metrics
 func (sd ksmDiscoverer) Discover() (url.URL, error) {
+	var endpoint url.URL
+
+	endpoint, err := sd.dnsDiscover()
+	if err != nil {
+		// if DNS discovery fails, we dig into Kubernetes API to get the service data
+		endpoint, err = sd.apiDiscover()
+	}
+
+	// KSM and Prometheus only work with HTTP
+	endpoint.Scheme = "http"
+	return endpoint, err
+}
+
+// dnsDiscover uses DNS to discover KSM
+func (sd ksmDiscoverer) dnsDiscover() (url.URL, error) {
+	var endpoint url.URL
+	_, addrs, err := sd.lookupSRV(ksmDNSService, ksmDNSProto, ksmQualifiedName)
+	if err == nil {
+		for _, addr := range addrs {
+			endpoint.Host = fmt.Sprintf("%v:%v", ksmQualifiedName, addr.Port)
+			return endpoint, nil
+		}
+	}
+	return endpoint, fmt.Errorf("can't get DNS port for %s", ksmQualifiedName)
+}
+
+// apiDiscover uses Kubernetes API to discover KSM
+func (sd ksmDiscoverer) apiDiscover() (url.URL, error) {
 	var endpoint url.URL
 
 	services, err := sd.client.FindServiceByLabel(ksmAppLabelName, ksmAppLabelValue)
@@ -31,9 +65,6 @@ func (sd ksmDiscoverer) Discover() (url.URL, error) {
 	if len(services.Items) == 0 {
 		return endpoint, fmt.Errorf("no service found by label %s=%s", ksmAppLabelName, ksmAppLabelValue)
 	}
-
-	// KSM and Prometheus only work with HTTP
-	endpoint.Scheme = "http"
 
 	for _, service := range services.Items {
 		if service.Spec.ClusterIP != "" && len(service.Spec.Ports) > 0 {
@@ -82,6 +113,8 @@ func NewKSMDiscoverer() (endpoints.Discoverer, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	discoverer.lookupSRV = net.LookupSRV
 
 	return discoverer, nil
 }
