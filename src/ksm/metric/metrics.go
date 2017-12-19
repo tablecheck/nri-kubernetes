@@ -47,22 +47,21 @@ func KSMNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroup
 func K8sMetricSetEntityTypeGuesser(nsFetch namespaceFetcher) func(groupLabel, entityId string, groups definition.RawGroups) string {
 	return func(groupLabel, entityId string, groups definition.RawGroups) string {
 		var actualGroupLabel string
-		if groupLabel == "container" {
-			actualGroupLabel = "pod"
-		} else {
-			actualGroupLabel = groupLabel
-		}
-
-		if groupLabel == "namespace" {
+		switch groupLabel {
+		case "namespace":
 			return fmt.Sprintf("k8s:namespace")
+		case "container":
+			actualGroupLabel = "pod"
+		default:
+			actualGroupLabel = groupLabel
 		}
 		return fmt.Sprintf("k8s:%s:%s", nsFetch(groupLabel, entityId, groups), actualGroupLabel)
 	}
 }
 
-// K8sMetricsNamingGuesser returns the metrics set displayName and entityName, taken from the entity.name and entity.type
-// properties
-func K8sMetricsNamingGuesser(entityName, entityType string, ms metric.MetricSet) {
+// K8sMetricsNamingManipulator modifies the MetricSet displayName and entityName, taken from the entity.name and
+// entity.type properties
+func K8sMetricsNamingManipulator(entityName, entityType string, ms metric.MetricSet) {
 	ms.SetMetric("displayName", entityName, metric.ATTRIBUTE)
 	ms.SetMetric("entityName", fmt.Sprintf("%s:%s", entityType, entityName), metric.ATTRIBUTE)
 }

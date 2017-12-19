@@ -139,7 +139,7 @@ func populateKubeStateMetrics(ksmMetricsURL string, integration *sdk.Integration
 		log.Fatal(errors.New("no data was fetched"))
 	}
 
-	populator := definition.IntegrationProtocol2PopulateFunc(integration, metric.K8sMetricSetTypeGuesser, metric.K8sMetricSetEntityTypeGuesser(metric.KSMNamespaceFetcher), metric.K8sMetricsNamingGuesser)
+	populator := definition.IntegrationProtocol2PopulateFunc(integration, metric.K8sMetricSetTypeGuesser, metric.K8sMetricSetEntityTypeGuesser(metric.KSMNamespaceFetcher), metric.K8sMetricsNamingManipulator)
 	ok, errs := populator(groups, ksmAggregation)
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -169,7 +169,7 @@ func populateKubeletMetrics(kubeletURL url.URL, netClient *http.Client, integrat
 		log.Fatal(errors.New("no data was fetched"))
 	}
 
-	populator := definition.IntegrationProtocol2PopulateFunc(integration, metric.K8sMetricSetTypeGuesser, metric.K8sMetricSetEntityTypeGuesser(metric.KubeletNamespaceFetcher), metric.K8sMetricsNamingGuesser)
+	populator := definition.IntegrationProtocol2PopulateFunc(integration, metric.K8sMetricSetTypeGuesser, metric.K8sMetricSetEntityTypeGuesser(metric.KubeletNamespaceFetcher), metric.K8sMetricsNamingManipulator)
 	ok, errs := populator(groups, kubeletAggregation)
 	if len(errs) > 0 {
 		for _, err := range errs {

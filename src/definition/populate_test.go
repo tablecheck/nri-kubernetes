@@ -57,7 +57,7 @@ func fromMultiple(values FetchedValues) FetchFunc {
 	}
 }
 
-func metricsNamingGuesser(entityName, entityType string, ms metric.MetricSet) {
+func metricsNamingManipulator(entityName, entityType string, ms metric.MetricSet) {
 	ms.SetMetric("displayName", entityName, metric.ATTRIBUTE)
 	ms.SetMetric("entityName", fmt.Sprintf("%s:%s", entityType, entityName), metric.ATTRIBUTE)
 }
@@ -98,7 +98,7 @@ func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
-	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingGuesser)(rawGroupsSample, specs)
+	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingManipulator)(rawGroupsSample, specs)
 	assert.True(t, populated)
 	assert.Empty(t, errs)
 
@@ -145,7 +145,7 @@ func TestIntegrationProtocol2PopulateFunc_PartialResult(t *testing.T) {
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
-	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingGuesser)(rawGroupsSample, metricSpecsWithIncompatibleType)
+	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingManipulator)(rawGroupsSample, metricSpecsWithIncompatibleType)
 	assert.True(t, populated)
 	assert.Contains(t, integration.Data, &expectedEntityData1)
 	assert.Contains(t, integration.Data, &expectedEntityData2)
@@ -162,7 +162,7 @@ func TestIntegrationProtocol2PopulateFunc_EntitiesDataNotPopulated_EmptyMetricGr
 	}
 	expectedData := make([]*sdk.EntityData, 0)
 
-	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingGuesser)(metricGroupEmpty, specs)
+	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingManipulator)(metricGroupEmpty, specs)
 	assert.False(t, populated)
 	assert.Nil(t, errs)
 	assert.Equal(t, expectedData, integration.Data)
@@ -187,7 +187,7 @@ func TestIntegrationProtocol2PopulateFunc_EntitiesDataNotPopulated_ErrorSettingE
 	}
 	expectedData := []*sdk.EntityData{}
 
-	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingGuesser)(metricGroupEmptyEntityID, specs)
+	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingManipulator)(metricGroupEmptyEntityID, specs)
 	assert.False(t, populated)
 	assert.EqualError(t, errs[0], "entity name and type are required when defining one")
 	assert.Equal(t, expectedData, integration.Data)
@@ -216,7 +216,7 @@ func TestIntegrationProtocol2PopulateFunc_MetricsSetsNotPopulated_OnlyEntity(t *
 		t.Fatal()
 	}
 
-	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingGuesser)(rawGroupsSample, metricSpecsIncorrect)
+	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingManipulator)(rawGroupsSample, metricSpecsIncorrect)
 	assert.False(t, populated)
 	assert.Len(t, errs, 2)
 
@@ -288,7 +288,7 @@ func TestIntegrationProtocol2PopulateFunc_EntityIDGenerator(t *testing.T) {
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
-	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingGuesser)(raw, withGeneratorSpec)
+	populated, errs := IntegrationProtocol2PopulateFunc(integration, FromGroupMetricSetTypeGuessFunc, FromGroupMetricSetEntitTypeGuessFunc, metricsNamingManipulator)(raw, withGeneratorSpec)
 
 	assert.True(t, populated)
 	assert.Empty(t, errs)

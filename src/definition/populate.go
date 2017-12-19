@@ -24,11 +24,11 @@ func FromGroupMetricSetEntitTypeGuessFunc(groupLabel, _ string, _ RawGroups) str
 // PopulateFunc populates raw metric groups using your specs
 type PopulateFunc func(RawGroups, SpecGroups) (bool, []error)
 
-// MetricsNamingFunc adds, to the passed metric set, the metrics' displayName and entityName
-type MetricsNamingFunc func(entityName, entityType string, ms metric.MetricSet)
+// MetricSetManipulator manipulates the MetricSet for a given entityName and entityType
+type MetricSetManipulator func(entityName, entityType string, ms metric.MetricSet)
 
 // IntegrationProtocol2PopulateFunc populates an integration protocol v2 with the given metrics and definition.
-func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, msTypeGuesser, msEntityTypeGuesser GuessFunc, msNamer MetricsNamingFunc) PopulateFunc {
+func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, msTypeGuesser, msEntityTypeGuesser GuessFunc, msManipulators ...MetricSetManipulator) PopulateFunc {
 	return func(groups RawGroups, specs SpecGroups) (bool, []error) {
 		var populated bool
 		var errs []error
@@ -51,7 +51,9 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, msTypeGuesser
 				}
 
 				ms := metric.NewMetricSet(msTypeGuesser(groupLabel, entityID, groups))
-				msNamer(e.Entity.Name, e.Entity.Type, ms)
+				for _, m := range msManipulators {
+					m(e.Entity.Name, e.Entity.Type, ms)
+				}
 
 				wasPopulated, populateErrs := metricSetPopulateFunc(ms, groupLabel, entityID)(groups, specs)
 				if len(populateErrs) != 0 {
