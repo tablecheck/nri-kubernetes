@@ -221,8 +221,6 @@ var prometheusRestQueries = []prometheus.Query{
 	},
 }
 
-var prometheusQueries = append(prometheusPodsAndContainerQueries, prometheusRestQueries...)
-
 var kubeletSpecs = definition.SpecGroups{
 	"pod": {
 		IDGenerator: kubeletMetric.FromRawEntityIDGroupEntityIDGenerator("namespace"),

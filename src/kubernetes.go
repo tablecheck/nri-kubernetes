@@ -22,7 +22,6 @@ type argumentList struct {
 	KubeStateMetricsURL string `help:"overrides Kube State Metrics schema://host:port URL parts (if not set, it will be self-discovered)."`
 	KubeletURL          string `help:"overrides kubelet schema://host:port URL parts (if not set, it will be self-discovered)"`
 	IgnoreCerts         bool   `default:"false" help:"disables HTTPS certificate verification for metrics sources"`
-	Ksm                 string `default:"auto" help:"whether the Kube State Metrics must be reported or not (accepted values: true, false, auto)"`
 	Timeout             int    `default:"1000" help:"Timeout in milliseconds for calling metrics sources"`
 	Role                string `help:"For debugging purpose. Sets the role of the integration (accepted values: kubelet-ksm-rest, kubelet-ksm"`
 }
