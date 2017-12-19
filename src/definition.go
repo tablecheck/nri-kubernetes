@@ -77,7 +77,7 @@ var ksmRestSpecs = definition.SpecGroups{
 		Specs: []definition.Spec{
 			{"createdAt", metric.FromPrometheusValue("kube_namespace_created"), sdkMetric.GAUGE},
 			{"namespace", metric.FromPrometheusLabelValue("kube_namespace_created", "namespace"), sdkMetric.ATTRIBUTE},
-			{"namespaceStatus", metric.FromPrometheusLabelValue("kube_namespace_status_phase", "phase"), sdkMetric.ATTRIBUTE},
+			{"status", metric.FromPrometheusLabelValue("kube_namespace_status_phase", "phase"), sdkMetric.ATTRIBUTE},
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels"), sdkMetric.ATTRIBUTE},
 		},
 	},
@@ -229,7 +229,7 @@ var kubeletSpecs = definition.SpecGroups{
 			{"namespace", definition.FromRaw("namespace"), sdkMetric.ATTRIBUTE},
 			{"net.rxBytesPerSecond", definition.FromRaw("rxBytes"), sdkMetric.RATE},
 			{"net.txBytesPerSecond", definition.FromRaw("txBytes"), sdkMetric.RATE},
-			{"net.errorsPerSecond", definition.FromRaw("errors"), sdkMetric.RATE},
+			{"net.errorCount", definition.FromRaw("errors"), sdkMetric.GAUGE},
 		},
 	},
 	"container": {
