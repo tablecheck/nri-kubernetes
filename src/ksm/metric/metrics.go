@@ -83,8 +83,8 @@ func K8sMetricSetEntityTypeGuesser(groupLabel, entityId string, groups definitio
 	default:
 		actualGroupLabel = groupLabel
 	}
-	ns, _ := kubeletKSMNamespaceFetcher(groupLabel, entityId, groups)
-	return fmt.Sprintf("k8s:%s:%s", ns, actualGroupLabel), nil
+	ns, err := kubeletKSMNamespaceFetcher(groupLabel, entityId, groups)
+	return fmt.Sprintf("k8s:%s:%s", ns, actualGroupLabel), err
 }
 
 // K8sMetricsNamingManipulator modifies the MetricSet displayName and entityName, taken from the entity.name and
