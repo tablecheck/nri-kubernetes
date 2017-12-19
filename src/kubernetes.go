@@ -7,13 +7,11 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
+	"github.com/Sirupsen/logrus"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 	ksmEndpoints "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/endpoints"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
 	kubeletEndpoints "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/endpoints"
-	kubeletMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
 	sdkArgs "github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/newrelic/infra-integrations-sdk/log"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
@@ -24,8 +22,8 @@ type argumentList struct {
 	KubeStateMetricsURL string `help:"overrides Kube State Metrics schema://host:port URL parts (if not set, it will be self-discovered)."`
 	KubeletURL          string `help:"overrides kubelet schema://host:port URL parts (if not set, it will be self-discovered)"`
 	IgnoreCerts         bool   `default:"false" help:"disables HTTPS certificate verification for metrics sources"`
-	Ksm                 string `default:"auto" help:"whether the Kube State Metrics must be reported or not (accepted values: true, false, auto)"`
 	Timeout             int    `default:"1000" help:"Timeout in milliseconds for calling metrics sources"`
+	Role                string `help:"For debugging purpose. Sets the role of the integration (accepted values: kubelet-ksm-rest, kubelet-ksm"`
 }
 
 const (
@@ -37,6 +35,38 @@ const (
 
 var args argumentList
 
+func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, logger *logrus.Logger) {
+	groups, errs := kubeletKSMGrouper.Group(kubeletSpecs)
+	for _, err := range errs {
+		logger.Warn("%s", err)
+	}
+
+	ok, err := data.NewK8sPopulator(logger).Populate(groups, kubeletKSMPopulateSpecs, i)
+	fatalIfErr(err)
+
+	if !ok {
+		// TODO better error
+		log.Fatal(errors.New("no data was populated"))
+	}
+}
+
+func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i *sdk.IntegrationProtocol2, logger *logrus.Logger) {
+	kubeletKSMGroups, errs := kubeletKSMGrouper.Group(kubeletSpecs)
+	g := data.NewKubeletKSMAndRestGrouper(kubeletKSMGroups, ksmMetricsURL, prometheusRestQueries, logger)
+	groups, errs := g.Group(ksmRestSpecs)
+	for _, err := range errs {
+		logger.Warn("%s", err)
+	}
+
+	ok, err := data.NewK8sPopulator(logger).Populate(groups, kubeletKSMAndRestPopulateSpecs, i)
+	fatalIfErr(err)
+
+	if !ok {
+		// TODO better error
+		log.Fatal(errors.New("no data was populated"))
+	}
+}
+
 func main() {
 	defer log.Debug("Integration '%s' exited", integrationName)
 
@@ -47,46 +77,60 @@ func main() {
 	var ksmDiscoverer endpoints.Discoverer
 
 	if args.All || args.Metrics {
-		// Kube State Metrics Discovery
-		var ksmURL url.URL
-		var ksmNode string
+		kubeletURL, err := url.Parse(args.KubeletURL)
+		fatalIfErr(err)
 
-		if args.KubeStateMetricsURL != "" {
-			pURL, err := url.Parse(args.KubeStateMetricsURL)
+		ksmURL, err := url.Parse(args.KubeStateMetricsURL)
+		fatalIfErr(err)
+
+		role := args.Role
+		if role == "" {
+			// autodiscover
+
+			kubeletDiscoverer, err := kubeletEndpoints.NewKubeletDiscoverer()
 			fatalIfErr(err)
-			ksmURL = *pURL
-		} else if args.Ksm != "false" {
+
+			discoveredKubeletURL, err := kubeletDiscoverer.Discover()
+			fatalIfErr(err)
+			kubeletURL = &discoveredKubeletURL
+
+			kubeletNodeIP, err := kubeletDiscoverer.NodeIP()
+			fatalIfErr(err)
+			log.Debug("Kubelet Node = %s", kubeletNodeIP)
+
 			ksmDiscoverer, err = ksmEndpoints.NewKSMDiscoverer()
-			if err == nil {
-				ksmNode, err = ksmDiscoverer.NodeIP()
-			}
-			if err == nil {
-				log.Debug("KSM Node = %s", ksmNode)
+			fatalIfErr(err)
+
+			ksmNodeIP, err := ksmDiscoverer.NodeIP()
+			fatalIfErr(err)
+
+			log.Debug("KSM Node = %s", ksmNodeIP)
+
+			discoveredKSMURL, err := ksmDiscoverer.Discover()
+			fatalIfErr(err)
+			ksmURL = &discoveredKSMURL
+
+			// setting role by auto discovery
+			if kubeletNodeIP == ksmNodeIP {
+				role = "kubelet-ksm-rest"
 			} else {
-				log.Debug("can't get Kube State Metrics node: %q", err.Error())
+				role = "kubelet-ksm"
 			}
 		}
 
-		// Kubelet Discovery
-		var kubeletURL url.URL
-		var kubeletNode string
-
-		if args.KubeletURL != "" {
-			pURL, err := url.Parse(args.KubeletURL)
-			fatalIfErr(err)
-			kubeletURL = *pURL
-			kubeletNode = kubeletURL.Hostname()
-		} else {
-			kubelet, err := kubeletEndpoints.NewKubeletDiscoverer()
-			fatalIfErr(err)
-			kubeletURL, err = kubelet.Discover()
-			fatalIfErr(err)
-			kubeletNode, err = kubelet.NodeIP()
-			fatalIfErr(err)
+		if ksmURL.String() == "" {
+			log.Fatal(errors.New("kube_state_metrics_url should be provided"))
 		}
+
+		if kubeletURL.String() == "" {
+			log.Fatal(errors.New("kubelet_url should be provided"))
+		}
+
 		kubeletURL.Path = statsSummaryPath
-		log.Debug("Kubelet URL = %s", kubeletURL.String())
-		log.Debug("Kubelet Node = %s", kubeletNode)
+		ksmURL.Path = metricsPath
+
+		log.Debug("Kubelet URL = %s", kubeletURL)
+		log.Debug("KSM URL = %s", ksmURL)
 
 		netClient := &http.Client{
 			Timeout: time.Millisecond * time.Duration(args.Timeout),
@@ -98,89 +142,28 @@ func main() {
 			}
 		}
 
-		// We populate KSM metrics in the next cases
-		// - If "ksm==true", metrics are always populated
-		// - If "ksm==false", metrics are never populated
-		// - If "ksm==auto", metrics are populated if:
-		//       . The user sets the KubeStateMetricsURL argument
-		//       . The discovery mechanisms shows that Kubelet and KSM are in the same node
-		if args.Ksm == "true" ||
-			(args.Ksm != "false" && args.KubeStateMetricsURL != "") ||
-			(args.Ksm == "auto" && kubeletNode == ksmNode) {
+		logger := logrus.New()
 
-			ksmURL, err = ksmDiscoverer.Discover()
-			ksmURL.Path = metricsPath
+		// todo fix pointers indirection stuff
+		kubeletKSMGrouper := data.NewKubeletKSMGrouper(
+			kubeletURL,
+			ksmURL,
+			netClient,
+			prometheusPodsAndContainerQueries,
+			ksmPodAndContainerSpecs,
+			logger,
+		)
 
-			log.Debug("KSM URL = %s", ksmURL.String())
-
-			fatalIfErr(err)
-			if err == nil {
-				populateKubeStateMetrics(ksmURL.String(), integration)
-			}
+		switch role {
+		case "kubelet-ksm-rest":
+			// todo fix pointers indirection stuff
+			kubeletKSMAndRest(kubeletKSMGrouper, ksmURL, integration, logger)
+		case "kubelet-ksm":
+			kubeletKSM(kubeletKSMGrouper, integration, logger)
 		}
-
-		populateKubeletMetrics(kubeletURL, netClient, integration)
 	}
 
 	fatalIfErr(integration.Publish())
-}
-
-func populateKubeStateMetrics(ksmMetricsURL string, integration *sdk.IntegrationProtocol2) {
-	mFamily, err := prometheus.Do(ksmMetricsURL, prometheusQueries)
-	log.Debug("Endpoint %s called for getting data from kube-state-metrics service", ksmMetricsURL)
-	fatalIfErr(err)
-
-	groups, errs := metric.GroupPrometheusMetricsBySpec(ksmAggregation, mFamily)
-	for _, err := range errs {
-		log.Warn("%s", err)
-	}
-
-	if len(groups) == 0 {
-		log.Fatal(errors.New("no data was fetched"))
-	}
-
-	populator := definition.IntegrationProtocol2PopulateFunc(integration, metric.K8sMetricSetTypeGuesser, metric.K8sMetricSetEntityTypeGuesser)
-	ok, errs := populator(groups, ksmAggregation)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Debug("%s", err)
-		}
-	}
-
-	if !ok {
-		// TODO better error
-		log.Fatal(errors.New("no data was populated"))
-	}
-}
-
-func populateKubeletMetrics(kubeletURL url.URL, netClient *http.Client, integration *sdk.IntegrationProtocol2) {
-	urlString := kubeletURL.String()
-	log.Debug("Getting metrics data from: %v", urlString)
-	response, err := kubeletMetric.GetMetricsData(netClient, urlString)
-	if err != nil {
-		log.Fatal(err)
-	}
-	groups, errs := kubeletMetric.GroupStatsSummary(response)
-	for _, err := range errs {
-		log.Warn("%s", err)
-	}
-
-	if len(groups) == 0 {
-		log.Fatal(errors.New("no data was fetched"))
-	}
-
-	populator := definition.IntegrationProtocol2PopulateFunc(integration, metric.K8sMetricSetTypeGuesser, metric.K8sMetricSetEntityTypeGuesser)
-	ok, errs := populator(groups, kubeletAggregation)
-	if len(errs) > 0 {
-		for _, err := range errs {
-			log.Debug("%s", err)
-		}
-	}
-
-	if !ok {
-		// TODO better error
-		log.Fatal(errors.New("no data was populated"))
-	}
 }
 
 func fatalIfErr(err error) {

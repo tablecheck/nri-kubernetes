@@ -35,6 +35,25 @@ func FromPrometheusLabelValueEntityIDGenerator(key, label string) definition.Met
 	}
 }
 
+// FromRawEntityIDGroupEntityIDGenerator generates an entityID from the raw entity ID
+// which is composed of namespace and pod name. It's used only for k8s pods.
+func FromRawEntityIDGroupEntityIDGenerator(key, label string) definition.MetricSetEntityIDGeneratorFunc {
+	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
+		labelValue, err := FromPrometheusLabelValue(key, label)(groupLabel, rawEntityID, g)
+		if err != nil {
+			return "", err
+		}
+
+		v := strings.TrimPrefix(rawEntityID, fmt.Sprintf("%s_", labelValue))
+
+		if v == "" {
+			return "", fmt.Errorf("error generating metric set entity id from kubelet raw data")
+		}
+
+		return v, nil
+	}
+}
+
 // GroupPrometheusMetricsBySpec groups metrics coming from Prometheus by a given metric spec.
 // Example: grouping by K8s pod, container, etc.
 func GroupPrometheusMetricsBySpec(specs definition.SpecGroups, families []prometheus.MetricFamily) (g definition.RawGroups, errs []error) {
@@ -120,7 +139,7 @@ func FromPrometheusLabelValue(key, label string) definition.FetchFunc {
 // Related metric means any metric you can get with the info that you have in your own metric.
 func InheritSpecificPrometheusLabelValuesFrom(parentGroupLabel, relatedMetricKey string, labelsToRetrieve map[string]string) definition.FetchFunc {
 	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
-		rawEntityID, err := getRawEntityID(parentGroupLabel, relatedMetricKey, groupLabel, entityID, groups)
+		rawEntityID, err := getRawEntityID(parentGroupLabel, groupLabel, entityID, groups)
 		if err != nil {
 			return nil, fmt.Errorf("cannot retrieve the entity ID of metrics to inherit value from, got error: %v", err)
 		}
@@ -146,7 +165,7 @@ func InheritSpecificPrometheusLabelValuesFrom(parentGroupLabel, relatedMetricKey
 // Related metric means any metric you can get with the info that you have in your own metric.
 func InheritAllPrometheusLabelsFrom(parentGroupLabel, relatedMetricKey string) definition.FetchFunc {
 	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
-		rawEntityID, err := getRawEntityID(parentGroupLabel, relatedMetricKey, groupLabel, entityID, groups)
+		rawEntityID, err := getRawEntityID(parentGroupLabel, groupLabel, entityID, groups)
 		if err != nil {
 			return nil, fmt.Errorf("cannot retrieve the entity ID of metrics to inherit labels from, got error: %v", err)
 		}
@@ -165,12 +184,12 @@ func InheritAllPrometheusLabelsFrom(parentGroupLabel, relatedMetricKey string) d
 	}
 }
 
-func getRawEntityID(parentGroupLabel, relatedMetricKey, groupLabel, entityID string, groups definition.RawGroups) (string, error) {
+func getRawEntityID(parentGroupLabel, groupLabel, entityID string, groups definition.RawGroups) (string, error) {
 	group, ok := groups[groupLabel][entityID]
 	if !ok {
 		return "", fmt.Errorf("metrics not found for %v with entity ID: %v", groupLabel, entityID)
 	}
-	metricKey, r := getRandomMetric(group)
+	metricKey, r := getRandomPrometheusMetric(group)
 	m, ok := r.(prometheus.Metric)
 
 	if !ok {
@@ -196,8 +215,11 @@ func getRawEntityID(parentGroupLabel, relatedMetricKey, groupLabel, entityID str
 	return rawEntityID, nil
 }
 
-func getRandomMetric(metrics definition.RawMetrics) (metricKey string, value definition.RawValue) {
+func getRandomPrometheusMetric(metrics definition.RawMetrics) (metricKey string, value definition.RawValue) {
 	for metricKey, value = range metrics {
+		if _, ok := value.(prometheus.Metric); !ok {
+			continue
+		}
 		// We just want 1.
 		break
 	}
