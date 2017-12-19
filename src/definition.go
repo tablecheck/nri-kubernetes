@@ -10,7 +10,7 @@ import (
 
 var ksmPodAndContainerSpecs = definition.SpecGroups{
 	"pod": {
-		IDGenerator: metric.FromRawEntityIDGroupEntityIDGenerator("kube_pod_info", "namespace"),
+		IDGenerator: metric.FromPrometheusLabelValueEntityIDGenerator("kube_pod_info", "pod"),
 		Specs: []definition.Spec{
 			{"createdAt", metric.FromPrometheusValue("kube_pod_created"), sdkMetric.GAUGE},
 			{"startTime", metric.FromPrometheusValue("kube_pod_start_time"), sdkMetric.GAUGE},

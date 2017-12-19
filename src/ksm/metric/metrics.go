@@ -35,25 +35,6 @@ func FromPrometheusLabelValueEntityIDGenerator(key, label string) definition.Met
 	}
 }
 
-// FromRawEntityIDGroupEntityIDGenerator generates an entityID from the raw entity ID
-// which is composed of namespace and pod name. It's used only for k8s pods.
-func FromRawEntityIDGroupEntityIDGenerator(key, label string) definition.MetricSetEntityIDGeneratorFunc {
-	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
-		labelValue, err := FromPrometheusLabelValue(key, label)(groupLabel, rawEntityID, g)
-		if err != nil {
-			return "", err
-		}
-
-		v := strings.TrimPrefix(rawEntityID, fmt.Sprintf("%s_", labelValue))
-
-		if v == "" {
-			return "", fmt.Errorf("error generating metric set entity id from kubelet raw data")
-		}
-
-		return v, nil
-	}
-}
-
 // GroupPrometheusMetricsBySpec groups metrics coming from Prometheus by a given metric spec.
 // Example: grouping by K8s pod, container, etc.
 func GroupPrometheusMetricsBySpec(specs definition.SpecGroups, families []prometheus.MetricFamily) (g definition.RawGroups, errs []error) {
