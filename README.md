@@ -35,7 +35,8 @@ Docker image. We are in private beta but we need a public repository to share
 with customers, for that reason, we are using a hacky mechanism: using a
 meaningless name for the docker image ["ohaik"](https://hub.docker.com/r/newrelic/ohaik/)
 
-* Update integration version number (source code and definition file)
+* Update integration version number (source code)
+* Update daemon set container image (deploy/newrelic-infra.yaml)
 * Update CHANGELOG.md with information about the changes
 * Go to Jenkins -> infra-integrations-beta -> infra-integrations-beta-kubernetes-docker-image
 * Click on 'Build with parameters' and enter the branch you want to build and the version number of the Docker image

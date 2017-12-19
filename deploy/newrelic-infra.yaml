@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: newrelic-infra
-          image: newrelic/ohaik:0.0.1
+          image: newrelic/ohaik:1.0.0-beta
           resources:
             limits:
               memory: 100Mi
