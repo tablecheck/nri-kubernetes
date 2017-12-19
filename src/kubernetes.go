@@ -126,6 +126,8 @@ func main() {
 			log.Fatal(errors.New("kubelet_url should be provided"))
 		}
 
+		log.Debug("Role = %s", role)
+
 		kubeletURL.Path = statsSummaryPath
 		ksmURL.Path = metricsPath
 
