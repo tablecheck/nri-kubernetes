@@ -7,7 +7,12 @@ import (
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
+	"github.com/newrelic/infra-integrations-sdk/log"
 	"github.com/newrelic/infra-integrations-sdk/metric"
+)
+
+const (
+	unknownNamespace = "_unknown"
 )
 
 // K8sMetricSetTypeGuesser is the metric set type guesser for k8s integrations.
@@ -19,9 +24,20 @@ type namespaceFetcher func(groupLabel, entityId string, groups definition.RawGro
 
 // KubeletNamespaceFetcher fetches the namespace from a Kubelet RawGroups information
 func KubeletNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) string {
-	ns, found := groups[groupLabel][entityId]["namespace"]
+	gl, found := groups[groupLabel]
 	if !found {
-		return ""
+		log.Debug("no grouplabel %q found", groupLabel)
+		return unknownNamespace
+	}
+	en, found := gl[entityId]
+	if !found {
+		log.Debug("no entityId %q found for grouplabel %q", entityId, groupLabel)
+		return unknownNamespace
+	}
+	ns, found := en["namespace"]
+	if !found {
+		log.Debug("no namespace found for groupLabel %q and entityId %q", groupLabel, entityId)
+		return unknownNamespace
 	}
 	return ns.(string)
 }
@@ -37,10 +53,15 @@ var nsKeyForGroup = map[string]string{
 // KSMNamespaceFetcher fetches the namespace from a KSM RawGroups information
 func KSMNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) string {
 	ns, err := FromPrometheusLabelValue(nsKeyForGroup[groupLabel], "namespace")(groupLabel, entityId, groups)
-	if err == nil && ns != nil {
-		return ns.(string)
+	if err != nil {
+		log.Debug("error fetching namespace for groupLabel %q and entityId %q: %v", groupLabel, entityId, err.Error())
+		return unknownNamespace
 	}
-	return ""
+	if ns == nil {
+		log.Debug("namespace not found for groupLabel %q and entityId %q", groupLabel, entityId)
+		return unknownNamespace
+	}
+	return ns.(string)
 }
 
 // K8sMetricSetEntityTypeGuesser guesses the Entity Type given a group name, entity Id and a namespace fetcher function
