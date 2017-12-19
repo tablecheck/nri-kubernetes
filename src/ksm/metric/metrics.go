@@ -7,7 +7,6 @@ import (
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
-	"github.com/newrelic/infra-integrations-sdk/log"
 	"github.com/newrelic/infra-integrations-sdk/metric"
 )
 
@@ -16,30 +15,41 @@ const (
 )
 
 // K8sMetricSetTypeGuesser is the metric set type guesser for k8s integrations.
-func K8sMetricSetTypeGuesser(groupLabel, _ string, _ definition.RawGroups) string {
-	return fmt.Sprintf("K8s%vSample", strings.Title(groupLabel))
+func K8sMetricSetTypeGuesser(groupLabel, _ string, _ definition.RawGroups) (string, error) {
+	return fmt.Sprintf("K8s%vSample", strings.Title(groupLabel)), nil
 }
 
-type namespaceFetcher func(groupLabel, entityId string, groups definition.RawGroups) string
+type namespaceFetcher func(groupLabel, entityId string, groups definition.RawGroups) (string, error)
 
-// KubeletNamespaceFetcher fetches the namespace from a Kubelet RawGroups information
-func KubeletNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) string {
-	gl, found := groups[groupLabel]
-	if !found {
-		log.Debug("no grouplabel %q found", groupLabel)
-		return unknownNamespace
+// KubeletKSMNamespaceFetcher fetches the namespace from the RawGroups information trying both Kubelet and KSM
+func kubeletKSMNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) (string, error) {
+	ns, err1 := kubeletNamespaceFetcher(groupLabel, entityId, groups)
+	if err1 == nil {
+		return ns, nil
 	}
-	en, found := gl[entityId]
-	if !found {
-		log.Debug("no entityId %q found for grouplabel %q", entityId, groupLabel)
-		return unknownNamespace
+	ns, err2 := ksmNamespaceFetcher(groupLabel, entityId, groups)
+	if err2 == nil {
+		return ns, nil
 	}
-	ns, found := en["namespace"]
-	if !found {
-		log.Debug("no namespace found for groupLabel %q and entityId %q", groupLabel, entityId)
-		return unknownNamespace
+	return unknownNamespace, fmt.Errorf("error fetching namespace: %q, %q", err1.Error(), err2.Error())
+}
+
+// kubeletNamespaceFetcher fetches the namespace from a Kubelet RawGroups information
+func kubeletNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) (string, error) {
+	gl, ok := groups[groupLabel]
+	if !ok {
+		return unknownNamespace, fmt.Errorf("no grouplabel %q found", groupLabel)
 	}
-	return ns.(string)
+	en, ok := gl[entityId]
+	if !ok {
+		return unknownNamespace, fmt.Errorf("no entityId %q found for grouplabel %q", entityId, groupLabel)
+	}
+
+	ns, ok := en["namespace"]
+	if !ok {
+		return unknownNamespace, fmt.Errorf("no namespace found for groupLabel %q and entityId %q", groupLabel, entityId)
+	}
+	return ns.(string), nil
 }
 
 var nsKeyForGroup = map[string]string{
@@ -50,34 +60,31 @@ var nsKeyForGroup = map[string]string{
 	"deployment": "kube_deployment_labels",
 }
 
-// KSMNamespaceFetcher fetches the namespace from a KSM RawGroups information
-func KSMNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) string {
+// ksmNamespaceFetcher fetches the namespace from a KSM RawGroups information
+func ksmNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) (string, error) {
 	ns, err := FromPrometheusLabelValue(nsKeyForGroup[groupLabel], "namespace")(groupLabel, entityId, groups)
 	if err != nil {
-		log.Debug("error fetching namespace for groupLabel %q and entityId %q: %v", groupLabel, entityId, err.Error())
-		return unknownNamespace
+		return unknownNamespace, fmt.Errorf("error fetching namespace for groupLabel %q and entityId %q: %v", groupLabel, entityId, err.Error())
 	}
 	if ns == nil {
-		log.Debug("namespace not found for groupLabel %q and entityId %q", groupLabel, entityId)
-		return unknownNamespace
+		return unknownNamespace, fmt.Errorf("namespace not found for groupLabel %q and entityId %q", groupLabel, entityId)
 	}
-	return ns.(string)
+	return ns.(string), nil
 }
 
 // K8sMetricSetEntityTypeGuesser guesses the Entity Type given a group name, entity Id and a namespace fetcher function
-func K8sMetricSetEntityTypeGuesser(nsFetch namespaceFetcher) func(groupLabel, entityId string, groups definition.RawGroups) string {
-	return func(groupLabel, entityId string, groups definition.RawGroups) string {
-		var actualGroupLabel string
-		switch groupLabel {
-		case "namespace":
-			return fmt.Sprintf("k8s:namespace")
-		case "container":
-			actualGroupLabel = "pod"
-		default:
-			actualGroupLabel = groupLabel
-		}
-		return fmt.Sprintf("k8s:%s:%s", nsFetch(groupLabel, entityId, groups), actualGroupLabel)
+func K8sMetricSetEntityTypeGuesser(groupLabel, entityId string, groups definition.RawGroups) (string, error) {
+	var actualGroupLabel string
+	switch groupLabel {
+	case "namespace":
+		return fmt.Sprintf("k8s:namespace"), nil
+	case "container":
+		actualGroupLabel = "pod"
+	default:
+		actualGroupLabel = groupLabel
 	}
+	ns, _ := kubeletKSMNamespaceFetcher(groupLabel, entityId, groups)
+	return fmt.Sprintf("k8s:%s:%s", ns, actualGroupLabel), nil
 }
 
 // K8sMetricsNamingManipulator modifies the MetricSet displayName and entityName, taken from the entity.name and
@@ -184,7 +191,7 @@ func FromPrometheusLabelValue(key, label string) definition.FetchFunc {
 // Related metric means any metric you can get with the info that you have in your own metric.
 func InheritSpecificPrometheusLabelValuesFrom(parentGroupLabel, relatedMetricKey string, labelsToRetrieve map[string]string) definition.FetchFunc {
 	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
-		rawEntityID, err := getRawEntityID(parentGroupLabel, relatedMetricKey, groupLabel, entityID, groups)
+		rawEntityID, err := getRawEntityID(parentGroupLabel, groupLabel, entityID, groups)
 		if err != nil {
 			return nil, fmt.Errorf("cannot retrieve the entity ID of metrics to inherit value from, got error: %v", err)
 		}
@@ -210,7 +217,7 @@ func InheritSpecificPrometheusLabelValuesFrom(parentGroupLabel, relatedMetricKey
 // Related metric means any metric you can get with the info that you have in your own metric.
 func InheritAllPrometheusLabelsFrom(parentGroupLabel, relatedMetricKey string) definition.FetchFunc {
 	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
-		rawEntityID, err := getRawEntityID(parentGroupLabel, relatedMetricKey, groupLabel, entityID, groups)
+		rawEntityID, err := getRawEntityID(parentGroupLabel, groupLabel, entityID, groups)
 		if err != nil {
 			return nil, fmt.Errorf("cannot retrieve the entity ID of metrics to inherit labels from, got error: %v", err)
 		}
@@ -229,12 +236,12 @@ func InheritAllPrometheusLabelsFrom(parentGroupLabel, relatedMetricKey string) d
 	}
 }
 
-func getRawEntityID(parentGroupLabel, relatedMetricKey, groupLabel, entityID string, groups definition.RawGroups) (string, error) {
+func getRawEntityID(parentGroupLabel, groupLabel, entityID string, groups definition.RawGroups) (string, error) {
 	group, ok := groups[groupLabel][entityID]
 	if !ok {
 		return "", fmt.Errorf("metrics not found for %v with entity ID: %v", groupLabel, entityID)
 	}
-	metricKey, r := getRandomMetric(group)
+	metricKey, r := getRandomPrometheusMetric(group)
 	m, ok := r.(prometheus.Metric)
 
 	if !ok {
@@ -260,8 +267,11 @@ func getRawEntityID(parentGroupLabel, relatedMetricKey, groupLabel, entityID str
 	return rawEntityID, nil
 }
 
-func getRandomMetric(metrics definition.RawMetrics) (metricKey string, value definition.RawValue) {
+func getRandomPrometheusMetric(metrics definition.RawMetrics) (metricKey string, value definition.RawValue) {
 	for metricKey, value = range metrics {
+		if _, ok := value.(prometheus.Metric); !ok {
+			continue
+		}
 		// We just want 1.
 		break
 	}

@@ -233,7 +233,7 @@ func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
-	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser(KSMNamespaceFetcher), K8sMetricsNamingManipulator)(rawGroups, specs)
+	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser, K8sMetricsNamingManipulator)(rawGroups, specs)
 	assert.True(t, populated)
 	assert.Empty(t, errs)
 	assert.Contains(t, integration.Data, &expectedEntityData1)
@@ -281,7 +281,7 @@ func TestIntegrationProtocol2PopulateFunc_PartialResult(t *testing.T) {
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
-	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser(KSMNamespaceFetcher), K8sMetricsNamingManipulator)(rawGroups, metricDefWithIncompatibleType)
+	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser, K8sMetricsNamingManipulator)(rawGroups, metricDefWithIncompatibleType)
 	assert.True(t, populated)
 	assert.Len(t, errs, 2)
 	assert.Contains(t, integration.Data, &expectedEntityData1)
@@ -297,7 +297,7 @@ func TestIntegrationProtocol2PopulateFunc_EntitiesDataNotPopulated_EmptyMetricGr
 	}
 	expectedData := []*sdk.EntityData{}
 
-	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser(KSMNamespaceFetcher), K8sMetricsNamingManipulator)(metricGroupEmpty, specs)
+	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser, K8sMetricsNamingManipulator)(metricGroupEmpty, specs)
 	assert.False(t, populated)
 	assert.Nil(t, errs)
 	assert.Equal(t, expectedData, integration.Data)
@@ -330,7 +330,7 @@ func TestIntegrationProtocol2PopulateFunc_EntitiesDataNotPopulated_ErrorSettingE
 	}
 	expectedData := []*sdk.EntityData{}
 
-	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser(KSMNamespaceFetcher), K8sMetricsNamingManipulator)(metricGroupEmptyEntityID, specs)
+	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser, K8sMetricsNamingManipulator)(metricGroupEmptyEntityID, specs)
 	assert.False(t, populated)
 	assert.EqualError(t, errs[0], "entity name and type are required when defining one")
 	assert.Equal(t, expectedData, integration.Data)
@@ -359,7 +359,7 @@ func TestIntegrationProtocol2PopulateFunc_MetricsSetsNotPopulated_OnlyEntity(t *
 		t.Fatal()
 	}
 
-	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser(KSMNamespaceFetcher), K8sMetricsNamingManipulator)(rawGroups, metricDefIncorrect)
+	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser, K8sMetricsNamingManipulator)(rawGroups, metricDefIncorrect)
 	assert.False(t, populated)
 	assert.Len(t, errs, 2)
 	assert.Contains(t, errs, errors.New("entity id: fluentd-elasticsearch-jnqb7: error fetching value for metric podStartTime. Error: FromRaw: metric not found. SpecGroup: pod, EntityID: fluentd-elasticsearch-jnqb7, Metric: foo"))

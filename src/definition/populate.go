@@ -9,16 +9,16 @@ import (
 )
 
 // GuessFunc guesses from data.
-type GuessFunc func(groupLabel, entityID string, groups RawGroups) string
+type GuessFunc func(groupLabel, entityID string, groups RawGroups) (string, error)
 
 // FromGroupMetricSetTypeGuessFunc uses the groupLabel for creating the metric set type sample.
-func FromGroupMetricSetTypeGuessFunc(groupLabel, _ string, _ RawGroups) string {
-	return fmt.Sprintf("%vSample", strings.Title(groupLabel))
+func FromGroupMetricSetTypeGuessFunc(groupLabel, _ string, _ RawGroups) (string, error) {
+	return fmt.Sprintf("%vSample", strings.Title(groupLabel)), nil
 }
 
 // FromGroupMetricSetEntitTypeGuessFunc uses the grouplabel as guess for the entity type.
-func FromGroupMetricSetEntitTypeGuessFunc(groupLabel, _ string, _ RawGroups) string {
-	return fmt.Sprintf("%v", groupLabel)
+func FromGroupMetricSetEntitTypeGuessFunc(groupLabel, _ string, _ RawGroups) (string, error) {
+	return fmt.Sprintf("%v", groupLabel), nil
 }
 
 // PopulateFunc populates raw metric groups using your specs
@@ -44,13 +44,24 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, msTypeGuesser
 					msEntityID = generatedEntityID
 				}
 
-				e, err := i.Entity(msEntityID, msEntityTypeGuesser(groupLabel, entityID, groups))
+				msEntityType, err := msEntityTypeGuesser(groupLabel, entityID, groups)
 				if err != nil {
 					errs = append(errs, err)
 					continue
 				}
 
-				ms := metric.NewMetricSet(msTypeGuesser(groupLabel, entityID, groups))
+				e, err := i.Entity(msEntityID, msEntityType)
+				if err != nil {
+					errs = append(errs, err)
+					continue
+				}
+
+				msType, err := msTypeGuesser(groupLabel, entityID, groups)
+				if err != nil {
+					errs = append(errs, err)
+					continue
+				}
+				ms := metric.NewMetricSet(msType)
 				for _, m := range msManipulators {
 					m(e.Entity.Name, e.Entity.Type, ms)
 				}
