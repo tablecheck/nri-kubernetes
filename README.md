@@ -25,32 +25,22 @@ You can view your data in Insights by creating your own custom NRQL queries. To 
 - K8sPodSample
 - K8sContainerSample
 
-## Deployments
+## Build & Release
 
-**Note::** This deployment mechanism isn't a final solution.
+**Note:** Remove sensitive data before moving this integration to the public
+repository
 
-Right now, we are using Quay.io as a private docker registry. Before trying to
-push/pull images, you should be logged in:
+We are using Docker Hub as a docker registry and Jenkins to build and push our
+Docker image. We are in private beta but we need a public repository to share
+with customers, for that reason, we are using a hacky mechanism: using a
+meaningless name for the docker image ["ohaik"](https://hub.docker.com/r/newrelic/ohaik/)
 
-`$ docker login quay.io`
-
-- Build and tag docker image
-`$ docker build . --tag quay.io/newrelic/ohai-k8s:v1`
-- Push image
-`$ docker push quay.io/newrelic/ohai-k8s:v1`
-- Update tag in Kubernetes deployment definition
-```
-...
-containers:
-  - name: newrelic-ksm
-    image: quay.io/newrelic/ohai-k8s:v1
-...
-```
-- Update k8s deployment
-```
-$ kubectl --namespace=your-namespace delete -f deploy/nri-kubernetes-integration.yml
-$ kubectl --namespace=your-namespace create -f deploy/nri-kubernetes-integration.yml
-```
+* Update integration version number (source code and definition file)
+* Update CHANGELOG.md with information about the changes
+* Go to Jenkins -> infra-integrations-beta -> infra-integrations-beta-kubernetes-docker-image
+* Click on 'Build with parameters' and enter the branch you want to build and the version number of the Docker image
+* Once the job is executed, a new version of the image should be uploaded to
+  docker hub. You can check it this [link](https://hub.docker.com/r/newrelic/ohaik/)
 
 ## Compatibility
 New Relic kube-state-metrics Integration is compatible with kube-state-metrics service version: v1.1.0
