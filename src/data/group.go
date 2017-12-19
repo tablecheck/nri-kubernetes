@@ -124,7 +124,7 @@ func (r *kubeletKSMGrouper) Group(specGroups definition.SpecGroups) (definition.
 		errs = append(errs, groupErrs...)
 	}
 
-	mergeGroups(groups, ksmGroups)
+	fillGroups(groups, ksmGroups)
 
 	return groups, errs
 }
@@ -140,10 +140,10 @@ func NewKubeletKSMGrouper(kubeletURL, ksmMetricsURL *url.URL, c *http.Client, ks
 }
 
 type kubeletKSMAndRestGrouper struct {
-	kubeletKSMGroups definition.RawGroups
-	ksmMetricsURL    *url.URL
-	restQueries      []prometheus.Query
-	logger           *logrus.Logger
+	kubeletKSMRawGroups definition.RawGroups
+	ksmMetricsURL       *url.URL
+	restQueries         []prometheus.Query
+	logger              *logrus.Logger
 }
 
 func (r *kubeletKSMAndRestGrouper) Group(specGroups definition.SpecGroups) (definition.RawGroups, []error) {
@@ -155,34 +155,40 @@ func (r *kubeletKSMAndRestGrouper) Group(specGroups definition.SpecGroups) (defi
 		errs = append(errs, groupErrs...)
 	}
 
-	mergeGroups(ksmGroups, r.kubeletKSMGroups)
+	mergeNonExistentGroups(ksmGroups, r.kubeletKSMRawGroups)
 
 	return ksmGroups, errs
 }
 
 func NewKubeletKSMAndRestGrouper(kubeletKSMGroups definition.RawGroups, ksmMetricsURL *url.URL, ksmRestQueries []prometheus.Query, logger *logrus.Logger) Grouper {
 	return &kubeletKSMAndRestGrouper{
-		kubeletKSMGroups: kubeletKSMGroups,
-		ksmMetricsURL:    ksmMetricsURL,
-		restQueries:      ksmRestQueries,
-		logger:           logger,
+		kubeletKSMRawGroups: kubeletKSMGroups,
+		ksmMetricsURL:       ksmMetricsURL,
+		restQueries:         ksmRestQueries,
+		logger:              logger,
 	}
 }
 
-func mergeGroups(destination, from definition.RawGroups) {
-	for g, e := range from {
-		if _, ok := destination[g]; ok {
-			for entityID, m := range e {
-				mergeMetrics(destination[g][entityID], m)
+func fillGroups(destination definition.RawGroups, from definition.RawGroups) {
+	for l, g := range destination {
+		if fromGroup, ok := from[l]; ok {
+			for entityID, e := range fromGroup {
+				if _, ok := g[entityID]; !ok {
+					continue
+				}
+
+				for k, v := range e {
+					g[entityID][k] = v
+				}
 			}
-		} else {
-			destination[g] = e
 		}
 	}
 }
 
-func mergeMetrics(destination, from definition.RawMetrics) {
-	for k, v := range from {
-		destination[k] = v
+func mergeNonExistentGroups(destination, from definition.RawGroups) {
+	for g, e := range from {
+		if _, ok := destination[g]; !ok {
+			destination[g] = e
+		}
 	}
 }
