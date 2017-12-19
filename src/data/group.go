@@ -27,7 +27,7 @@ type k8sPopulator struct {
 }
 
 func (p *k8sPopulator) Populate(groups definition.RawGroups, specGroups definition.SpecGroups, i *sdk.IntegrationProtocol2) (bool, error) {
-	populatorFunc := definition.IntegrationProtocol2PopulateFunc(i, ksmMetric.K8sMetricSetTypeGuesser, ksmMetric.K8sMetricSetEntityTypeGuesser)
+	populatorFunc := definition.IntegrationProtocol2PopulateFunc(i, ksmMetric.K8sMetricSetTypeGuesser, ksmMetric.K8sMetricSetEntityTypeGuesser, ksmMetric.K8sMetricsNamingManipulator)
 	ok, errs := populatorFunc(groups, specGroups)
 
 	if len(errs) > 0 {
