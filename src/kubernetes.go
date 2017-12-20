@@ -21,7 +21,7 @@ type argumentList struct {
 	sdkArgs.DefaultArgumentList
 	KubeStateMetricsURL string `help:"overrides Kube State Metrics schema://host:port URL parts (if not set, it will be self-discovered)."`
 	DebugKubeletURL     string `help:"for debugging purposes. Overrides kubelet schema://host:port URL parts (if not set, it will be self-discovered)"`
-	DebugRole           string `help:"for debugging purposes. Sets the role of the integration (accepted values: kubelet-ksm-rest, kubelet-ksm"`
+	DebugRole           string `help:"for debugging purposes. Sets the role of the integration (accepted values: kubelet-ksm-rest, kubelet-ksm. If not set, it will be self-discovered)"`
 	IgnoreCerts         bool   `default:"false" help:"disables HTTPS certificate verification for metrics sources"`
 	Timeout             int    `default:"1000" help:"timeout in milliseconds for calling metrics sources"`
 }
@@ -87,7 +87,7 @@ func main() {
 		fatalIfErr(err)
 
 		if args.DebugRole != "" {
-			log.Warn("using argument aimed for debugging purposes. role=%q", args.DebugRole)
+			log.Warn("using argument aimed for debugging purposes. debug_role=%q", args.DebugRole)
 		}
 		role := args.DebugRole
 		if role == "" {
