@@ -328,7 +328,6 @@ func GetDeploymentNameForReplicaSet() definition.FetchFunc {
 // Pod.  It returns an empty string if Pod hasn't been created by a deployment.
 func GetDeploymentNameForPod() definition.FetchFunc {
 	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
-		var deploymentName string
 		creatorKind, err := FromPrometheusLabelValue("kube_pod_info", "created_by_kind")(groupLabel, entityID, groups)
 		if err != nil {
 			return nil, err
@@ -337,11 +336,35 @@ func GetDeploymentNameForPod() definition.FetchFunc {
 		if err != nil {
 			return nil, err
 		}
-		if creatorKind.(string) == "ReplicaSet" {
-			deploymentName = replicasetNameToDeploymentName(creatorName.(string))
-		}
-		return deploymentName, nil
+		return deploymentNameBasedOnCreator(creatorKind.(string), creatorName.(string)), nil
 	}
+}
+
+// GetDeploymentNameForContainer returns the name of the deployment has created
+// a container. It's providing this information inheriting some metrics from its
+// pod. Returns an empty string if its pod hasn't been created by a deployment.
+func GetDeploymentNameForContainer() definition.FetchFunc {
+	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
+		mm := map[string]string{
+			"created_by_kind": "created_by_kind",
+			"created_by_name": "created_by_name",
+		}
+		podValues, err := InheritSpecificPrometheusLabelValuesFrom("pod", "kube_pod_info", mm)(groupLabel, entityID, groups)
+		if err != nil {
+			return nil, err
+		}
+		podMetrics := podValues.(definition.FetchedValues)
+		return deploymentNameBasedOnCreator(podMetrics["created_by_kind"].(string), podMetrics["created_by_name"].(string)), nil
+
+	}
+}
+
+func deploymentNameBasedOnCreator(creatorKind, creatorName string) string {
+	var deploymentName string
+	if creatorKind == "ReplicaSet" {
+		deploymentName = replicasetNameToDeploymentName(creatorName)
+	}
+	return deploymentName
 }
 
 func replicasetNameToDeploymentName(rsName string) string {

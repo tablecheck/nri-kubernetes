@@ -568,6 +568,79 @@ func TestGetDeploymentNameForPod_NotCreatedByReplicaSet(t *testing.T) {
 	assert.Empty(t, fetchedValue)
 }
 
+func TestGetDeploymentNameForContainer_CreatedByReplicaSet(t *testing.T) {
+	expectedValue := "fluentd-elasticsearch"
+	podRawID := "kube-system_fluentd-elasticsearch-jnqb7_kube-state-metrics"
+	raw := definition.RawGroups{
+		"pod": {
+			"kube-system_kube-addon-manager-minikube": definition.RawMetrics{
+				"kube_pod_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1507117436),
+					Labels: map[string]string{
+						"created_by_kind": "ReplicaSet",
+						"created_by_name": "fluentd-elasticsearch-fafnoa",
+						"namespace":       "kube-system",
+						"node":            "minikube",
+						"pod":             "kube-addon-manager-minikube",
+					},
+				},
+			},
+		},
+		"container": {
+			podRawID: definition.RawMetrics{
+				"kube_pod_container_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"container": "kube-state-metrics",
+						"image":     "gcr.io/google_containers/kube-state-metrics:v1.1.0",
+						"namespace": "kube-system",
+						"pod":       "kube-addon-manager-minikube",
+					},
+				},
+			},
+		},
+	}
+	fetchedValue, err := GetDeploymentNameForContainer()("container", podRawID, raw)
+	assert.Nil(t, err)
+	assert.Equal(t, expectedValue, fetchedValue)
+}
+
+func TestGetDeploymentNameForContainer_NotCreatedByReplicaSet(t *testing.T) {
+	podRawID := "kube-system_fluentd-elasticsearch-jnqb7_kube-state-metrics"
+	raw := definition.RawGroups{
+		"pod": {
+			"kube-system_kube-addon-manager-minikube": definition.RawMetrics{
+				"kube_pod_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1507117436),
+					Labels: map[string]string{
+						"created_by_kind": "DaemonSet",
+						"created_by_name": "newrelic-infra-monitoring",
+						"namespace":       "kube-system",
+						"node":            "minikube",
+						"pod":             "kube-addon-manager-minikube",
+					},
+				},
+			},
+		},
+		"container": {
+			podRawID: definition.RawMetrics{
+				"kube_pod_container_info": prometheus.Metric{
+					Value: prometheus.GaugeValue(1),
+					Labels: map[string]string{
+						"container": "kube-state-metrics",
+						"image":     "gcr.io/google_containers/kube-state-metrics:v1.1.0",
+						"namespace": "kube-system",
+						"pod":       "kube-addon-manager-minikube",
+					},
+				},
+			},
+		},
+	}
+	fetchedValue, err := GetDeploymentNameForContainer()("container", podRawID, raw)
+	assert.Nil(t, err)
+	assert.Empty(t, fetchedValue)
+}
+
 // --------------- FromPrometheusLabelValueEntityIDGenerator ---------------
 func TestFromPrometheusLabelValueEntityIDGenerator(t *testing.T) {
 	expectedFetchedValue := "fluentd-elasticsearch-jnqb7"
