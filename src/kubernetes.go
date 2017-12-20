@@ -20,10 +20,10 @@ import (
 type argumentList struct {
 	sdkArgs.DefaultArgumentList
 	KubeStateMetricsURL string `help:"overrides Kube State Metrics schema://host:port URL parts (if not set, it will be self-discovered)."`
-	KubeletURL          string `help:"overrides kubelet schema://host:port URL parts (if not set, it will be self-discovered)"`
+	DebugKubeletURL     string `help:"for debugging purposes. Overrides kubelet schema://host:port URL parts (if not set, it will be self-discovered)"`
+	DebugRole           string `help:"for debugging purposes. Sets the role of the integration (accepted values: kubelet-ksm-rest, kubelet-ksm"`
 	IgnoreCerts         bool   `default:"false" help:"disables HTTPS certificate verification for metrics sources"`
-	Timeout             int    `default:"1000" help:"Timeout in milliseconds for calling metrics sources"`
-	Role                string `help:"For debugging purpose. Sets the role of the integration (accepted values: kubelet-ksm-rest, kubelet-ksm"`
+	Timeout             int    `default:"1000" help:"timeout in milliseconds for calling metrics sources"`
 }
 
 const (
@@ -77,13 +77,19 @@ func main() {
 	var ksmDiscoverer endpoints.Discoverer
 
 	if args.All || args.Metrics {
-		kubeletURL, err := url.Parse(args.KubeletURL)
+		if args.DebugKubeletURL != "" {
+			log.Warn("using argument aimed for debugging purposes. debug_kubelet_url=%q", args.DebugKubeletURL)
+		}
+		kubeletURL, err := url.Parse(args.DebugKubeletURL)
 		fatalIfErr(err)
 
 		ksmURL, err := url.Parse(args.KubeStateMetricsURL)
 		fatalIfErr(err)
 
-		role := args.Role
+		if args.DebugRole != "" {
+			log.Warn("using argument aimed for debugging purposes. role=%q", args.DebugRole)
+		}
+		role := args.DebugRole
 		if role == "" {
 			// autodiscover
 
@@ -116,6 +122,7 @@ func main() {
 			} else {
 				role = "kubelet-ksm"
 			}
+			log.Debug("Auto-discovered role = %s", role)
 		}
 
 		if ksmURL.String() == "" {
@@ -125,8 +132,6 @@ func main() {
 		if kubeletURL.String() == "" {
 			log.Fatal(errors.New("kubelet_url should be provided"))
 		}
-
-		log.Debug("Role = %s", role)
 
 		kubeletURL.Path = statsSummaryPath
 		ksmURL.Path = metricsPath
