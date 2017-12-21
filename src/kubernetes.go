@@ -11,6 +11,7 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 	ksmEndpoints "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/endpoints"
+	ksmMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
 	kubeletEndpoints "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/endpoints"
 	sdkArgs "github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/newrelic/infra-integrations-sdk/log"
@@ -150,7 +151,7 @@ func main() {
 		}
 
 		if kubeletURL.String() == "" {
-			log.Fatal(errors.New("kubelet_url should be provided"))
+			log.Fatal(errors.New("debug_kubelet_url should be provided"))
 		}
 
 		kubeletURL.Path = statsSummaryPath
@@ -171,21 +172,32 @@ func main() {
 
 		logger := logrus.New()
 
-		// todo fix pointers indirection stuff
-		kubeletKSMGrouper := data.NewKubeletKSMGrouper(
-			kubeletURL,
-			ksmURL,
-			netClient,
-			prometheusPodsAndContainerQueries,
-			ksmPodAndContainerSpecs,
-			logger,
-		)
-
 		switch role {
 		case "kubelet-ksm-rest":
 			// todo fix pointers indirection stuff
+			kubeletKSMGrouper := data.NewKubeletKSMPatchedGrouper(
+				kubeletURL,
+				ksmURL,
+				netClient,
+				prometheusPodsAndContainerQueries,
+				ksmPodAndContainerSpecs,
+				logger,
+				ksmMetric.UnscheduledItemsPatcher,
+			)
+
+			// todo fix pointers indirection stuff
 			kubeletKSMAndRest(kubeletKSMGrouper, ksmURL, integration, args.ClusterName, logger)
 		case "kubelet-ksm":
+			// todo fix pointers indirection stuff
+			kubeletKSMGrouper := data.NewKubeletKSMGrouper(
+				kubeletURL,
+				ksmURL,
+				netClient,
+				prometheusPodsAndContainerQueries,
+				ksmPodAndContainerSpecs,
+				logger,
+			)
+
 			kubeletKSM(kubeletKSMGrouper, integration, args.ClusterName, logger)
 		}
 	}

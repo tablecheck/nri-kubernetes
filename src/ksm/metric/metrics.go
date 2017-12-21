@@ -377,3 +377,15 @@ func replicasetNameToDeploymentName(rsName string) string {
 	s := strings.Split(rsName, "-")
 	return strings.Join(s[:len(s)-1], "-")
 }
+
+// UnscheduledItemsPatcher adds to the destination RawGroups the pods that haven't been scheduled
+func UnscheduledItemsPatcher(destination definition.RawGroups, source definition.RawGroups) {
+	for podName, pod := range source["pod"] {
+		podMap := pod["kube_pod_info"].(prometheus.Metric).Labels
+		if podMap["node"] == "" {
+			destination["pod"][podName] = definition.RawMetrics{}
+			destination["pod"][podName]["podName"] = podMap["pod"]
+			destination["pod"][podName]["namespace"] = podMap["namespace"]
+		}
+	}
+}

@@ -28,6 +28,9 @@ type k8sPopulator struct {
 	logger *logrus.Logger
 }
 
+// GroupPatcher performs programmatic patching of the destination RawGroups, as a function of the source RawGroups
+type GroupPatcher func(destination definition.RawGroups, source definition.RawGroups)
+
 func (p *k8sPopulator) Populate(groups definition.RawGroups, specGroups definition.SpecGroups, i *sdk.IntegrationProtocol2, clusterName string) (bool, error) {
 	populatorFunc := definition.IntegrationProtocol2PopulateFunc(i, clusterName, ksmMetric.K8sMetricSetTypeGuesser, ksmMetric.K8sMetricSetEntityTypeGuesser, ksmMetric.K8sEntityMetricsManipulator, ksmMetric.K8sClusterMetricsManipulator)
 	ok, errs := populatorFunc(groups, specGroups)
@@ -111,6 +114,7 @@ type kubeletKSMGrouper struct {
 	ksmSpecGroups     definition.SpecGroups
 	kubeletGrouper    Grouper
 	logger            *logrus.Logger
+	groupPatcher      GroupPatcher
 }
 
 func (r *kubeletKSMGrouper) Group(specGroups definition.SpecGroups) (definition.RawGroups, []error) {
@@ -126,18 +130,27 @@ func (r *kubeletKSMGrouper) Group(specGroups definition.SpecGroups) (definition.
 		errs = append(errs, groupErrs...)
 	}
 
+	if r.groupPatcher != nil {
+		r.groupPatcher(groups, ksmGroups)
+	}
+
 	fillGroups(groups, ksmGroups)
 
 	return groups, errs
 }
 
 func NewKubeletKSMGrouper(kubeletURL, ksmMetricsURL *url.URL, c *http.Client, ksmPodAndContainerQueries []prometheus.Query, ksmSpecGroups definition.SpecGroups, logger *logrus.Logger) Grouper {
+	return NewKubeletKSMPatchedGrouper(kubeletURL, ksmMetricsURL, c, ksmPodAndContainerQueries, ksmSpecGroups, logger, nil)
+}
+
+func NewKubeletKSMPatchedGrouper(kubeletURL, ksmMetricsURL *url.URL, c *http.Client, ksmPodAndContainerQueries []prometheus.Query, ksmSpecGroups definition.SpecGroups, logger *logrus.Logger, patcher GroupPatcher) Grouper {
 	return &kubeletKSMGrouper{
 		ksmMetricsURL:     ksmMetricsURL,
 		ksmPartialQueries: ksmPodAndContainerQueries,
 		ksmSpecGroups:     ksmSpecGroups,
 		kubeletGrouper:    NewKubeletGrouper(kubeletURL, c, logger),
 		logger:            logger,
+		groupPatcher:      patcher,
 	}
 }
 
