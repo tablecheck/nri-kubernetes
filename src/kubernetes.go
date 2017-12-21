@@ -88,10 +88,10 @@ func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i
 func main() {
 	defer log.Debug("Integration '%s' exited", integrationName)
 	log.Debug("Integration '%s' with version %s started", integrationName, integrationVersion)
+	integration, err := sdk.NewIntegrationProtocol2(integrationName, integrationVersion, &args)
 	if args.ClusterName == "" {
 		log.Fatal(errors.New("cluster_name argument is mandatory"))
 	}
-	integration, err := sdk.NewIntegrationProtocol2(integrationName, integrationVersion, &args)
 	fatalIfErr(err)
 
 	var ksmDiscoverer endpoints.Discoverer
