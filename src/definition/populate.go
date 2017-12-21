@@ -9,26 +9,26 @@ import (
 )
 
 // GuessFunc guesses from data.
-type GuessFunc func(groupLabel, entityID string, groups RawGroups) (string, error)
+type GuessFunc func(clusterName, groupLabel, entityID string, groups RawGroups) (string, error)
 
 // FromGroupMetricSetTypeGuessFunc uses the groupLabel for creating the metric set type sample.
-func FromGroupMetricSetTypeGuessFunc(groupLabel, _ string, _ RawGroups) (string, error) {
+func FromGroupMetricSetTypeGuessFunc(_, groupLabel, _ string, _ RawGroups) (string, error) {
 	return fmt.Sprintf("%vSample", strings.Title(groupLabel)), nil
 }
 
 // FromGroupMetricSetEntitTypeGuessFunc uses the grouplabel as guess for the entity type.
-func FromGroupMetricSetEntitTypeGuessFunc(groupLabel, _ string, _ RawGroups) (string, error) {
+func FromGroupMetricSetEntitTypeGuessFunc(_, groupLabel, _ string, _ RawGroups) (string, error) {
 	return fmt.Sprintf("%v", groupLabel), nil
 }
 
 // PopulateFunc populates raw metric groups using your specs
 type PopulateFunc func(RawGroups, SpecGroups) (bool, []error)
 
-// MetricSetManipulator manipulates the MetricSet for a given entityName and entityType
-type MetricSetManipulator func(entityName, entityType string, ms metric.MetricSet)
+// MetricSetManipulator manipulates the MetricSet for a given entity and clusterName
+type MetricSetManipulator func(ms metric.MetricSet, entity sdk.Entity, clusterName string)
 
 // IntegrationProtocol2PopulateFunc populates an integration protocol v2 with the given metrics and definition.
-func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, msTypeGuesser, msEntityTypeGuesser GuessFunc, msManipulators ...MetricSetManipulator) PopulateFunc {
+func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName string, msTypeGuesser, msEntityTypeGuesser GuessFunc, msManipulators ...MetricSetManipulator) PopulateFunc {
 	return func(groups RawGroups, specs SpecGroups) (bool, []error) {
 		var populated bool
 		var errs []error
@@ -44,7 +44,7 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, msTypeGuesser
 					msEntityID = generatedEntityID
 				}
 
-				msEntityType, err := msEntityTypeGuesser(groupLabel, entityID, groups)
+				msEntityType, err := msEntityTypeGuesser(clusterName, groupLabel, entityID, groups)
 				if err != nil {
 					errs = append(errs, err)
 					continue
@@ -56,14 +56,15 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, msTypeGuesser
 					continue
 				}
 
-				msType, err := msTypeGuesser(groupLabel, entityID, groups)
+				msType, err := msTypeGuesser(clusterName, groupLabel, entityID, groups)
 				if err != nil {
 					errs = append(errs, err)
 					continue
 				}
+
 				ms := metric.NewMetricSet(msType)
 				for _, m := range msManipulators {
-					m(e.Entity.Name, e.Entity.Type, ms)
+					m(ms, e.Entity, clusterName)
 				}
 
 				wasPopulated, populateErrs := metricSetPopulateFunc(ms, groupLabel, entityID)(groups, specs)

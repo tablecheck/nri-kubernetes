@@ -21,15 +21,15 @@ type Grouper interface {
 }
 
 type Populator interface {
-	Populate(definition.RawGroups, definition.SpecGroups, *sdk.IntegrationProtocol2) (bool, error)
+	Populate(definition.RawGroups, definition.SpecGroups, *sdk.IntegrationProtocol2, string) (bool, error)
 }
 
 type k8sPopulator struct {
 	logger *logrus.Logger
 }
 
-func (p *k8sPopulator) Populate(groups definition.RawGroups, specGroups definition.SpecGroups, i *sdk.IntegrationProtocol2) (bool, error) {
-	populatorFunc := definition.IntegrationProtocol2PopulateFunc(i, ksmMetric.K8sMetricSetTypeGuesser, ksmMetric.K8sMetricSetEntityTypeGuesser, ksmMetric.K8sMetricsNamingManipulator)
+func (p *k8sPopulator) Populate(groups definition.RawGroups, specGroups definition.SpecGroups, i *sdk.IntegrationProtocol2, clusterName string) (bool, error) {
+	populatorFunc := definition.IntegrationProtocol2PopulateFunc(i, clusterName, ksmMetric.K8sMetricSetTypeGuesser, ksmMetric.K8sMetricSetEntityTypeGuesser, ksmMetric.K8sEntityMetricsManipulator, ksmMetric.K8sClusterMetricsManipulator)
 	ok, errs := populatorFunc(groups, specGroups)
 
 	if len(errs) > 0 {

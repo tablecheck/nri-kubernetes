@@ -25,6 +25,7 @@ type argumentList struct {
 	DebugRole           string `help:"for debugging purposes. Sets the role of the integration (accepted values: kubelet-ksm-rest, kubelet-ksm. If not set, it will be self-discovered)"`
 	IgnoreCerts         bool   `default:"false" help:"disables HTTPS certificate verification for metrics sources"`
 	Timeout             int    `default:"1000" help:"timeout in milliseconds for calling metrics sources"`
+	ClusterName         string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
 }
 
 const (
@@ -36,19 +37,21 @@ const (
 
 var args argumentList
 
-func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, logger *logrus.Logger) {
+func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) {
 	groups, errs := kubeletKSMGrouper.Group(kubeletSpecs)
 	for _, err := range errs {
 		logger.Warn("%s", err)
 	}
 
-	ok, err := data.NewK8sPopulator(logger).Populate(groups, kubeletKSMPopulateSpecs, i)
+	ok, err := data.NewK8sPopulator(logger).Populate(groups, kubeletKSMPopulateSpecs, i, clusterName)
 	fatalIfErr(err)
 
 	e, err := i.Entity("nr-errors", "error")
 	fatalIfErr(err)
 	for _, err := range errs {
-		e.NewMetricSet("k8sDebugErrors").SetMetric("error", err.Error(), metric.ATTRIBUTE)
+		ms := e.NewMetricSet("K8sDebugErrors")
+		ms.SetMetric("error", err.Error(), metric.ATTRIBUTE)
+		ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
 	}
 
 	if !ok {
@@ -57,7 +60,7 @@ func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, log
 	}
 }
 
-func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i *sdk.IntegrationProtocol2, logger *logrus.Logger) {
+func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) {
 	kubeletKSMGroups, errs := kubeletKSMGrouper.Group(kubeletSpecs)
 	g := data.NewKubeletKSMAndRestGrouper(kubeletKSMGroups, ksmMetricsURL, prometheusRestQueries, logger)
 	groups, errs := g.Group(ksmRestSpecs)
@@ -65,13 +68,15 @@ func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i
 		logger.Warn("%s", err)
 	}
 
-	ok, err := data.NewK8sPopulator(logger).Populate(groups, kubeletKSMAndRestPopulateSpecs, i)
+	ok, err := data.NewK8sPopulator(logger).Populate(groups, kubeletKSMAndRestPopulateSpecs, i, clusterName)
 	fatalIfErr(err)
 
 	e, err := i.Entity("nr-errors", "error")
 	fatalIfErr(err)
 	for _, err := range errs {
-		e.NewMetricSet("k8sDebugErrors").SetMetric("error", err.Error(), metric.ATTRIBUTE)
+		ms := e.NewMetricSet("K8sDebugErrors")
+		ms.SetMetric("error", err.Error(), metric.ATTRIBUTE)
+		ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
 	}
 
 	if !ok {
@@ -82,9 +87,11 @@ func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i
 
 func main() {
 	defer log.Debug("Integration '%s' exited", integrationName)
-
-	integration, err := sdk.NewIntegrationProtocol2(integrationName, integrationVersion, &args)
 	log.Debug("Integration '%s' with version %s started", integrationName, integrationVersion)
+	if args.ClusterName == "" {
+		log.Fatal(errors.New("cluster_name argument is mandatory"))
+	}
+	integration, err := sdk.NewIntegrationProtocol2(integrationName, integrationVersion, &args)
 	fatalIfErr(err)
 
 	var ksmDiscoverer endpoints.Discoverer
@@ -177,9 +184,9 @@ func main() {
 		switch role {
 		case "kubelet-ksm-rest":
 			// todo fix pointers indirection stuff
-			kubeletKSMAndRest(kubeletKSMGrouper, ksmURL, integration, logger)
+			kubeletKSMAndRest(kubeletKSMGrouper, ksmURL, integration, args.ClusterName, logger)
 		case "kubelet-ksm":
-			kubeletKSM(kubeletKSMGrouper, integration, logger)
+			kubeletKSM(kubeletKSMGrouper, integration, args.ClusterName, logger)
 		}
 	}
 
