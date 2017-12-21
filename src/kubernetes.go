@@ -14,6 +14,7 @@ import (
 	kubeletEndpoints "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/endpoints"
 	sdkArgs "github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/newrelic/infra-integrations-sdk/log"
+	"github.com/newrelic/infra-integrations-sdk/metric"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
 )
 
@@ -44,6 +45,12 @@ func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, log
 	ok, err := data.NewK8sPopulator(logger).Populate(groups, kubeletKSMPopulateSpecs, i)
 	fatalIfErr(err)
 
+	e, err := i.Entity("nr-errors", "error")
+	fatalIfErr(err)
+	for _, err := range errs {
+		e.NewMetricSet("k8sDebugErrors").SetMetric("error", err.Error(), metric.ATTRIBUTE)
+	}
+
 	if !ok {
 		// TODO better error
 		log.Fatal(errors.New("no data was populated"))
@@ -60,6 +67,12 @@ func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i
 
 	ok, err := data.NewK8sPopulator(logger).Populate(groups, kubeletKSMAndRestPopulateSpecs, i)
 	fatalIfErr(err)
+
+	e, err := i.Entity("nr-errors", "error")
+	fatalIfErr(err)
+	for _, err := range errs {
+		e.NewMetricSet("k8sDebugErrors").SetMetric("error", err.Error(), metric.ATTRIBUTE)
+	}
 
 	if !ok {
 		// TODO better error

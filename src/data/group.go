@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"fmt"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
@@ -61,7 +63,7 @@ func (r *ksmGrouper) Group(specGroups definition.SpecGroups) (definition.RawGrou
 
 	mFamily, err := prometheus.Do(r.kubeletURL.String(), r.queries)
 	if err != nil {
-		return nil, []error{err}
+		return nil, []error{fmt.Errorf("error querying KSM. %s", err)}
 	}
 
 	return ksmMetric.GroupPrometheusMetricsBySpec(specGroups, mFamily)
@@ -88,7 +90,7 @@ func (r *kubelet) Group(definition.SpecGroups) (definition.RawGroups, []error) {
 	r.logger.Debug("Getting metrics data from: %v", urlString)
 	response, err := kubeletMetric.GetMetricsData(r.httpClient, urlString)
 	if err != nil {
-		return nil, []error{err}
+		return nil, []error{fmt.Errorf("error querying Kubelet. %s", err)}
 	}
 
 	return kubeletMetric.GroupStatsSummary(response)
