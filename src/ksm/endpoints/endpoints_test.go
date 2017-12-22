@@ -150,3 +150,26 @@ func TestKsmDiscoverer_NodeIP(t *testing.T) {
 	// And the nodeIP is correctly returned
 	assert.Equal(t, "6.7.8.9", nodeIP)
 }
+
+func TestKsmDiscoverer_NodeIP_MultiplePods(t *testing.T) {
+	// Given a client
+	client := new(endpoints2.MockedClient)
+	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
+		Return(&v1.PodList{Items: []v1.Pod{
+			{Status: v1.PodStatus{HostIP: "6.7.8.9"}},
+			{Status: v1.PodStatus{HostIP: "162.178.1.1"}},
+			{Status: v1.PodStatus{HostIP: "4.3.2.1"}},
+		}}, nil)
+
+	// and an Discoverer implementation
+	endpoints := ksmDiscoverer{
+		client: client,
+	}
+
+	// When getting the Node IP
+	nodeIP, err := endpoints.NodeIP()
+	// The call works correctly
+	assert.Nil(t, err, "should not return error")
+	// And the nodeIP is correctly returned
+	assert.Equal(t, "162.178.1.1", nodeIP)
+}
