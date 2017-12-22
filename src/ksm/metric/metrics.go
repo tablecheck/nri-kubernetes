@@ -8,6 +8,7 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
 	"github.com/newrelic/infra-integrations-sdk/metric"
+	"github.com/newrelic/infra-integrations-sdk/sdk"
 )
 
 const (
@@ -15,7 +16,7 @@ const (
 )
 
 // K8sMetricSetTypeGuesser is the metric set type guesser for k8s integrations.
-func K8sMetricSetTypeGuesser(groupLabel, _ string, _ definition.RawGroups) (string, error) {
+func K8sMetricSetTypeGuesser(_, groupLabel, _ string, _ definition.RawGroups) (string, error) {
 	return fmt.Sprintf("K8s%vSample", strings.Title(groupLabel)), nil
 }
 
@@ -73,25 +74,30 @@ func ksmNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroup
 }
 
 // K8sMetricSetEntityTypeGuesser guesses the Entity Type given a group name, entity Id and a namespace fetcher function
-func K8sMetricSetEntityTypeGuesser(groupLabel, entityId string, groups definition.RawGroups) (string, error) {
+func K8sMetricSetEntityTypeGuesser(clusterName, groupLabel, entityId string, groups definition.RawGroups) (string, error) {
 	var actualGroupLabel string
 	switch groupLabel {
 	case "namespace":
-		return fmt.Sprintf("k8s:namespace"), nil
+		return fmt.Sprintf("k8s:%s:namespace", clusterName), nil
 	case "container":
 		actualGroupLabel = "pod"
 	default:
 		actualGroupLabel = groupLabel
 	}
 	ns, err := kubeletKSMNamespaceFetcher(groupLabel, entityId, groups)
-	return fmt.Sprintf("k8s:%s:%s", ns, actualGroupLabel), err
+	return fmt.Sprintf("k8s:%s:%s:%s", clusterName, ns, actualGroupLabel), err
 }
 
-// K8sMetricsNamingManipulator modifies the MetricSet displayName and entityName, taken from the entity.name and
-// entity.type properties
-func K8sMetricsNamingManipulator(entityName, entityType string, ms metric.MetricSet) {
-	ms.SetMetric("displayName", entityName, metric.ATTRIBUTE)
-	ms.SetMetric("entityName", fmt.Sprintf("%s:%s", entityType, entityName), metric.ATTRIBUTE)
+func K8sClusterMetricsManipulator(ms metric.MetricSet, _ sdk.Entity, clusterName string) {
+	ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
+}
+
+// K8sEntityMetricsManipulator adds 'displayName' and 'entityName' metrics to
+// the MetricSet displayName and entityName, taking values from entity.name and
+// entity.type
+func K8sEntityMetricsManipulator(ms metric.MetricSet, entity sdk.Entity, _ string) {
+	ms.SetMetric("displayName", entity.Name, metric.ATTRIBUTE)
+	ms.SetMetric("entityName", fmt.Sprintf("%s:%s", entity.Type, entity.Name), metric.ATTRIBUTE)
 }
 
 // FromPrometheusLabelValueEntityIDGenerator generates an entityID from the pod name. It's only used for k8s containers.

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -100,14 +101,14 @@ func (sd ksmDiscoverer) NodeIP() (string, error) {
 	}
 	// In case there are multiple pods for the same service, we must be sure we always show the Node IP of the
 	// same pod. So we chose, for example, the HostIp with highest precedence in alphabetical order
-	hostIP := ""
+	var hostIP string
 	for _, pod := range pods.Items {
 		if pod.Status.HostIP != "" && (hostIP == "" || strings.Compare(pod.Status.HostIP, hostIP) < 0) {
 			hostIP = pod.Status.HostIP
 		}
 	}
 	if hostIP == "" {
-		return "", fmt.Errorf("no InternalIP address found for KSM node")
+		return "", errors.New("no HostIP address found for KSM node")
 	}
 	return hostIP, nil
 }

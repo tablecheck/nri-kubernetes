@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"fmt"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
@@ -19,15 +21,15 @@ type Grouper interface {
 }
 
 type Populator interface {
-	Populate(definition.RawGroups, definition.SpecGroups, *sdk.IntegrationProtocol2) (bool, error)
+	Populate(definition.RawGroups, definition.SpecGroups, *sdk.IntegrationProtocol2, string) (bool, error)
 }
 
 type k8sPopulator struct {
 	logger *logrus.Logger
 }
 
-func (p *k8sPopulator) Populate(groups definition.RawGroups, specGroups definition.SpecGroups, i *sdk.IntegrationProtocol2) (bool, error) {
-	populatorFunc := definition.IntegrationProtocol2PopulateFunc(i, ksmMetric.K8sMetricSetTypeGuesser, ksmMetric.K8sMetricSetEntityTypeGuesser, ksmMetric.K8sMetricsNamingManipulator)
+func (p *k8sPopulator) Populate(groups definition.RawGroups, specGroups definition.SpecGroups, i *sdk.IntegrationProtocol2, clusterName string) (bool, error) {
+	populatorFunc := definition.IntegrationProtocol2PopulateFunc(i, clusterName, ksmMetric.K8sMetricSetTypeGuesser, ksmMetric.K8sMetricSetEntityTypeGuesser, ksmMetric.K8sEntityMetricsManipulator, ksmMetric.K8sClusterMetricsManipulator)
 	ok, errs := populatorFunc(groups, specGroups)
 
 	if len(errs) > 0 {
@@ -61,7 +63,7 @@ func (r *ksmGrouper) Group(specGroups definition.SpecGroups) (definition.RawGrou
 
 	mFamily, err := prometheus.Do(r.kubeletURL.String(), r.queries)
 	if err != nil {
-		return nil, []error{err}
+		return nil, []error{fmt.Errorf("error querying KSM. %s", err)}
 	}
 
 	return ksmMetric.GroupPrometheusMetricsBySpec(specGroups, mFamily)
@@ -88,7 +90,7 @@ func (r *kubelet) Group(definition.SpecGroups) (definition.RawGroups, []error) {
 	r.logger.Debug("Getting metrics data from: %v", urlString)
 	response, err := kubeletMetric.GetMetricsData(r.httpClient, urlString)
 	if err != nil {
-		return nil, []error{err}
+		return nil, []error{fmt.Errorf("error querying Kubelet. %s", err)}
 	}
 
 	return kubeletMetric.GroupStatsSummary(response)

@@ -7,6 +7,8 @@ import (
 
 	"time"
 
+	"fmt"
+
 	"github.com/matttproud/golang_protobuf_extensions/pbutil"
 	prometheus "github.com/prometheus/client_model/go"
 )
@@ -89,7 +91,6 @@ func valueFromPrometheus(metricType prometheus.MetricType, metric *prometheus.Me
 
 // Do is the main entry point. It runs queries agains the Prometheus metrics provided by the endpoint.
 func Do(endpoint string, queries []Query) ([]MetricFamily, error) {
-
 	r, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err
@@ -98,11 +99,13 @@ func Do(endpoint string, queries []Query) ([]MetricFamily, error) {
 	r.Header.Set("Accept", acceptHeader)
 
 	c := http.DefaultClient
-	c.Timeout = 5 * time.Second
+
+	// TODO pass as argument
+	c.Timeout = 15 * time.Second
 
 	resp, err := c.Do(r)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error during the request to %q. %s", endpoint, err)
 	}
 
 	defer resp.Body.Close()
