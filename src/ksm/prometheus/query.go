@@ -101,7 +101,7 @@ func Do(endpoint string, queries []Query) ([]MetricFamily, error) {
 	c := http.DefaultClient
 
 	// TODO pass as argument
-	c.Timeout = 5 * time.Second
+	c.Timeout = 15 * time.Second
 
 	resp, err := c.Do(r)
 	if err != nil {
