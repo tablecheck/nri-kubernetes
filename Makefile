@@ -2,6 +2,7 @@ INTEGRATION  := $(shell basename $(shell pwd))
 BINARY_NAME   = nr-$(INTEGRATION)
 GO_PKGS      := $(shell go list ./... | grep -v "/vendor/")
 GO_FILES     := $(shell find src -type f -name "*.go")
+DEPS          = github.com/kardianos/govendor
 VALIDATE_DEPS = github.com/golang/lint/golint
 TEST_DEPS     = github.com/axw/gocov/gocov github.com/AlekSi/gocov-xml
 
@@ -9,7 +10,7 @@ all: build
 
 build: clean validate compile test
 
-clean:        
+clean:
 	@echo "=== $(INTEGRATION) === [ clean ]: removing binaries and coverage file..."
 	@rm -rfv bin coverage.xml
 
@@ -52,7 +53,8 @@ validate: validate-deps validate-only
 
 compile-deps:
 	@echo "=== $(INTEGRATION) === [ compile-deps ]: installing build dependencies..."
-	@go get -v -d -t ./...
+	@go get $(DEPS)
+	@govendor sync
 
 compile-only:
 	@echo "=== $(INTEGRATION) === [ compile ]: building $(BINARY_NAME)..."
