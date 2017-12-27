@@ -244,6 +244,54 @@ func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
 	assert.Contains(t, integration.Data, &expectedEntityData2)
 }
 
+func TestIntegrationProtocol2PopulateFunc_PopulateOnlySpecifiedGroups(t *testing.T) {
+	groups := rawGroups
+
+	// We don't want to populate replicaset
+	groups["replicaset"] = rawGroupWithReplicaSet["replicaset"]
+
+	integration, err := sdk.NewIntegrationProtocol2("nr.test", "1.0.0", new(struct{}))
+	if err != nil {
+		t.Fatal()
+	}
+	expectedEntityData1, err := sdk.NewEntityData("fluentd-elasticsearch-jnqb7", "k8s:playground:kube-system:pod")
+	if err != nil {
+		t.Fatal()
+	}
+	expectedMetricSet1 := metric.MetricSet{
+		"event_type":        "K8sPodSample",
+		"podStartTime":      prometheus.GaugeValue(1507117436),
+		"podInfo.namespace": "kube-system",
+		"podInfo.pod":       "fluentd-elasticsearch-jnqb7",
+		"displayName":       "fluentd-elasticsearch-jnqb7",
+		"entityName":        "k8s:playground:kube-system:pod:fluentd-elasticsearch-jnqb7",
+		"clusterName":       "playground",
+	}
+	expectedEntityData1.Metrics = []metric.MetricSet{expectedMetricSet1}
+
+	expectedEntityData2, err := sdk.NewEntityData("newrelic-infra-monitoring-cglrn", "k8s:playground:kube-system:pod")
+	if err != nil {
+		t.Fatal()
+	}
+	expectedMetricSet2 := metric.MetricSet{
+		"event_type":        "K8sPodSample",
+		"podStartTime":      prometheus.GaugeValue(1510579152),
+		"podInfo.namespace": "kube-system",
+		"podInfo.pod":       "newrelic-infra-monitoring-cglrn",
+		"displayName":       "newrelic-infra-monitoring-cglrn",
+		"entityName":        "k8s:playground:kube-system:pod:newrelic-infra-monitoring-cglrn",
+		"clusterName":       "playground",
+	}
+	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
+
+	populated, errs := definition.IntegrationProtocol2PopulateFunc(integration, defaultNS, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser, K8sEntityMetricsManipulator, K8sClusterMetricsManipulator)(groups, specs)
+	assert.True(t, populated)
+	assert.Empty(t, errs)
+	assert.Contains(t, integration.Data, &expectedEntityData1)
+	assert.Contains(t, integration.Data, &expectedEntityData2)
+	assert.Len(t, integration.Data, 2)
+}
+
 func TestIntegrationProtocol2PopulateFunc_PartialResult(t *testing.T) {
 	var metricDefWithIncompatibleType = definition.SpecGroups{
 		"pod": {

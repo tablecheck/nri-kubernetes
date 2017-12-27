@@ -180,7 +180,7 @@ func main() {
 				ksmURL,
 				netClient,
 				prometheusPodsAndContainerQueries,
-				ksmPodAndContainerSpecs,
+				ksmPodAndContainerGroupSpecs,
 				logger,
 				ksmMetric.UnscheduledItemsPatcher,
 			)
@@ -194,7 +194,7 @@ func main() {
 				ksmURL,
 				netClient,
 				prometheusPodsAndContainerQueries,
-				ksmPodAndContainerSpecs,
+				ksmPodAndContainerGroupSpecs,
 				logger,
 			)
 

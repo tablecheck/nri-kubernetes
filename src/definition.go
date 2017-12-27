@@ -8,7 +8,7 @@ import (
 	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
 )
 
-var ksmPodAndContainerSpecs = definition.SpecGroups{
+var ksmPodAndContainerGroupSpecs = definition.SpecGroups{
 	"pod": {
 		IDGenerator: metric.FromPrometheusLabelValueEntityIDGenerator("kube_pod_info", "pod"),
 		Specs: []definition.Spec{
@@ -57,6 +57,7 @@ var ksmPodAndContainerSpecs = definition.SpecGroups{
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("pod", "kube_pod_labels"), sdkMetric.ATTRIBUTE},
 		},
 	},
+	"namespace": ksmRestSpecs["namespace"], // Needed for labels inheritance
 }
 
 var ksmRestSpecs = definition.SpecGroups{
@@ -163,6 +164,10 @@ var prometheusPodsAndContainerQueries = []prometheus.Query{
 		MetricName: "kube_pod_container_status_waiting_reason",
 		Value:      prometheus.GaugeValue(1),
 	},
+	{
+		MetricName: "kube_namespace_labels", // Needed for labels inheritance
+		Value:      prometheus.GaugeValue(1),
+	},
 }
 
 var prometheusRestQueries = []prometheus.Query{
@@ -248,11 +253,11 @@ var kubeletSpecs = definition.SpecGroups{
 var kubeletKSMPopulateSpecs = definition.SpecGroups{
 	"pod": {
 		IDGenerator: kubeletSpecs["pod"].IDGenerator,
-		Specs:       append(kubeletSpecs["pod"].Specs, ksmPodAndContainerSpecs["pod"].Specs...),
+		Specs:       append(kubeletSpecs["pod"].Specs, ksmPodAndContainerGroupSpecs["pod"].Specs...),
 	},
 	"container": {
 		IDGenerator: kubeletSpecs["container"].IDGenerator,
-		Specs:       append(kubeletSpecs["container"].Specs, ksmPodAndContainerSpecs["container"].Specs...),
+		Specs:       append(kubeletSpecs["container"].Specs, ksmPodAndContainerGroupSpecs["container"].Specs...),
 	},
 }
 

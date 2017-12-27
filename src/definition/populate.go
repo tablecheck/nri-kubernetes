@@ -34,6 +34,12 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName s
 		var errs []error
 		for groupLabel, entities := range groups {
 			for entityID := range entities {
+
+				// Only populate specified groups.
+				if _, ok := specs[groupLabel]; !ok {
+					continue
+				}
+
 				msEntityID := entityID
 				if generator := specs[groupLabel].IDGenerator; generator != nil {
 					generatedEntityID, err := generator(groupLabel, entityID, groups)

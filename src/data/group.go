@@ -134,7 +134,7 @@ func (r *kubeletKSMGrouper) Group(specGroups definition.SpecGroups) (definition.
 		r.groupPatcher(groups, ksmGroups)
 	}
 
-	fillGroups(groups, ksmGroups)
+	fillGroupsAndMergeNonExistent(groups, ksmGroups)
 
 	return groups, errs
 }
@@ -184,16 +184,21 @@ func NewKubeletKSMAndRestGrouper(kubeletKSMGroups definition.RawGroups, ksmMetri
 	}
 }
 
-func fillGroups(destination definition.RawGroups, from definition.RawGroups) {
-	for l, g := range destination {
-		if fromGroup, ok := from[l]; ok {
-			for entityID, e := range fromGroup {
-				if _, ok := g[entityID]; !ok {
-					continue
-				}
+func fillGroupsAndMergeNonExistent(destination definition.RawGroups, from definition.RawGroups) {
+	for l, g := range from {
+		if _, ok := destination[l]; !ok {
+			destination[l] = g
+			continue
+		}
 
-				for k, v := range e {
-					g[entityID][k] = v
+		for entityID, e := range destination[l] {
+			if _, ok := g[entityID]; !ok {
+				continue
+			}
+
+			for k, v := range g[entityID] {
+				if _, ok := e[k]; !ok {
+					e[k] = v
 				}
 			}
 		}
