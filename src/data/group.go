@@ -9,17 +9,18 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 	ksmMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
 	kubeletMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
 )
 
+// Grouper groups raw data by any desired label such object (pod, container...).
 type Grouper interface {
 	Group(definition.SpecGroups) (definition.RawGroups, []error)
 }
 
+// Populator populates a given integration with grouped raw data.
 type Populator interface {
 	Populate(definition.RawGroups, definition.SpecGroups, *sdk.IntegrationProtocol2, string) (bool, error)
 }
@@ -49,6 +50,7 @@ func (p *k8sPopulator) Populate(groups definition.RawGroups, specGroups definiti
 	return true, nil
 }
 
+// NewK8sPopulator creates a Kubernetes aware populator.
 func NewK8sPopulator(logger *logrus.Logger) Populator {
 	return &k8sPopulator{
 		logger: logger,
@@ -72,7 +74,7 @@ func (r *ksmGrouper) Group(specGroups definition.SpecGroups) (definition.RawGrou
 	return ksmMetric.GroupPrometheusMetricsBySpec(specGroups, mFamily)
 }
 
-// NewKSM returns an executor for only KSM metrics.
+// NewKSMGrouper creates a grouper aware of Kube State Metrics raw metrics.
 func NewKSMGrouper(kubeletURL *url.URL, queries []prometheus.Query, logger *logrus.Logger) Grouper {
 	return &ksmGrouper{
 		kubeletURL: kubeletURL,
@@ -82,10 +84,9 @@ func NewKSMGrouper(kubeletURL *url.URL, queries []prometheus.Query, logger *logr
 }
 
 type kubelet struct {
-	metricsURL        *url.URL
-	httpClient        *http.Client
-	kubeletDiscoverer endpoints.Discoverer
-	logger            *logrus.Logger
+	metricsURL *url.URL
+	httpClient *http.Client
+	logger     *logrus.Logger
 }
 
 func (r *kubelet) Group(definition.SpecGroups) (definition.RawGroups, []error) {
@@ -99,7 +100,7 @@ func (r *kubelet) Group(definition.SpecGroups) (definition.RawGroups, []error) {
 	return kubeletMetric.GroupStatsSummary(response)
 }
 
-// NewKubelet returns an executor for only local kubelet metrics.
+// NewKubeletGrouper creates a grouper aware of Kubelet raw metrics.
 func NewKubeletGrouper(metricsURL *url.URL, httpClient *http.Client, logger *logrus.Logger) Grouper {
 	return &kubelet{
 		metricsURL: metricsURL,
@@ -139,10 +140,14 @@ func (r *kubeletKSMGrouper) Group(specGroups definition.SpecGroups) (definition.
 	return groups, errs
 }
 
+// NewKubeletKSMGrouper creates a grouper that merges groups provided by the
+// kubelet and ksm groupers.
 func NewKubeletKSMGrouper(kubeletURL, ksmMetricsURL *url.URL, c *http.Client, ksmPodAndContainerQueries []prometheus.Query, ksmSpecGroups definition.SpecGroups, logger *logrus.Logger) Grouper {
 	return NewKubeletKSMPatchedGrouper(kubeletURL, ksmMetricsURL, c, ksmPodAndContainerQueries, ksmSpecGroups, logger, nil)
 }
 
+// NewKubeletKSMPatchedGrouper creates a grouper that merges groups provided by
+// the kubeletKSMAndRestGrouper plus some missing ksm raw metrics.
 func NewKubeletKSMPatchedGrouper(kubeletURL, ksmMetricsURL *url.URL, c *http.Client, ksmPodAndContainerQueries []prometheus.Query, ksmSpecGroups definition.SpecGroups, logger *logrus.Logger, patcher GroupPatcher) Grouper {
 	return &kubeletKSMGrouper{
 		ksmMetricsURL:     ksmMetricsURL,
@@ -175,6 +180,8 @@ func (r *kubeletKSMAndRestGrouper) Group(specGroups definition.SpecGroups) (defi
 	return ksmGroups, errs
 }
 
+// NewKubeletKSMAndRestGrouper creates a grouper that merges groups provided by
+// the kubelet and ksm groupers plus some additional ksm raw metrics.
 func NewKubeletKSMAndRestGrouper(kubeletKSMGroups definition.RawGroups, ksmMetricsURL *url.URL, ksmRestQueries []prometheus.Query, logger *logrus.Logger) Grouper {
 	return &kubeletKSMAndRestGrouper{
 		kubeletKSMRawGroups: kubeletKSMGroups,

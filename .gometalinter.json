@@ -1,0 +1,3 @@
+{
+  "Enable": ["deadcode", "errcheck", "gofmt", "golint", "goimports", "interfacer", "gosimple"]
+}

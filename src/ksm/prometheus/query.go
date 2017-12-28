@@ -108,7 +108,7 @@ func Do(endpoint string, queries []Query) ([]MetricFamily, error) {
 		return nil, fmt.Errorf("error during the request to %q. %s", endpoint, err)
 	}
 
-	defer resp.Body.Close()
+	defer resp.Body.Close() // nolint: errcheck
 
 	metrics := make([]MetricFamily, 0)
 	for {

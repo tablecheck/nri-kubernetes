@@ -51,8 +51,14 @@ func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clu
 	fatalIfErr(err)
 	for _, err := range errs {
 		ms := e.NewMetricSet("K8sDebugErrors")
-		ms.SetMetric("error", err.Error(), metric.ATTRIBUTE)
-		ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
+		mserr := ms.SetMetric("error", err.Error(), metric.ATTRIBUTE)
+		if mserr != nil {
+			logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "error", "K8sDebugErrors", mserr)
+		}
+		mserr = ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
+		if mserr != nil {
+			logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "clusterName", "K8sDebugErrors", mserr)
+		}
 	}
 
 	if !ok {
@@ -63,6 +69,9 @@ func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clu
 
 func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) {
 	kubeletKSMGroups, errs := kubeletKSMGrouper.Group(kubeletSpecs)
+	for _, err := range errs {
+		logger.Warn("%s", err)
+	}
 	g := data.NewKubeletKSMAndRestGrouper(kubeletKSMGroups, ksmMetricsURL, prometheusRestQueries, logger)
 	groups, errs := g.Group(ksmRestSpecs)
 	for _, err := range errs {
@@ -76,8 +85,14 @@ func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i
 	fatalIfErr(err)
 	for _, err := range errs {
 		ms := e.NewMetricSet("K8sDebugErrors")
-		ms.SetMetric("error", err.Error(), metric.ATTRIBUTE)
-		ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
+		mserr := ms.SetMetric("error", err.Error(), metric.ATTRIBUTE)
+		if mserr != nil {
+			logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "error", "K8sDebugErrors", mserr)
+		}
+		mserr = ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
+		if mserr != nil {
+			logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "clusterName", "K8sDebugErrors", mserr)
+		}
 	}
 
 	if !ok {

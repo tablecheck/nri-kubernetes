@@ -74,7 +74,7 @@ func (ka goClientImpl) IsHTTPS(url string) bool {
 	if err != nil {
 		return false
 	}
-	resp.Body.Close()
+	resp.Body.Close() // nolint: errcheck
 
 	return resp.TLS != nil
 }

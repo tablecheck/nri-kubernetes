@@ -59,7 +59,7 @@ func GetMetricsData(netClient *http.Client, URL string) (*Summary, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error trying to connect to '%s'. Got error: %v", URL, err.Error())
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() // nolint: errcheck
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

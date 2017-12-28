@@ -25,7 +25,7 @@ func FromGroupMetricSetEntitTypeGuessFunc(_, groupLabel, _ string, _ RawGroups) 
 type PopulateFunc func(RawGroups, SpecGroups) (bool, []error)
 
 // MetricSetManipulator manipulates the MetricSet for a given entity and clusterName
-type MetricSetManipulator func(ms metric.MetricSet, entity sdk.Entity, clusterName string)
+type MetricSetManipulator func(ms metric.MetricSet, entity sdk.Entity, clusterName string) error
 
 // IntegrationProtocol2PopulateFunc populates an integration protocol v2 with the given metrics and definition.
 func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName string, msTypeGuesser, msEntityTypeGuesser GuessFunc, msManipulators ...MetricSetManipulator) PopulateFunc {
@@ -70,7 +70,11 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName s
 
 				ms := metric.NewMetricSet(msType)
 				for _, m := range msManipulators {
-					m(ms, e.Entity, clusterName)
+					err = m(ms, e.Entity, clusterName)
+					if err != nil {
+						errs = append(errs, err)
+						continue
+					}
 				}
 
 				wasPopulated, populateErrs := metricSetPopulateFunc(ms, groupLabel, entityID)(groups, specs)

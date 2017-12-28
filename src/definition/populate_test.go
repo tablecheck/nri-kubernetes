@@ -59,13 +59,16 @@ func fromMultiple(values FetchedValues) FetchFunc {
 	}
 }
 
-func clusterMetricsManipulator(ms metric.MetricSet, entity sdk.Entity, clusterName string) {
-	ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
+func clusterMetricsManipulator(ms metric.MetricSet, entity sdk.Entity, clusterName string) error {
+	return ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
 }
 
-func metricsNamingManipulator(ms metric.MetricSet, entity sdk.Entity, clusterName string) {
-	ms.SetMetric("displayName", entity.Name, metric.ATTRIBUTE)
-	ms.SetMetric("entityName", fmt.Sprintf("%s:%s:%s", clusterName, entity.Type, entity.Name), metric.ATTRIBUTE)
+func metricsNamingManipulator(ms metric.MetricSet, entity sdk.Entity, clusterName string) error {
+	err := ms.SetMetric("displayName", entity.Name, metric.ATTRIBUTE)
+	if err != nil {
+		return err
+	}
+	return ms.SetMetric("entityName", fmt.Sprintf("%s:%s:%s", clusterName, entity.Type, entity.Name), metric.ATTRIBUTE)
 }
 
 func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {

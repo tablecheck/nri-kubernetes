@@ -20,15 +20,13 @@ func K8sMetricSetTypeGuesser(_, groupLabel, _ string, _ definition.RawGroups) (s
 	return fmt.Sprintf("K8s%vSample", strings.Title(groupLabel)), nil
 }
 
-type namespaceFetcher func(groupLabel, entityId string, groups definition.RawGroups) (string, error)
-
 // KubeletKSMNamespaceFetcher fetches the namespace from the RawGroups information trying both Kubelet and KSM
-func kubeletKSMNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) (string, error) {
-	ns, err1 := kubeletNamespaceFetcher(groupLabel, entityId, groups)
+func kubeletKSMNamespaceFetcher(groupLabel, entityID string, groups definition.RawGroups) (string, error) {
+	ns, err1 := kubeletNamespaceFetcher(groupLabel, entityID, groups)
 	if err1 == nil {
 		return ns, nil
 	}
-	ns, err2 := ksmNamespaceFetcher(groupLabel, entityId, groups)
+	ns, err2 := ksmNamespaceFetcher(groupLabel, entityID, groups)
 	if err2 == nil {
 		return ns, nil
 	}
@@ -36,19 +34,19 @@ func kubeletKSMNamespaceFetcher(groupLabel, entityId string, groups definition.R
 }
 
 // kubeletNamespaceFetcher fetches the namespace from a Kubelet RawGroups information
-func kubeletNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) (string, error) {
+func kubeletNamespaceFetcher(groupLabel, entityID string, groups definition.RawGroups) (string, error) {
 	gl, ok := groups[groupLabel]
 	if !ok {
 		return unknownNamespace, fmt.Errorf("no grouplabel %q found", groupLabel)
 	}
-	en, ok := gl[entityId]
+	en, ok := gl[entityID]
 	if !ok {
-		return unknownNamespace, fmt.Errorf("no entityId %q found for grouplabel %q", entityId, groupLabel)
+		return unknownNamespace, fmt.Errorf("no entityID %q found for grouplabel %q", entityID, groupLabel)
 	}
 
 	ns, ok := en["namespace"]
 	if !ok {
-		return unknownNamespace, fmt.Errorf("no namespace found for groupLabel %q and entityId %q", groupLabel, entityId)
+		return unknownNamespace, fmt.Errorf("no namespace found for groupLabel %q and entityID %q", groupLabel, entityID)
 	}
 	return ns.(string), nil
 }
@@ -62,19 +60,19 @@ var nsKeyForGroup = map[string]string{
 }
 
 // ksmNamespaceFetcher fetches the namespace from a KSM RawGroups information
-func ksmNamespaceFetcher(groupLabel, entityId string, groups definition.RawGroups) (string, error) {
-	ns, err := FromPrometheusLabelValue(nsKeyForGroup[groupLabel], "namespace")(groupLabel, entityId, groups)
+func ksmNamespaceFetcher(groupLabel, entityID string, groups definition.RawGroups) (string, error) {
+	ns, err := FromPrometheusLabelValue(nsKeyForGroup[groupLabel], "namespace")(groupLabel, entityID, groups)
 	if err != nil {
-		return unknownNamespace, fmt.Errorf("error fetching namespace for groupLabel %q and entityId %q: %v", groupLabel, entityId, err.Error())
+		return unknownNamespace, fmt.Errorf("error fetching namespace for groupLabel %q and entityID %q: %v", groupLabel, entityID, err.Error())
 	}
 	if ns == nil {
-		return unknownNamespace, fmt.Errorf("namespace not found for groupLabel %q and entityId %q", groupLabel, entityId)
+		return unknownNamespace, fmt.Errorf("namespace not found for groupLabel %q and entityID %q", groupLabel, entityID)
 	}
 	return ns.(string), nil
 }
 
 // K8sMetricSetEntityTypeGuesser guesses the Entity Type given a group name, entity Id and a namespace fetcher function
-func K8sMetricSetEntityTypeGuesser(clusterName, groupLabel, entityId string, groups definition.RawGroups) (string, error) {
+func K8sMetricSetEntityTypeGuesser(clusterName, groupLabel, entityID string, groups definition.RawGroups) (string, error) {
 	var actualGroupLabel string
 	switch groupLabel {
 	case "namespace":
@@ -84,20 +82,24 @@ func K8sMetricSetEntityTypeGuesser(clusterName, groupLabel, entityId string, gro
 	default:
 		actualGroupLabel = groupLabel
 	}
-	ns, err := kubeletKSMNamespaceFetcher(groupLabel, entityId, groups)
+	ns, err := kubeletKSMNamespaceFetcher(groupLabel, entityID, groups)
 	return fmt.Sprintf("k8s:%s:%s:%s", clusterName, ns, actualGroupLabel), err
 }
 
-func K8sClusterMetricsManipulator(ms metric.MetricSet, _ sdk.Entity, clusterName string) {
-	ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
+// K8sClusterMetricsManipulator adds 'clusterName' metric to the MetricSet 'ms',
+// taking the value from 'clusterName' argument.
+func K8sClusterMetricsManipulator(ms metric.MetricSet, _ sdk.Entity, clusterName string) error {
+	return ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
 }
 
 // K8sEntityMetricsManipulator adds 'displayName' and 'entityName' metrics to
-// the MetricSet displayName and entityName, taking values from entity.name and
-// entity.type
-func K8sEntityMetricsManipulator(ms metric.MetricSet, entity sdk.Entity, _ string) {
-	ms.SetMetric("displayName", entity.Name, metric.ATTRIBUTE)
-	ms.SetMetric("entityName", fmt.Sprintf("%s:%s", entity.Type, entity.Name), metric.ATTRIBUTE)
+// the MetricSet, taking values from entity.name and entity.type
+func K8sEntityMetricsManipulator(ms metric.MetricSet, entity sdk.Entity, _ string) error {
+	err := ms.SetMetric("displayName", entity.Name, metric.ATTRIBUTE)
+	if err != nil {
+		return err
+	}
+	return ms.SetMetric("entityName", fmt.Sprintf("%s:%s", entity.Type, entity.Name), metric.ATTRIBUTE)
 }
 
 // FromPrometheusLabelValueEntityIDGenerator generates an entityID from the pod name. It's only used for k8s containers.
