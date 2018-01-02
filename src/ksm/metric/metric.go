@@ -7,12 +7,9 @@ import (
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
+	parentMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/metric"
 	"github.com/newrelic/infra-integrations-sdk/metric"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
-)
-
-const (
-	unknownNamespace = "_unknown"
 )
 
 // K8sMetricSetTypeGuesser is the metric set type guesser for k8s integrations.
@@ -20,33 +17,20 @@ func K8sMetricSetTypeGuesser(_, groupLabel, _ string, _ definition.RawGroups) (s
 	return fmt.Sprintf("K8s%vSample", strings.Title(groupLabel)), nil
 }
 
-// KubeletKSMNamespaceFetcher fetches the namespace from the RawGroups information trying both Kubelet and KSM
-func kubeletKSMNamespaceFetcher(groupLabel, entityID string, groups definition.RawGroups) (string, error) {
-	ns, err1 := kubeletNamespaceFetcher(groupLabel, entityID, groups)
-	if err1 == nil {
-		return ns, nil
-	}
-	ns, err2 := ksmNamespaceFetcher(groupLabel, entityID, groups)
-	if err2 == nil {
-		return ns, nil
-	}
-	return unknownNamespace, fmt.Errorf("error fetching namespace: %q, %q", err1.Error(), err2.Error())
-}
-
 // kubeletNamespaceFetcher fetches the namespace from a Kubelet RawGroups information
 func kubeletNamespaceFetcher(groupLabel, entityID string, groups definition.RawGroups) (string, error) {
 	gl, ok := groups[groupLabel]
 	if !ok {
-		return unknownNamespace, fmt.Errorf("no grouplabel %q found", groupLabel)
+		return parentMetric.UnknownNamespace, fmt.Errorf("no grouplabel %q found", groupLabel)
 	}
 	en, ok := gl[entityID]
 	if !ok {
-		return unknownNamespace, fmt.Errorf("no entityID %q found for grouplabel %q", entityID, groupLabel)
+		return parentMetric.UnknownNamespace, fmt.Errorf("no entityID %q found for grouplabel %q", entityID, groupLabel)
 	}
 
 	ns, ok := en["namespace"]
 	if !ok {
-		return unknownNamespace, fmt.Errorf("no namespace found for groupLabel %q and entityID %q", groupLabel, entityID)
+		return parentMetric.UnknownNamespace, fmt.Errorf("no namespace found for groupLabel %q and entityID %q", groupLabel, entityID)
 	}
 	return ns.(string), nil
 }
@@ -63,10 +47,10 @@ var nsKeyForGroup = map[string]string{
 func ksmNamespaceFetcher(groupLabel, entityID string, groups definition.RawGroups) (string, error) {
 	ns, err := FromPrometheusLabelValue(nsKeyForGroup[groupLabel], "namespace")(groupLabel, entityID, groups)
 	if err != nil {
-		return unknownNamespace, fmt.Errorf("error fetching namespace for groupLabel %q and entityID %q: %v", groupLabel, entityID, err.Error())
+		return parentMetric.UnknownNamespace, fmt.Errorf("error fetching namespace for groupLabel %q and entityID %q: %v", groupLabel, entityID, err.Error())
 	}
 	if ns == nil {
-		return unknownNamespace, fmt.Errorf("namespace not found for groupLabel %q and entityID %q", groupLabel, entityID)
+		return parentMetric.UnknownNamespace, fmt.Errorf("namespace not found for groupLabel %q and entityID %q", groupLabel, entityID)
 	}
 	return ns.(string), nil
 }
@@ -82,7 +66,7 @@ func K8sMetricSetEntityTypeGuesser(clusterName, groupLabel, entityID string, gro
 	default:
 		actualGroupLabel = groupLabel
 	}
-	ns, err := kubeletKSMNamespaceFetcher(groupLabel, entityID, groups)
+	ns, err := parentMetric.MultipleNamespaceFetcher(groupLabel, entityID, groups, kubeletNamespaceFetcher, ksmNamespaceFetcher)
 	return fmt.Sprintf("k8s:%s:%s:%s", clusterName, ns, actualGroupLabel), err
 }
 
