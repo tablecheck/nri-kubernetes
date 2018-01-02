@@ -237,7 +237,7 @@ func InheritAllPrometheusLabelsFrom(parentGroupLabel, relatedMetricKey string) d
 
 		multiple := make(definition.FetchedValues)
 		for k, v := range parent.(prometheus.Metric).Labels {
-			multiple[fmt.Sprintf("label.%v", k)] = v
+			multiple[fmt.Sprintf("label.%v", strings.TrimPrefix(k, "label_"))] = v
 		}
 
 		return multiple, nil

@@ -967,7 +967,7 @@ func TestInheritAllPrometheusLabelsFrom_FromTheSameLabelGroup(t *testing.T) {
 	fetchedValue, err := InheritAllPrometheusLabelsFrom("deployment", "kube_deployment_labels")("deployment", deploymentRawEntityID, raw)
 	assert.NoError(t, err)
 
-	expectedValue := definition.FetchedValues{"label.deployment": "newrelic-infra-monitoring", "label.namespace": "kube-public", "label.label_app": "newrelic-infra-monitoring"}
+	expectedValue := definition.FetchedValues{"label.deployment": "newrelic-infra-monitoring", "label.namespace": "kube-public", "label.app": "newrelic-infra-monitoring"}
 	assert.Equal(t, expectedValue, fetchedValue)
 }
 func TestInheritAllPrometheusLabelsFrom_LabelNotFound(t *testing.T) {
