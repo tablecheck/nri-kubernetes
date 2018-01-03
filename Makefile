@@ -3,7 +3,7 @@ BINARY_NAME   = nr-$(INTEGRATION)
 GO_PKGS      := $(shell go list ./... | grep -v "/vendor/")
 GO_FILES     := $(shell find src -type f -name "*.go")
 GOTOOLS       = github.com/kardianos/govendor \
-		github.com/alecthomas/gometalinter \
+		gopkg.in/alecthomas/gometalinter.v2 \
 		github.com/axw/gocov/gocov \
 		github.com/AlekSi/gocov-xml \
 
@@ -18,12 +18,12 @@ clean:
 tools:
 	@echo "=== $(INTEGRATION) === [ tools ]: Installing tools required by the project..."
 	@go get $(GOTOOLS)
-	@gometalinter --install
+	@gometalinter.v2 --install
 
 tools-update:
 	@echo "=== $(INTEGRATION) === [ tools-update ]: Updating tools required by the project..."
 	@go get -u $(GOTOOLS)
-	@gometalinter --install
+	@gometalinter.v2 --install
 
 deps: tools
 	@echo "=== $(INTEGRATION) === [ deps ]: Installing package dependencies required by the project..."
@@ -31,7 +31,7 @@ deps: tools
 
 validate: deps
 	@echo "=== $(INTEGRATION) === [ validate ]: Validating source code running gometalinter..."
-	@gometalinter --config=.gometalinter.json ./...
+	@gometalinter.v2 --config=.gometalinter.json ./...
 
 compile: deps
 	@echo "=== $(INTEGRATION) === [ compile ]: Building $(BINARY_NAME)..."
