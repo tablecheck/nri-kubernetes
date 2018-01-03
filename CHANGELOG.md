@@ -5,18 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-
 ## Unreleased
 
-### Kube State Metrics
-- Initial version: Includes Metrics data for Kubernetes pods, containers, replicasets, namespace, deployments. Metrics are fetched from [kube-state-metrics service](https://github.com/kubernetes/kube-state-metrics)
-- Includes *prometheus* parser, which is used to parse data received from kube-state-metrics
+## 1.0.0-beta2
 
-### Kubelet
-- Initial version: Includes Metrics data for:
-  - network and errors of Kubernetes pods
-  - memory and CPU usage of Kubernetes containers
-- Second version: self-discovery of kubelet
+### Added
+- Metrics for unscheduled Pods.
 
-### Merged version
-- Initial, simple merging of KSM and Kubelet integrations.
+### Fixed
+- Fix format of inherited labels. Remove unnecessary prefix `label_` included by kube-state-metrics.
+- Fix labels inheritance. Labels weren't propagating between "entities" correctly.
+
+## 1.0.0-beta
+
+### Added
+- Initial version reporting metrics about Namespaces, Deployments, ReplicaSets,
+  Pods and Containers. This data is fetched from two different sources: Kubelet
+  and kube-state-metrics.
