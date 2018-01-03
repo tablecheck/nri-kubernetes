@@ -31,7 +31,7 @@ type argumentList struct {
 
 const (
 	integrationName    = "com.newrelic.kubernetes"
-	integrationVersion = "1.0.0-beta"
+	integrationVersion = "1.0.0-beta2"
 	statsSummaryPath   = "/stats/summary"
 	metricsPath        = "/metrics"
 )
