@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fix format of inherited labels. Remove unnecessary prefix `label_` included by kube-state-metrics.
 - Fix labels inheritance. Labels weren't propagating between "entities" correctly.
 
+### Changed
+- `updatedAt` metric was renamed to `podsUpdated`.
+- `cpuUsedCores` has been divided by 10^9, to show actual cores instead of nanocores.
+
 ## 1.0.0-beta
 
 ### Added
