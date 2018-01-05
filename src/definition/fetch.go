@@ -44,3 +44,14 @@ func FromRaw(metricKey string) FetchFunc {
 		return value, nil
 	}
 }
+
+// Transform return a new FetchFunc that applies the transformFunc to the result of the fetchFunc passed as argument
+func Transform(fetchFunc FetchFunc, transformFunc func(FetchedValue) FetchedValue) FetchFunc {
+	return func(groupLabel, entityID string, groups RawGroups) (FetchedValue, error) {
+		fetchedVal, err := fetchFunc(groupLabel, entityID, groups)
+		if err != nil {
+			return nil, err
+		}
+		return transformFunc(fetchedVal), nil
+	}
+}

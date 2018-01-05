@@ -91,7 +91,7 @@ var ksmRestSpecs = definition.SpecGroups{
 			{"podsTotal", metric.FromPrometheusValue("kube_deployment_status_replicas"), sdkMetric.GAUGE},
 			{"podsAvailable", metric.FromPrometheusValue("kube_deployment_status_replicas_available"), sdkMetric.GAUGE},
 			{"podsUnavailable", metric.FromPrometheusValue("kube_deployment_status_replicas_unavailable"), sdkMetric.GAUGE},
-			{"updatedAt", metric.FromPrometheusValue("kube_deployment_status_replicas_updated"), sdkMetric.GAUGE},
+			{"podsUpdated", metric.FromPrometheusValue("kube_deployment_status_replicas_updated"), sdkMetric.GAUGE},
 			{"podsMaxUnavailable", metric.FromPrometheusValue("kube_deployment_spec_strategy_rollingupdate_max_unavailable"), sdkMetric.GAUGE},
 			{"namespace", metric.FromPrometheusLabelValue("kube_deployment_labels", "namespace"), sdkMetric.ATTRIBUTE},
 			{"deploymentName", metric.FromPrometheusLabelValue("kube_deployment_labels", "deployment"), sdkMetric.ATTRIBUTE},
@@ -227,6 +227,11 @@ var prometheusRestQueries = []prometheus.Query{
 	},
 }
 
+// Used to transform from usageNanoCores to cpuUsedCores
+var fromNano = func(value definition.FetchedValue) definition.FetchedValue {
+	return float64(value.(int)) / 1000000000
+}
+
 var kubeletSpecs = definition.SpecGroups{
 	"pod": {
 		IDGenerator: kubeletMetric.FromRawEntityIDGroupEntityIDGenerator("namespace"),
@@ -243,7 +248,7 @@ var kubeletSpecs = definition.SpecGroups{
 		Specs: []definition.Spec{
 			{"containerName", definition.FromRaw("containerName"), sdkMetric.ATTRIBUTE},
 			{"memoryUsedBytes", definition.FromRaw("usageBytes"), sdkMetric.GAUGE},
-			{"cpuUsedCores", definition.FromRaw("usageNanoCores"), sdkMetric.GAUGE},
+			{"cpuUsedCores", definition.Transform(definition.FromRaw("usageNanoCores"), fromNano), sdkMetric.GAUGE},
 			{"podName", definition.FromRaw("podName"), sdkMetric.ATTRIBUTE},
 			{"namespace", definition.FromRaw("namespace"), sdkMetric.ATTRIBUTE},
 		},
