@@ -5,35 +5,10 @@ import (
 
 	"strings"
 
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/config"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
-	parentMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/metric"
-	"github.com/newrelic/infra-integrations-sdk/metric"
-	"github.com/newrelic/infra-integrations-sdk/sdk"
 )
-
-// K8sMetricSetTypeGuesser is the metric set type guesser for k8s integrations.
-func K8sMetricSetTypeGuesser(_, groupLabel, _ string, _ definition.RawGroups) (string, error) {
-	return fmt.Sprintf("K8s%vSample", strings.Title(groupLabel)), nil
-}
-
-// kubeletNamespaceFetcher fetches the namespace from a Kubelet RawGroups information
-func kubeletNamespaceFetcher(groupLabel, entityID string, groups definition.RawGroups) (string, error) {
-	gl, ok := groups[groupLabel]
-	if !ok {
-		return parentMetric.UnknownNamespace, fmt.Errorf("no grouplabel %q found", groupLabel)
-	}
-	en, ok := gl[entityID]
-	if !ok {
-		return parentMetric.UnknownNamespace, fmt.Errorf("no entityID %q found for grouplabel %q", entityID, groupLabel)
-	}
-
-	ns, ok := en["namespace"]
-	if !ok {
-		return parentMetric.UnknownNamespace, fmt.Errorf("no namespace found for groupLabel %q and entityID %q", groupLabel, entityID)
-	}
-	return ns.(string), nil
-}
 
 var nsKeyForGroup = map[string]string{
 	"pod":        "kube_pod_info",
@@ -43,47 +18,16 @@ var nsKeyForGroup = map[string]string{
 	"deployment": "kube_deployment_labels",
 }
 
-// ksmNamespaceFetcher fetches the namespace from a KSM RawGroups information
-func ksmNamespaceFetcher(groupLabel, entityID string, groups definition.RawGroups) (string, error) {
+// KsmNamespaceFetcher fetches the namespace from a KSM RawGroups information
+func KsmNamespaceFetcher(groupLabel, entityID string, groups definition.RawGroups) (string, error) {
 	ns, err := FromPrometheusLabelValue(nsKeyForGroup[groupLabel], "namespace")(groupLabel, entityID, groups)
 	if err != nil {
-		return parentMetric.UnknownNamespace, fmt.Errorf("error fetching namespace for groupLabel %q and entityID %q: %v", groupLabel, entityID, err.Error())
+		return config.UnknownNamespace, fmt.Errorf("error fetching namespace for groupLabel %q and entityID %q: %v", groupLabel, entityID, err.Error())
 	}
 	if ns == nil {
-		return parentMetric.UnknownNamespace, fmt.Errorf("namespace not found for groupLabel %q and entityID %q", groupLabel, entityID)
+		return config.UnknownNamespace, fmt.Errorf("namespace not found for groupLabel %q and entityID %q", groupLabel, entityID)
 	}
 	return ns.(string), nil
-}
-
-// K8sMetricSetEntityTypeGuesser guesses the Entity Type given a group name, entity Id and a namespace fetcher function
-func K8sMetricSetEntityTypeGuesser(clusterName, groupLabel, entityID string, groups definition.RawGroups) (string, error) {
-	var actualGroupLabel string
-	switch groupLabel {
-	case "namespace":
-		return fmt.Sprintf("k8s:%s:namespace", clusterName), nil
-	case "container":
-		actualGroupLabel = "pod"
-	default:
-		actualGroupLabel = groupLabel
-	}
-	ns, err := parentMetric.MultipleNamespaceFetcher(groupLabel, entityID, groups, kubeletNamespaceFetcher, ksmNamespaceFetcher)
-	return fmt.Sprintf("k8s:%s:%s:%s", clusterName, ns, actualGroupLabel), err
-}
-
-// K8sClusterMetricsManipulator adds 'clusterName' metric to the MetricSet 'ms',
-// taking the value from 'clusterName' argument.
-func K8sClusterMetricsManipulator(ms metric.MetricSet, _ sdk.Entity, clusterName string) error {
-	return ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
-}
-
-// K8sEntityMetricsManipulator adds 'displayName' and 'entityName' metrics to
-// the MetricSet, taking values from entity.name and entity.type
-func K8sEntityMetricsManipulator(ms metric.MetricSet, entity sdk.Entity, _ string) error {
-	err := ms.SetMetric("displayName", entity.Name, metric.ATTRIBUTE)
-	if err != nil {
-		return err
-	}
-	return ms.SetMetric("entityName", fmt.Sprintf("%s:%s", entity.Type, entity.Name), metric.ATTRIBUTE)
 }
 
 // FromPrometheusLabelValueEntityIDGenerator generates an entityID from the pod name. It's only used for k8s containers.

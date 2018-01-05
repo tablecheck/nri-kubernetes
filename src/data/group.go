@@ -12,6 +12,7 @@ import (
 	ksmMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
 	kubeletMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/metric"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
 )
 
@@ -33,7 +34,7 @@ type k8sPopulator struct {
 type GroupPatcher func(destination definition.RawGroups, source definition.RawGroups)
 
 func (p *k8sPopulator) Populate(groups definition.RawGroups, specGroups definition.SpecGroups, i *sdk.IntegrationProtocol2, clusterName string) (bool, error) {
-	populatorFunc := definition.IntegrationProtocol2PopulateFunc(i, clusterName, ksmMetric.K8sMetricSetTypeGuesser, ksmMetric.K8sMetricSetEntityTypeGuesser, ksmMetric.K8sEntityMetricsManipulator, ksmMetric.K8sClusterMetricsManipulator)
+	populatorFunc := definition.IntegrationProtocol2PopulateFunc(i, clusterName, metric.K8sMetricSetTypeGuesser, metric.K8sMetricSetEntityTypeGuesser, metric.K8sEntityMetricsManipulator, metric.K8sClusterMetricsManipulator)
 	ok, errs := populatorFunc(groups, specGroups)
 
 	if len(errs) > 0 {

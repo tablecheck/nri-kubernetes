@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/config"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 )
 
@@ -144,4 +145,22 @@ func FromRawEntityIDGroupEntityIDGenerator(key string) definition.MetricSetEntit
 
 		return v, nil
 	}
+}
+
+// KubeletNamespaceFetcher fetches the namespace from a Kubelet RawGroups information
+func KubeletNamespaceFetcher(groupLabel, entityID string, groups definition.RawGroups) (string, error) {
+	gl, ok := groups[groupLabel]
+	if !ok {
+		return config.UnknownNamespace, fmt.Errorf("no grouplabel %q found", groupLabel)
+	}
+	en, ok := gl[entityID]
+	if !ok {
+		return config.UnknownNamespace, fmt.Errorf("no entityID %q found for grouplabel %q", entityID, groupLabel)
+	}
+
+	ns, ok := en["namespace"]
+	if !ok {
+		return config.UnknownNamespace, fmt.Errorf("no namespace found for groupLabel %q and entityID %q", groupLabel, entityID)
+	}
+	return ns.(string), nil
 }

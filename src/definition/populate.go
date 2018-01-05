@@ -2,7 +2,6 @@ package definition
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/newrelic/infra-integrations-sdk/metric"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
@@ -10,16 +9,6 @@ import (
 
 // GuessFunc guesses from data.
 type GuessFunc func(clusterName, groupLabel, entityID string, groups RawGroups) (string, error)
-
-// FromGroupMetricSetTypeGuessFunc uses the groupLabel for creating the metric set type sample.
-func FromGroupMetricSetTypeGuessFunc(_, groupLabel, _ string, _ RawGroups) (string, error) {
-	return fmt.Sprintf("%vSample", strings.Title(groupLabel)), nil
-}
-
-// FromGroupMetricSetEntitTypeGuessFunc uses the grouplabel as guess for the entity type.
-func FromGroupMetricSetEntitTypeGuessFunc(_, groupLabel, _ string, _ RawGroups) (string, error) {
-	return fmt.Sprintf("%v", groupLabel), nil
-}
 
 // PopulateFunc populates raw metric groups using your specs
 type PopulateFunc func(RawGroups, SpecGroups) (bool, []error)
