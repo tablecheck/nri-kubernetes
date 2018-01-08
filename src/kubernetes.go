@@ -25,7 +25,7 @@ type argumentList struct {
 	DebugKubeletURL     string `help:"for debugging purposes. Overrides kubelet schema://host:port URL parts (if not set, it will be self-discovered)"`
 	DebugRole           string `help:"for debugging purposes. Sets the role of the integration (accepted values: kubelet-ksm-rest, kubelet-ksm. If not set, it will be self-discovered)"`
 	IgnoreCerts         bool   `default:"false" help:"disables HTTPS certificate verification for metrics sources"`
-	Timeout             int    `default:"1000" help:"timeout in milliseconds for calling metrics sources"`
+	Timeout             int    `default:"5000" help:"timeout in milliseconds for calling metrics sources"`
 	ClusterName         string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
 }
 
@@ -41,7 +41,7 @@ var args argumentList
 func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) {
 	groups, errs := kubeletKSMGrouper.Group(kubeletSpecs)
 	for _, err := range errs {
-		logger.Warn("%s", err)
+		logger.Warnf("%s", err)
 	}
 
 	ok, err := data.NewK8sPopulator(logger).Populate(groups, kubeletKSMPopulateSpecs, i, clusterName)
@@ -67,15 +67,15 @@ func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clu
 	}
 }
 
-func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) {
+func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i *sdk.IntegrationProtocol2, ksmClient *http.Client, clusterName string, logger *logrus.Logger) {
 	kubeletKSMGroups, errs := kubeletKSMGrouper.Group(kubeletSpecs)
 	for _, err := range errs {
-		logger.Warn("%s", err)
+		logger.Warnf("%s", err)
 	}
-	g := data.NewKubeletKSMAndRestGrouper(kubeletKSMGroups, ksmMetricsURL, prometheusRestQueries, logger)
+	g := data.NewKubeletKSMAndRestGrouper(kubeletKSMGroups, ksmMetricsURL, prometheusRestQueries, ksmClient, logger)
 	groups, errs := g.Group(ksmRestSpecs)
 	for _, err := range errs {
-		logger.Warn("%s", err)
+		logger.Warnf("%s", err)
 	}
 
 	ok, err := data.NewK8sPopulator(logger).Populate(groups, kubeletKSMAndRestPopulateSpecs, i, clusterName)
@@ -175,16 +175,19 @@ func main() {
 		log.Debug("Kubelet URL = %s", kubeletURL)
 		log.Debug("KSM URL = %s", ksmURL)
 
-		netClient := &http.Client{
+		kubeletClient := &http.Client{
 			Timeout: time.Millisecond * time.Duration(args.Timeout),
 		}
 
 		if args.IgnoreCerts && kubeletURL.Scheme == "https" {
-			netClient.Transport = &http.Transport{
+			kubeletClient.Transport = &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			}
 		}
 
+		ksmClient := &http.Client{
+			Timeout: time.Millisecond * time.Duration(args.Timeout),
+		}
 		logger := logrus.New()
 
 		switch role {
@@ -193,7 +196,8 @@ func main() {
 			kubeletKSMGrouper := data.NewKubeletKSMPatchedGrouper(
 				kubeletURL,
 				ksmURL,
-				netClient,
+				kubeletClient,
+				ksmClient,
 				prometheusPodsAndContainerQueries,
 				ksmPodAndContainerGroupSpecs,
 				logger,
@@ -201,13 +205,14 @@ func main() {
 			)
 
 			// todo fix pointers indirection stuff
-			kubeletKSMAndRest(kubeletKSMGrouper, ksmURL, integration, args.ClusterName, logger)
+			kubeletKSMAndRest(kubeletKSMGrouper, ksmURL, integration, ksmClient, args.ClusterName, logger)
 		case "kubelet-ksm":
 			// todo fix pointers indirection stuff
 			kubeletKSMGrouper := data.NewKubeletKSMGrouper(
 				kubeletURL,
 				ksmURL,
-				netClient,
+				kubeletClient,
+				ksmClient,
 				prometheusPodsAndContainerQueries,
 				ksmPodAndContainerGroupSpecs,
 				logger,

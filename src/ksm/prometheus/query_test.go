@@ -20,9 +20,10 @@ func TestFoo(t *testing.T) {
 	f, err := os.Open("protobuf/metrics")
 	assert.NoError(t, err)
 
-	defer f.Close()
+	defer f.Close() // nolint: errcheck
 
 	s := httptest.NewServer(mockResponseHandler(f))
+	c := http.DefaultClient
 
 	queryMetricName := "kube_pod_status_phase"
 	queryLabels := Labels{
@@ -53,7 +54,7 @@ func TestFoo(t *testing.T) {
 		},
 	}
 
-	m, err := Do(s.URL, queries)
+	m, err := Do(s.URL, queries, c)
 	assert.NoError(t, err)
 
 	assert.Equal(t, expectedMetrics, m)
@@ -147,6 +148,6 @@ func TestQueryMatch(t *testing.T) {
 
 func mockResponseHandler(mockResponse io.Reader) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		io.Copy(w, mockResponse)
+		io.Copy(w, mockResponse) // nolint: errcheck
 	}
 }
