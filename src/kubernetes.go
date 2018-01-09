@@ -188,7 +188,8 @@ func main() {
 		ksmClient := &http.Client{
 			Timeout: time.Millisecond * time.Duration(args.Timeout),
 		}
-		logger := logrus.New()
+
+		logger := log.New(args.Verbose)
 
 		switch role {
 		case "kubelet-ksm-rest":
