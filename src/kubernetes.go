@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 	ksmEndpoints "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/endpoints"
@@ -17,6 +16,7 @@ import (
 	"github.com/newrelic/infra-integrations-sdk/log"
 	"github.com/newrelic/infra-integrations-sdk/metric"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
+	"github.com/sirupsen/logrus"
 )
 
 type argumentList struct {

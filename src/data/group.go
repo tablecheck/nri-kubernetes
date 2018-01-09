@@ -7,13 +7,13 @@ import (
 
 	"fmt"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	ksmMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
 	kubeletMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/metric"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
+	"github.com/sirupsen/logrus"
 )
 
 // Grouper groups raw data by any desired label such object (pod, container...).
