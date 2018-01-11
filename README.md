@@ -38,6 +38,7 @@ meaningless name for the docker image ["ohaik"](https://hub.docker.com/r/newreli
 * Update integration version number (source code)
 * Update daemon set container image (deploy/newrelic-infra.yaml)
 * Update CHANGELOG.md with information about the changes
+* Create a PR with all the changes in the infra-integrations-beta and make sure that is approved and merged
 * Go to Jenkins -> infra-integrations-beta -> infra-integrations-beta-kubernetes-docker-image
 * Click on 'Build with parameters' and enter the branch you want to build and the version number of the Docker image
 * Once the job is executed, a new version of the image should be uploaded to
