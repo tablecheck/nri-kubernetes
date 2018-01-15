@@ -43,6 +43,9 @@ meaningless name for the docker image ["ohaik"](https://hub.docker.com/r/newreli
 * Click on 'Build with parameters' and enter the branch you want to build and the version number of the Docker image
 * Once the job is executed, a new version of the image should be uploaded to
   docker hub. You can check it this [link](https://hub.docker.com/r/newrelic/ohaik/)
+* Upload a new version of our daemonset config file to s3. Take care of
+  versioning also this file:
+  `$ aws s3 cp deploy/newrelic-infra.yaml s3://nr-downloads-main/infrastructure_agent/integrations/kubernetes/newrelic-infra-betaX.yaml`
 
 ## Compatibility
 New Relic kube-state-metrics Integration is compatible with kube-state-metrics service version: v1.1.0
