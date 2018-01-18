@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `updatedAt` metric was renamed to `podsUpdated`.
 - `cpuUsedCores` has been divided by 10^9, to show actual cores instead of nanocores.
 - Update configurable timeout flag using it to connect to kubelet and kube-state-metrics.
+- Integration stops on KSM or Kubelet connection error, instead of continuing.
 
 ## 1.0.0-beta2
 

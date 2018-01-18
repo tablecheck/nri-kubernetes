@@ -38,10 +38,13 @@ const (
 
 var args argumentList
 
-func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) {
+func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) error {
 	groups, errs := kubeletKSMGrouper.Group(kubeletSpecs)
-	for _, err := range errs {
-		logger.Warnf("%s", err)
+	if errs != nil {
+		if !errs.Recoverable {
+			return errors.New(errs.String())
+		}
+		logger.Warnf("%s", errs.String())
 	}
 
 	ok, err := data.NewK8sPopulator(logger).Populate(groups, kubeletKSMPopulateSpecs, i, clusterName)
@@ -49,33 +52,43 @@ func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clu
 
 	e, err := i.Entity("nr-errors", "error")
 	fatalIfErr(err)
-	for _, err := range errs {
-		ms := e.NewMetricSet("K8sDebugErrors")
-		mserr := ms.SetMetric("error", err.Error(), metric.ATTRIBUTE)
-		if mserr != nil {
-			logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "error", "K8sDebugErrors", mserr)
-		}
-		mserr = ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
-		if mserr != nil {
-			logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "clusterName", "K8sDebugErrors", mserr)
+	if errs != nil {
+		for _, err := range errs.Errors {
+			ms := e.NewMetricSet("K8sDebugErrors")
+			mserr := ms.SetMetric("error", err.Error(), metric.ATTRIBUTE)
+			if mserr != nil {
+				logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "error", "K8sDebugErrors", mserr)
+			}
+			mserr = ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
+			if mserr != nil {
+				logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "clusterName", "K8sDebugErrors", mserr)
+			}
 		}
 	}
 
 	if !ok {
 		// TODO better error
-		log.Fatal(errors.New("no data was populated"))
+		return errors.New("no data was populated")
 	}
+	return nil
 }
 
-func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i *sdk.IntegrationProtocol2, ksmClient *http.Client, clusterName string, logger *logrus.Logger) {
+func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i *sdk.IntegrationProtocol2, ksmClient *http.Client, clusterName string, logger *logrus.Logger) error {
 	kubeletKSMGroups, errs := kubeletKSMGrouper.Group(kubeletSpecs)
-	for _, err := range errs {
-		logger.Warnf("%s", err)
+	if errs != nil {
+		if !errs.Recoverable {
+			return errors.New(errs.String())
+		}
+		logger.Warnf("%s", errs.String())
 	}
+
 	g := data.NewKubeletKSMAndRestGrouper(kubeletKSMGroups, ksmMetricsURL, prometheusRestQueries, ksmClient, logger)
 	groups, errs := g.Group(ksmRestSpecs)
-	for _, err := range errs {
-		logger.Warnf("%s", err)
+	if errs != nil {
+		if !errs.Recoverable {
+			return errors.New(errs.String())
+		}
+		logger.Warnf("%s", errs.String())
 	}
 
 	ok, err := data.NewK8sPopulator(logger).Populate(groups, kubeletKSMAndRestPopulateSpecs, i, clusterName)
@@ -83,22 +96,25 @@ func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i
 
 	e, err := i.Entity("nr-errors", "error")
 	fatalIfErr(err)
-	for _, err := range errs {
-		ms := e.NewMetricSet("K8sDebugErrors")
-		mserr := ms.SetMetric("error", err.Error(), metric.ATTRIBUTE)
-		if mserr != nil {
-			logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "error", "K8sDebugErrors", mserr)
-		}
-		mserr = ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
-		if mserr != nil {
-			logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "clusterName", "K8sDebugErrors", mserr)
+	if errs != nil {
+		for _, err := range errs.Errors {
+			ms := e.NewMetricSet("K8sDebugErrors")
+			mserr := ms.SetMetric("error", err.Error(), metric.ATTRIBUTE)
+			if mserr != nil {
+				logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "error", "K8sDebugErrors", mserr)
+			}
+			mserr = ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
+			if mserr != nil {
+				logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "clusterName", "K8sDebugErrors", mserr)
+			}
 		}
 	}
 
 	if !ok {
 		// TODO better error
-		log.Fatal(errors.New("no data was populated"))
+		return errors.New("no data was populated")
 	}
+	return nil
 }
 
 func main() {
@@ -206,7 +222,7 @@ func main() {
 			)
 
 			// todo fix pointers indirection stuff
-			kubeletKSMAndRest(kubeletKSMGrouper, ksmURL, integration, ksmClient, args.ClusterName, logger)
+			fatalIfErr(kubeletKSMAndRest(kubeletKSMGrouper, ksmURL, integration, ksmClient, args.ClusterName, logger))
 		case "kubelet-ksm":
 			// todo fix pointers indirection stuff
 			kubeletKSMGrouper := data.NewKubeletKSMGrouper(
@@ -219,7 +235,7 @@ func main() {
 				logger,
 			)
 
-			kubeletKSM(kubeletKSMGrouper, integration, args.ClusterName, logger)
+			fatalIfErr(kubeletKSM(kubeletKSMGrouper, integration, args.ClusterName, logger))
 		}
 	}
 

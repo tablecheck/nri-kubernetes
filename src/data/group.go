@@ -18,7 +18,7 @@ import (
 
 // Grouper groups raw data by any desired label such object (pod, container...).
 type Grouper interface {
-	Group(definition.SpecGroups) (definition.RawGroups, []error)
+	Group(definition.SpecGroups) (definition.RawGroups, *ErrorGroup)
 }
 
 // Populator populates a given integration with grouped raw data.
@@ -65,15 +65,22 @@ type ksmGrouper struct {
 	logger     *logrus.Logger
 }
 
-func (r *ksmGrouper) Group(specGroups definition.SpecGroups) (definition.RawGroups, []error) {
+func (r *ksmGrouper) Group(specGroups definition.SpecGroups) (definition.RawGroups, *ErrorGroup) {
 	r.logger.Debug("Endpoint %s called for getting data from kube-state-metrics service", r.ksmURL)
 
 	mFamily, err := prometheus.Do(r.ksmURL.String(), r.queries, r.HTTPClient)
 	if err != nil {
-		return nil, []error{fmt.Errorf("error querying KSM. %s", err)}
+		return nil, &ErrorGroup{
+			Recoverable: false,
+			Errors:      []error{fmt.Errorf("error querying KSM. %s", err)},
+		}
 	}
 
-	return ksmMetric.GroupPrometheusMetricsBySpec(specGroups, mFamily)
+	groups, errs := ksmMetric.GroupPrometheusMetricsBySpec(specGroups, mFamily)
+	if len(errs) == 0 {
+		return groups, nil
+	}
+	return groups, &ErrorGroup{Recoverable: true, Errors: errs}
 }
 
 // NewKSMGrouper creates a grouper aware of Kube State Metrics raw metrics.
@@ -92,15 +99,22 @@ type kubelet struct {
 	logger     *logrus.Logger
 }
 
-func (r *kubelet) Group(definition.SpecGroups) (definition.RawGroups, []error) {
+func (r *kubelet) Group(definition.SpecGroups) (definition.RawGroups, *ErrorGroup) {
 	urlString := r.metricsURL.String()
 	r.logger.Debug("Getting metrics data from: %v", urlString)
 	response, err := kubeletMetric.GetMetricsData(r.HTTPClient, urlString)
 	if err != nil {
-		return nil, []error{fmt.Errorf("error querying Kubelet. %s", err)}
+		return nil, &ErrorGroup{
+			Recoverable: false,
+			Errors:      []error{fmt.Errorf("error querying Kubelet. %s", err)},
+		}
 	}
 
-	return kubeletMetric.GroupStatsSummary(response)
+	groups, errs := kubeletMetric.GroupStatsSummary(response)
+	if len(errs) == 0 {
+		return groups, nil
+	}
+	return groups, &ErrorGroup{Recoverable: true, Errors: errs}
 }
 
 // NewKubeletGrouper creates a grouper aware of Kubelet raw metrics.
@@ -122,17 +136,26 @@ type kubeletKSMGrouper struct {
 	groupPatcher      GroupPatcher
 }
 
-func (r *kubeletKSMGrouper) Group(specGroups definition.SpecGroups) (definition.RawGroups, []error) {
-	var errs []error
+func (r *kubeletKSMGrouper) Group(specGroups definition.SpecGroups) (definition.RawGroups, *ErrorGroup) {
+	errs := ErrorGroup{Recoverable: true}
+
 	groups, groupErrs := r.kubeletGrouper.Group(specGroups)
-	if len(groupErrs) > 0 {
-		errs = append(errs, groupErrs...)
+	if groupErrs != nil {
+		if groupErrs.Recoverable {
+			errs.Append(groupErrs.Errors...)
+		} else {
+			return nil, groupErrs
+		}
 	}
 
 	ksmGrouper := NewKSMGrouper(r.ksmMetricsURL, r.ksmPartialQueries, r.ksmHTTPClient, r.logger)
 	ksmGroups, groupErrs := ksmGrouper.Group(r.ksmSpecGroups)
-	if len(groupErrs) > 0 {
-		errs = append(errs, groupErrs...)
+	if groupErrs != nil {
+		if groupErrs.Recoverable {
+			errs.Append(groupErrs.Errors...)
+		} else {
+			return nil, groupErrs
+		}
 	}
 
 	if r.groupPatcher != nil {
@@ -141,7 +164,7 @@ func (r *kubeletKSMGrouper) Group(specGroups definition.SpecGroups) (definition.
 
 	fillGroupsAndMergeNonExistent(groups, ksmGroups)
 
-	return groups, errs
+	return groups, &errs
 }
 
 // NewKubeletKSMGrouper creates a grouper that merges groups provided by the
@@ -172,18 +195,22 @@ type kubeletKSMAndRestGrouper struct {
 	logger              *logrus.Logger
 }
 
-func (r *kubeletKSMAndRestGrouper) Group(specGroups definition.SpecGroups) (definition.RawGroups, []error) {
-	var errs []error
+func (r *kubeletKSMAndRestGrouper) Group(specGroups definition.SpecGroups) (definition.RawGroups, *ErrorGroup) {
+	errs := ErrorGroup{Recoverable: true}
 
 	ksmGrouper := NewKSMGrouper(r.ksmMetricsURL, r.restQueries, r.ksmHTTPClient, r.logger)
 	ksmGroups, groupErrs := ksmGrouper.Group(specGroups)
-	if len(groupErrs) > 0 {
-		errs = append(errs, groupErrs...)
+	if groupErrs != nil {
+		if groupErrs.Recoverable {
+			errs.Append(groupErrs.Errors...)
+		} else {
+			return nil, groupErrs
+		}
 	}
 
 	mergeNonExistentGroups(ksmGroups, r.kubeletKSMRawGroups)
 
-	return ksmGroups, errs
+	return ksmGroups, &errs
 }
 
 // NewKubeletKSMAndRestGrouper creates a grouper that merges groups provided by

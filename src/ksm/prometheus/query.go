@@ -87,7 +87,7 @@ func valueFromPrometheus(metricType prometheus.MetricType, metric *prometheus.Me
 	}
 }
 
-// Do is the main entry point. It runs queries agains the Prometheus metrics provided by the endpoint.
+// Do is the main entry point. It runs queries against the Prometheus metrics provided by the endpoint.
 func Do(endpoint string, queries []Query, c *http.Client) ([]MetricFamily, error) {
 	r, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
