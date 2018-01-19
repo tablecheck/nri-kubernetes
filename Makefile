@@ -6,6 +6,7 @@ GOTOOLS       = github.com/kardianos/govendor \
 		gopkg.in/alecthomas/gometalinter.v2 \
 		github.com/axw/gocov/gocov \
 		github.com/AlekSi/gocov-xml \
+		go.datanerd.us/p/ohai/papers-go/... \
 
 all: build
 
@@ -29,9 +30,13 @@ deps: tools
 	@echo "=== $(INTEGRATION) === [ deps ]: Installing package dependencies required by the project..."
 	@govendor sync
 
-validate: deps
+validate: deps license
 	@echo "=== $(INTEGRATION) === [ validate ]: Validating source code running gometalinter..."
 	@gometalinter.v2 --config=.gometalinter.json ./...
+
+license:
+	@echo "=== $(INTEGRATION) === [ license ]: Validating licenses of your dependencies..."
+	@papers-go validate -c ../../.papers_config.yml
 
 compile: deps
 	@echo "=== $(INTEGRATION) === [ compile ]: Building $(BINARY_NAME)..."
