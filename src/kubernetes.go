@@ -40,7 +40,7 @@ var args argumentList
 
 func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) error {
 	groups, errs := kubeletKSMGrouper.Group(kubeletSpecs)
-	if errs != nil {
+	if errs != nil && len(errs.Errors) > 0 {
 		if !errs.Recoverable {
 			return errors.New(errs.String())
 		}
@@ -75,7 +75,7 @@ func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clu
 
 func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i *sdk.IntegrationProtocol2, ksmClient *http.Client, clusterName string, logger *logrus.Logger) error {
 	kubeletKSMGroups, errs := kubeletKSMGrouper.Group(kubeletSpecs)
-	if errs != nil {
+	if errs != nil && len(errs.Errors) > 0 {
 		if !errs.Recoverable {
 			return errors.New(errs.String())
 		}
@@ -84,7 +84,7 @@ func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i
 
 	g := data.NewKubeletKSMAndRestGrouper(kubeletKSMGroups, ksmMetricsURL, prometheusRestQueries, ksmClient, logger)
 	groups, errs := g.Group(ksmRestSpecs)
-	if errs != nil {
+	if errs != nil && len(errs.Errors) > 0 {
 		if !errs.Recoverable {
 			return errors.New(errs.String())
 		}
