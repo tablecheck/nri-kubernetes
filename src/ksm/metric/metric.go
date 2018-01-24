@@ -55,7 +55,7 @@ func GroupPrometheusMetricsBySpec(specs definition.SpecGroups, families []promet
 
 				var rawEntityID string
 				switch groupLabel {
-				case "namespace":
+				case "namespace", "node":
 					rawEntityID = m.Labels[groupLabel]
 				case "container":
 					rawEntityID = fmt.Sprintf("%v_%v_%v", m.Labels["namespace"], m.Labels["pod"], m.Labels[groupLabel])
@@ -184,16 +184,18 @@ func getRawEntityID(parentGroupLabel, groupLabel, entityID string, groups defini
 		return "", fmt.Errorf("incompatible metric type. Expected: prometheus.Metric. Got: %T", r)
 	}
 
-	namespaceID, ok := m.Labels["namespace"]
-	if !ok {
-		return "", fmt.Errorf("label not found. Label: 'namespace', Metric: %s", metricKey)
-	}
-
 	var rawEntityID string
 	switch parentGroupLabel {
-	case "namespace":
-		rawEntityID = namespaceID
+	case "node", "namespace":
+		rawEntityID, ok = m.Labels[parentGroupLabel]
+		if !ok {
+			return "", fmt.Errorf("label not found. Label: '%s', Metric: %s", parentGroupLabel, metricKey)
+		}
 	default:
+		namespaceID, ok := m.Labels["namespace"]
+		if !ok {
+			return "", fmt.Errorf("label not found. Label: 'namespace', Metric: %s", metricKey)
+		}
 		relatedMetricID, ok := m.Labels[parentGroupLabel]
 		if !ok {
 			return "", fmt.Errorf("label not found. Label: %s, Metric: %s", parentGroupLabel, metricKey)

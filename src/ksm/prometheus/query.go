@@ -17,6 +17,7 @@ const acceptHeader = `application/vnd.google.protobuf;proto=io.prometheus.client
 
 // Query represents the query object. It will run against Prometheus metrics.
 type Query struct {
+	CustomName string
 	MetricName string
 	Labels     Labels
 	Value      Value // TODO Only supported Counter and Gauge
@@ -58,8 +59,15 @@ func (q Query) Execute(promMetricFamily *prometheus.MetricFamily) (metricFamily 
 		matches = append(matches, m)
 	}
 
+	var name string
+	if q.CustomName != "" {
+		name = q.CustomName
+	} else {
+		name = promMetricFamily.GetName()
+	}
+
 	metricFamily = MetricFamily{
-		Name:    promMetricFamily.GetName(),
+		Name:    name,
 		Type:    promMetricFamily.GetType().String(),
 		Metrics: matches,
 	}

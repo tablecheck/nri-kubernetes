@@ -37,8 +37,8 @@ func MultipleNamespaceFetcher(groupLabel, entityID string, groups definition.Raw
 func K8sMetricSetEntityTypeGuesser(clusterName, groupLabel, entityID string, groups definition.RawGroups) (string, error) {
 	var actualGroupLabel string
 	switch groupLabel {
-	case "namespace":
-		return fmt.Sprintf("k8s:%s:namespace", clusterName), nil
+	case "namespace", "node":
+		return fmt.Sprintf("k8s:%s:%s", clusterName, groupLabel), nil
 	case "container":
 		actualGroupLabel = "pod"
 	default:
