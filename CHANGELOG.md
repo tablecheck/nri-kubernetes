@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Fixed
+- Integration stops on KSM or Kubelet connection error, instead of continuing.
+
 ## 1.0.0-beta3
 
 ### Fixed
@@ -14,7 +19,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `updatedAt` metric was renamed to `podsUpdated`.
 - `cpuUsedCores` has been divided by 10^9, to show actual cores instead of nanocores.
 - Update configurable timeout flag using it to connect to kubelet and kube-state-metrics.
-- Integration stops on KSM or Kubelet connection error, instead of continuing.
 
 ## 1.0.0-beta2
 
