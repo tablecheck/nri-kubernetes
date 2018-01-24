@@ -215,8 +215,8 @@ func main() {
 				ksmURL,
 				kubeletClient,
 				ksmClient,
-				prometheusPodsAndContainerQueries,
-				ksmPodAndContainerGroupSpecs,
+				prometheusPodsContainerNodeQueries,
+				ksmPodContainerNodeGroupSpecs,
 				logger,
 				ksmMetric.UnscheduledItemsPatcher,
 			)
@@ -230,8 +230,8 @@ func main() {
 				ksmURL,
 				kubeletClient,
 				ksmClient,
-				prometheusPodsAndContainerQueries,
-				ksmPodAndContainerGroupSpecs,
+				prometheusPodsContainerNodeQueries,
+				ksmPodContainerNodeGroupSpecs,
 				logger,
 			)
 

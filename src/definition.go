@@ -8,7 +8,7 @@ import (
 	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
 )
 
-var ksmPodAndContainerGroupSpecs = definition.SpecGroups{
+var ksmPodContainerNodeGroupSpecs = definition.SpecGroups{
 	"pod": {
 		IDGenerator: metric.FromPrometheusLabelValueEntityIDGenerator("kube_pod_info", "pod"),
 		Specs: []definition.Spec{
@@ -57,6 +57,32 @@ var ksmPodAndContainerGroupSpecs = definition.SpecGroups{
 			{"label.*", metric.InheritAllPrometheusLabelsFrom("pod", "kube_pod_labels"), sdkMetric.ATTRIBUTE},
 		},
 	},
+	"node": {
+		Specs: []definition.Spec{
+			{"node", metric.FromPrometheusLabelValue("kube_node_info", "node"), sdkMetric.ATTRIBUTE},
+			{"containerRuntimeVersion", metric.FromPrometheusLabelValue("kube_node_info", "container_runtime_version"), sdkMetric.ATTRIBUTE},
+			{"kernelVersion", metric.FromPrometheusLabelValue("kube_node_info", "kernel_version"), sdkMetric.ATTRIBUTE},
+			{"kubeletVersion", metric.FromPrometheusLabelValue("kube_node_info", "kubelet_version"), sdkMetric.ATTRIBUTE},
+			{"kubeproxyVersion", metric.FromPrometheusLabelValue("kube_node_info", "kubeproxy_version"), sdkMetric.ATTRIBUTE},
+			{"osImage", metric.FromPrometheusLabelValue("kube_node_info", "os_image"), sdkMetric.ATTRIBUTE},
+			{"providerId", metric.FromPrometheusLabelValue("kube_node_info", "provider_id"), sdkMetric.ATTRIBUTE},
+			{"label.*", metric.InheritAllPrometheusLabelsFrom("node", "kube_node_labels"), sdkMetric.ATTRIBUTE},
+			{"isUnschedulable", definition.Transform(metric.FromPrometheusValue("kube_node_spec_unschedulable"), toBoolean), sdkMetric.ATTRIBUTE},
+			{"capacityCpuCores", metric.FromPrometheusValue("kube_node_status_capacity_cpu_cores"), sdkMetric.GAUGE},
+			{"capacityNvidiaGpuCards", metric.FromPrometheusValue("kube_node_status_capacity_nvidia_gpu_cards"), sdkMetric.GAUGE},
+			{"capacityMemoryBytes", metric.FromPrometheusValue("kube_node_status_capacity_memory_bytes"), sdkMetric.GAUGE},
+			{"capacityPods", metric.FromPrometheusValue("kube_node_status_capacity_pods"), sdkMetric.GAUGE},
+			{"allocatableCpuCores", metric.FromPrometheusValue("kube_node_status_allocatable_cpu_cores"), sdkMetric.GAUGE},
+			{"allocatableNvidiaGpuCards", metric.FromPrometheusValue("kube_node_status_allocatable_nvidia_gpu_cards"), sdkMetric.GAUGE},
+			{"allocatableMemoryBytes", metric.FromPrometheusValue("kube_node_status_allocatable_memory_bytes"), sdkMetric.GAUGE},
+			{"allocatablePods", metric.FromPrometheusValue("kube_node_status_allocatable_pods"), sdkMetric.GAUGE},
+			{"createdAt", metric.FromPrometheusValue("kube_node_created"), sdkMetric.GAUGE},
+			{"isReady", metric.FromPrometheusLabelValue("isReady", "status"), sdkMetric.ATTRIBUTE},
+			{"isDiskPressure", metric.FromPrometheusLabelValue("isDiskPressure", "status"), sdkMetric.ATTRIBUTE},
+			{"isMemoryPressure", metric.FromPrometheusLabelValue("isMemoryPressure", "status"), sdkMetric.ATTRIBUTE},
+			{"isOutOfDisk", metric.FromPrometheusLabelValue("isOutOfDisk", "status"), sdkMetric.ATTRIBUTE},
+		},
+	},
 	"namespace": ksmRestSpecs["namespace"], // Needed for labels inheritance
 }
 
@@ -102,7 +128,7 @@ var ksmRestSpecs = definition.SpecGroups{
 	},
 }
 
-var prometheusPodsAndContainerQueries = []prometheus.Query{
+var prometheusPodsContainerNodeQueries = []prometheus.Query{
 	{
 		MetricName: "kube_pod_info",
 		Value:      prometheus.GaugeValue(1),
@@ -168,6 +194,76 @@ var prometheusPodsAndContainerQueries = []prometheus.Query{
 		MetricName: "kube_namespace_labels", // Needed for labels inheritance
 		Value:      prometheus.GaugeValue(1),
 	},
+	{
+		MetricName: "kube_node_info",
+		Value:      prometheus.GaugeValue(1),
+	},
+	{
+		MetricName: "kube_node_labels",
+		Value:      prometheus.GaugeValue(1),
+	},
+	{
+		MetricName: "kube_node_spec_unschedulable",
+	},
+	{
+		MetricName: "kube_node_status_capacity_cpu_cores",
+	},
+	{
+		MetricName: "kube_node_status_capacity_nvidia_gpu_cards",
+	},
+	{
+		MetricName: "kube_node_status_capacity_memory_bytes",
+	},
+	{
+		MetricName: "kube_node_status_capacity_pods",
+	},
+	{
+		MetricName: "kube_node_status_allocatable_cpu_cores",
+	},
+	{
+		MetricName: "kube_node_status_allocatable_nvidia_gpu_cards",
+	},
+	{
+		MetricName: "kube_node_status_allocatable_memory_bytes",
+	},
+	{
+		MetricName: "kube_node_status_allocatable_pods",
+	},
+	{
+		CustomName: "isReady",
+		MetricName: "kube_node_status_condition",
+		Labels: prometheus.Labels{
+			"condition": "Ready",
+		},
+		Value: prometheus.GaugeValue(1),
+	},
+	{
+		CustomName: "isDiskPressure",
+		MetricName: "kube_node_status_condition",
+		Labels: prometheus.Labels{
+			"condition": "DiskPressure",
+		},
+		Value: prometheus.GaugeValue(1),
+	},
+	{
+		CustomName: "isMemoryPressure",
+		MetricName: "kube_node_status_condition",
+		Labels: prometheus.Labels{
+			"condition": "MemoryPressure",
+		},
+		Value: prometheus.GaugeValue(1),
+	},
+	{
+		CustomName: "isOutOfDisk",
+		MetricName: "kube_node_status_condition",
+		Labels: prometheus.Labels{
+			"condition": "OutOfDisk",
+		},
+		Value: prometheus.GaugeValue(1),
+	},
+	{
+		MetricName: "kube_node_created",
+	},
 }
 
 var prometheusRestQueries = []prometheus.Query{
@@ -232,6 +328,13 @@ var fromNano = func(value definition.FetchedValue) definition.FetchedValue {
 	return float64(value.(int)) / 1000000000
 }
 
+var toBoolean = func(value definition.FetchedValue) definition.FetchedValue {
+	if value == prometheus.GaugeValue(1) {
+		return "true"
+	}
+	return "false"
+}
+
 var kubeletSpecs = definition.SpecGroups{
 	"pod": {
 		IDGenerator: kubeletMetric.FromRawEntityIDGroupEntityIDGenerator("namespace"),
@@ -253,22 +356,54 @@ var kubeletSpecs = definition.SpecGroups{
 			{"namespace", definition.FromRaw("namespace"), sdkMetric.ATTRIBUTE},
 		},
 	},
+	"node": {
+		Specs: []definition.Spec{
+			{"nodeName", definition.FromRaw("nodeName"), sdkMetric.ATTRIBUTE},
+			{"cpuUsedCores", definition.Transform(definition.FromRaw("usageNanoCores"), fromNano), sdkMetric.GAUGE},
+			{"usageCoreSeconds", definition.Transform(definition.FromRaw("usageCoreNanoSeconds"), fromNano), sdkMetric.GAUGE},
+			{"memoryUsedBytes", definition.FromRaw("memoryUsageBytes"), sdkMetric.GAUGE},
+			{"memoryAvailableBytes", definition.FromRaw("memoryAvailableBytes"), sdkMetric.GAUGE},
+			{"memoryWorkingSetBytes", definition.FromRaw("memoryWorkingSetBytes"), sdkMetric.GAUGE},
+			{"memoryRssBytes", definition.FromRaw("memoryRssBytes"), sdkMetric.GAUGE},
+			{"memoryPageFaults", definition.FromRaw("memoryPageFaults"), sdkMetric.GAUGE},
+			{"memoryMajorPageFaults", definition.FromRaw("memoryMajorPageFaults"), sdkMetric.GAUGE},
+			{"net.rxBytesPerSecond", definition.FromRaw("rxBytes"), sdkMetric.RATE},
+			{"net.txBytesPerSecond", definition.FromRaw("txBytes"), sdkMetric.RATE},
+			{"net.errorCount", definition.FromRaw("errors"), sdkMetric.GAUGE},
+			{"fsAvailableBytes", definition.FromRaw("fsAvailableBytes"), sdkMetric.GAUGE},
+			{"fsCapacityBytes", definition.FromRaw("fsCapacityBytes"), sdkMetric.GAUGE},
+			{"fsUsedBytes", definition.FromRaw("fsUsedBytes"), sdkMetric.GAUGE},
+			{"fsInodesFree", definition.FromRaw("fsInodesFree"), sdkMetric.GAUGE},
+			{"fsInodes", definition.FromRaw("fsInodes"), sdkMetric.GAUGE},
+			{"fsInodesUsed", definition.FromRaw("fsInodesUsed"), sdkMetric.GAUGE},
+			{"runtimeAvailableBytes", definition.FromRaw("runtimeAvailableBytes"), sdkMetric.GAUGE},
+			{"runtimeCapacityBytes", definition.FromRaw("runtimeCapacityBytes"), sdkMetric.GAUGE},
+			{"runtimeUsedBytes", definition.FromRaw("runtimeUsedBytes"), sdkMetric.GAUGE},
+			{"runtimeInodesFree", definition.FromRaw("runtimeInodesFree"), sdkMetric.GAUGE},
+			{"runtimeInodes", definition.FromRaw("runtimeInodes"), sdkMetric.GAUGE},
+			{"runtimeInodesUsed", definition.FromRaw("runtimeInodesUsed"), sdkMetric.GAUGE},
+		},
+	},
 }
 
 var kubeletKSMPopulateSpecs = definition.SpecGroups{
 	"pod": {
 		IDGenerator: kubeletSpecs["pod"].IDGenerator,
-		Specs:       append(kubeletSpecs["pod"].Specs, ksmPodAndContainerGroupSpecs["pod"].Specs...),
+		Specs:       append(kubeletSpecs["pod"].Specs, ksmPodContainerNodeGroupSpecs["pod"].Specs...),
 	},
 	"container": {
 		IDGenerator: kubeletSpecs["container"].IDGenerator,
-		Specs:       append(kubeletSpecs["container"].Specs, ksmPodAndContainerGroupSpecs["container"].Specs...),
+		Specs:       append(kubeletSpecs["container"].Specs, ksmPodContainerNodeGroupSpecs["container"].Specs...),
+	},
+	"node": {
+		Specs: append(kubeletSpecs["node"].Specs, ksmPodContainerNodeGroupSpecs["node"].Specs...),
 	},
 }
 
 var kubeletKSMAndRestPopulateSpecs = definition.SpecGroups{
 	"pod":        kubeletKSMPopulateSpecs["pod"],
 	"container":  kubeletKSMPopulateSpecs["container"],
+	"node":       kubeletKSMPopulateSpecs["node"],
 	"replicaset": ksmRestSpecs["replicaset"],
 	"namespace":  ksmRestSpecs["namespace"],
 	"deployment": ksmRestSpecs["deployment"],
