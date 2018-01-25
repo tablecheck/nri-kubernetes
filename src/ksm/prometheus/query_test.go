@@ -146,6 +146,69 @@ func TestQueryMatch(t *testing.T) {
 	assert.Equal(t, expectedMetrics, q.Execute(&r))
 }
 
+func TestQueryMatch_CustomName(t *testing.T) {
+	q := Query{
+		CustomName: "custom_name",
+		MetricName: "kube_pod_status_phase",
+		Labels: Labels{
+			"namespace": "default",
+			"pod":       "nr-123456789",
+		},
+		Value: GaugeValue(1),
+	}
+
+	metrictType := prometheus.MetricType_GAUGE
+	r := prometheus.MetricFamily{
+		Name: proto.String(q.MetricName),
+		Type: &metrictType,
+		Metric: []*prometheus.Metric{
+			{
+				Gauge: &prometheus.Gauge{
+					Value: proto.Float64(1),
+				},
+				Label: []*prometheus.LabelPair{
+					{
+						Name:  proto.String("namespace"),
+						Value: proto.String("default"),
+					},
+					{
+						Name:  proto.String("pod"),
+						Value: proto.String("nr-123456789"),
+					},
+				},
+			},
+			{
+				Gauge: &prometheus.Gauge{
+					Value: proto.Float64(0),
+				},
+				Label: []*prometheus.LabelPair{
+					{
+						Name:  proto.String("namespace"),
+						Value: proto.String("default"),
+					},
+					{
+						Name:  proto.String("pod"),
+						Value: proto.String("nr-123456789"),
+					},
+				},
+			},
+		},
+	}
+
+	expectedMetrics := MetricFamily{
+		Name: q.CustomName,
+		Type: "GAUGE",
+		Metrics: []Metric{
+			{
+				Labels: q.Labels,
+				Value:  GaugeValue(1),
+			},
+		},
+	}
+
+	assert.Equal(t, expectedMetrics, q.Execute(&r))
+}
+
 func mockResponseHandler(mockResponse io.Reader) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		io.Copy(w, mockResponse) // nolint: errcheck
