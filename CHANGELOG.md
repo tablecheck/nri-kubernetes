@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Added
+- Adding node metrics. Data is fetched from Kubelet and kube-state-metrics.
+
 ### Fixed
 - Integration stops on KSM or Kubelet connection error, instead of continuing.
 

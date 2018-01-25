@@ -71,7 +71,7 @@ type Memory struct {
 	MajorPageFaults int `json:"majorPageFaults"`
 }
 
-// Fs represents file system data of a node
+// Fs represents filesystem data of a node
 type Fs struct {
 	AvailableBytes int `json:"availableBytes"`
 	CapacityBytes  int `json:"capacityBytes"`
@@ -81,7 +81,7 @@ type Fs struct {
 	InodesUsed     int `json:"inodesUsed"`
 }
 
-// Runtime ...
+// Runtime represents runtime image filesystem data of a node
 type Runtime struct {
 	ImageFS ImageFS `json:"imageFs"`
 }
