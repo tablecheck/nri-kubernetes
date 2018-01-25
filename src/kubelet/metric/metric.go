@@ -142,7 +142,7 @@ func GroupStatsSummary(statsSummary *Summary) (definition.RawGroups, []error) {
 			"memoryWorkingSetBytes": node.Memory.WorkingSetBytes,
 			"memoryRssBytes":        node.Memory.RssBytes,
 			"memoryPageFaults":      node.Memory.PageFaults,
-			"memoryMajorPageFaults": node.Memory.PageFaults,
+			"memoryMajorPageFaults": node.Memory.MajorPageFaults,
 			// Network
 			"rxBytes": node.Network.RxBytes,
 			"txBytes": node.Network.TxBytes,
@@ -164,7 +164,7 @@ func GroupStatsSummary(statsSummary *Summary) (definition.RawGroups, []error) {
 		}
 		g["node"][rawEntityID] = nodeData
 	} else {
-		errs = append(errs, fmt.Errorf("empty node identifier, fetching pod data skipped"))
+		errs = append(errs, fmt.Errorf("empty node identifier, fetching node data skipped"))
 	}
 
 	for _, pod := range statsSummary.Pods {
