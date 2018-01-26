@@ -39,7 +39,7 @@ func (p *k8sPopulator) Populate(groups definition.RawGroups, specGroups definiti
 
 	if len(errs) > 0 {
 		for _, err := range errs {
-			p.logger.Debug("%s", err)
+			p.logger.Debugf("%s", err)
 		}
 	}
 
@@ -66,7 +66,7 @@ type ksmGrouper struct {
 }
 
 func (r *ksmGrouper) Group(specGroups definition.SpecGroups) (definition.RawGroups, *ErrorGroup) {
-	r.logger.Debug("Endpoint %s called for getting data from kube-state-metrics service", r.ksmURL)
+	r.logger.Debugf("Endpoint %q called for getting data from kube-state-metrics service", r.ksmURL)
 
 	mFamily, err := prometheus.Do(r.ksmURL.String(), r.queries, r.HTTPClient)
 	if err != nil {
@@ -101,7 +101,7 @@ type kubelet struct {
 
 func (r *kubelet) Group(definition.SpecGroups) (definition.RawGroups, *ErrorGroup) {
 	urlString := r.metricsURL.String()
-	r.logger.Debug("Getting metrics data from: %v", urlString)
+	r.logger.Debugf("Getting metrics data from: %s", urlString)
 	response, err := kubeletMetric.GetMetricsData(r.HTTPClient, urlString)
 	if err != nil {
 		return nil, &ErrorGroup{
