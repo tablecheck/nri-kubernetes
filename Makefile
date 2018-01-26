@@ -30,12 +30,9 @@ deps: tools
 	@echo "=== $(INTEGRATION) === [ deps ]: Installing package dependencies required by the project..."
 	@govendor sync
 
-validate: deps license
+validate: deps
 	@echo "=== $(INTEGRATION) === [ validate ]: Validating source code running gometalinter..."
 	@gometalinter.v2 --config=.gometalinter.json ./...
-
-license:
-	@echo "=== $(INTEGRATION) === [ license ]: Validating licenses of your dependencies..."
 	@papers-go validate -c ../../.papers_config.yml
 
 compile: deps
