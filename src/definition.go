@@ -8,7 +8,7 @@ import (
 	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
 )
 
-var ksmPodContainerNodeGroupSpecs = definition.SpecGroups{
+var ksmMergeableSpecs = definition.SpecGroups{
 	"pod": {
 		IDGenerator: metric.FromPrometheusLabelValueEntityIDGenerator("kube_pod_info", "pod"),
 		Specs: []definition.Spec{
@@ -59,7 +59,7 @@ var ksmPodContainerNodeGroupSpecs = definition.SpecGroups{
 	},
 	"node": {
 		Specs: []definition.Spec{
-			{"node", metric.FromPrometheusLabelValue("kube_node_info", "node"), sdkMetric.ATTRIBUTE},
+			{"nodeName", metric.FromPrometheusLabelValue("kube_node_info", "node"), sdkMetric.ATTRIBUTE},
 			{"containerRuntimeVersion", metric.FromPrometheusLabelValue("kube_node_info", "container_runtime_version"), sdkMetric.ATTRIBUTE},
 			{"kernelVersion", metric.FromPrometheusLabelValue("kube_node_info", "kernel_version"), sdkMetric.ATTRIBUTE},
 			{"kubeletVersion", metric.FromPrometheusLabelValue("kube_node_info", "kubelet_version"), sdkMetric.ATTRIBUTE},
@@ -83,10 +83,10 @@ var ksmPodContainerNodeGroupSpecs = definition.SpecGroups{
 			{"isOutOfDisk", metric.FromPrometheusLabelValue("isOutOfDisk", "status"), sdkMetric.ATTRIBUTE},
 		},
 	},
-	"namespace": ksmRestSpecs["namespace"], // Needed for labels inheritance
+	"namespace": ksmUnmergeableSpecs["namespace"], // Needed for labels inheritance
 }
 
-var ksmRestSpecs = definition.SpecGroups{
+var ksmUnmergeableSpecs = definition.SpecGroups{
 	"replicaset": {
 		IDGenerator: metric.FromPrometheusLabelValueEntityIDGenerator("kube_replicaset_created", "replicaset"),
 		Specs: []definition.Spec{
@@ -128,7 +128,7 @@ var ksmRestSpecs = definition.SpecGroups{
 	},
 }
 
-var prometheusPodsContainerNodeQueries = []prometheus.Query{
+var mergeableObjectsQueries = []prometheus.Query{
 	{
 		MetricName: "kube_pod_info",
 		Value:      prometheus.GaugeValue(1),
@@ -266,7 +266,7 @@ var prometheusPodsContainerNodeQueries = []prometheus.Query{
 	},
 }
 
-var prometheusRestQueries = []prometheus.Query{
+var unmergeableObjectsQueries = []prometheus.Query{
 	{
 		MetricName: "kube_replicaset_spec_replicas",
 	},
@@ -335,7 +335,7 @@ var toBoolean = func(value definition.FetchedValue) definition.FetchedValue {
 	return "false"
 }
 
-var kubeletSpecs = definition.SpecGroups{
+var kubeletMergeableSpecs = definition.SpecGroups{
 	"pod": {
 		IDGenerator: kubeletMetric.FromRawEntityIDGroupEntityIDGenerator("namespace"),
 		Specs: []definition.Spec{
@@ -386,25 +386,25 @@ var kubeletSpecs = definition.SpecGroups{
 	},
 }
 
-var kubeletKSMPopulateSpecs = definition.SpecGroups{
+var mergeableObjectsPopulateSpecs = definition.SpecGroups{
 	"pod": {
-		IDGenerator: kubeletSpecs["pod"].IDGenerator,
-		Specs:       append(kubeletSpecs["pod"].Specs, ksmPodContainerNodeGroupSpecs["pod"].Specs...),
+		IDGenerator: kubeletMergeableSpecs["pod"].IDGenerator,
+		Specs:       append(kubeletMergeableSpecs["pod"].Specs, ksmMergeableSpecs["pod"].Specs...),
 	},
 	"container": {
-		IDGenerator: kubeletSpecs["container"].IDGenerator,
-		Specs:       append(kubeletSpecs["container"].Specs, ksmPodContainerNodeGroupSpecs["container"].Specs...),
+		IDGenerator: kubeletMergeableSpecs["container"].IDGenerator,
+		Specs:       append(kubeletMergeableSpecs["container"].Specs, ksmMergeableSpecs["container"].Specs...),
 	},
 	"node": {
-		Specs: append(kubeletSpecs["node"].Specs, ksmPodContainerNodeGroupSpecs["node"].Specs...),
+		Specs: append(kubeletMergeableSpecs["node"].Specs, ksmMergeableSpecs["node"].Specs...),
 	},
 }
 
-var kubeletKSMAndRestPopulateSpecs = definition.SpecGroups{
-	"pod":        kubeletKSMPopulateSpecs["pod"],
-	"container":  kubeletKSMPopulateSpecs["container"],
-	"node":       kubeletKSMPopulateSpecs["node"],
-	"replicaset": ksmRestSpecs["replicaset"],
-	"namespace":  ksmRestSpecs["namespace"],
-	"deployment": ksmRestSpecs["deployment"],
+var allObjectsPopulateSpecs = definition.SpecGroups{
+	"pod":        mergeableObjectsPopulateSpecs["pod"],
+	"container":  mergeableObjectsPopulateSpecs["container"],
+	"node":       mergeableObjectsPopulateSpecs["node"],
+	"replicaset": ksmUnmergeableSpecs["replicaset"],
+	"namespace":  ksmUnmergeableSpecs["namespace"],
+	"deployment": ksmUnmergeableSpecs["deployment"],
 }

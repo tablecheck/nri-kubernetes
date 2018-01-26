@@ -39,7 +39,7 @@ const (
 var args argumentList
 
 func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) error {
-	groups, errs := kubeletKSMGrouper.Group(kubeletSpecs)
+	groups, errs := kubeletKSMGrouper.Group(kubeletMergeableSpecs)
 	if errs != nil && len(errs.Errors) > 0 {
 		if !errs.Recoverable {
 			return errors.New(errs.String())
@@ -47,7 +47,7 @@ func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clu
 		logger.Warnf("%s", errs.String())
 	}
 
-	ok, err := data.NewK8sPopulator(logger).Populate(groups, kubeletKSMPopulateSpecs, i, clusterName)
+	ok, err := data.NewK8sPopulator(logger).Populate(groups, mergeableObjectsPopulateSpecs, i, clusterName)
 	fatalIfErr(err)
 
 	e, err := i.Entity("nr-errors", "error")
@@ -74,7 +74,7 @@ func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clu
 }
 
 func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i *sdk.IntegrationProtocol2, ksmClient *http.Client, clusterName string, logger *logrus.Logger) error {
-	kubeletKSMGroups, errs := kubeletKSMGrouper.Group(kubeletSpecs)
+	kubeletKSMGroups, errs := kubeletKSMGrouper.Group(kubeletMergeableSpecs)
 	if errs != nil && len(errs.Errors) > 0 {
 		if !errs.Recoverable {
 			return errors.New(errs.String())
@@ -82,8 +82,8 @@ func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i
 		logger.Warnf("%s", errs.String())
 	}
 
-	g := data.NewKubeletKSMAndRestGrouper(kubeletKSMGroups, ksmMetricsURL, prometheusRestQueries, ksmClient, logger)
-	groups, errs := g.Group(ksmRestSpecs)
+	g := data.NewKubeletKSMAndRestGrouper(kubeletKSMGroups, ksmMetricsURL, unmergeableObjectsQueries, ksmClient, logger)
+	groups, errs := g.Group(ksmUnmergeableSpecs)
 	if errs != nil && len(errs.Errors) > 0 {
 		if !errs.Recoverable {
 			return errors.New(errs.String())
@@ -91,7 +91,7 @@ func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i
 		logger.Warnf("%s", errs.String())
 	}
 
-	ok, err := data.NewK8sPopulator(logger).Populate(groups, kubeletKSMAndRestPopulateSpecs, i, clusterName)
+	ok, err := data.NewK8sPopulator(logger).Populate(groups, allObjectsPopulateSpecs, i, clusterName)
 	fatalIfErr(err)
 
 	e, err := i.Entity("nr-errors", "error")
@@ -215,8 +215,8 @@ func main() {
 				ksmURL,
 				kubeletClient,
 				ksmClient,
-				prometheusPodsContainerNodeQueries,
-				ksmPodContainerNodeGroupSpecs,
+				mergeableObjectsQueries,
+				ksmMergeableSpecs,
 				logger,
 				ksmMetric.UnscheduledItemsPatcher,
 			)
@@ -230,8 +230,8 @@ func main() {
 				ksmURL,
 				kubeletClient,
 				ksmClient,
-				prometheusPodsContainerNodeQueries,
-				ksmPodContainerNodeGroupSpecs,
+				mergeableObjectsQueries,
+				ksmMergeableSpecs,
 				logger,
 			)
 

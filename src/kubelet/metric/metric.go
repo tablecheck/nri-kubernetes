@@ -129,9 +129,11 @@ func GroupStatsSummary(statsSummary *Summary) (definition.RawGroups, []error) {
 	}
 
 	node := statsSummary.Node
-	if node.Name != "" {
+	if node.Name == "" {
+		errs = append(errs, fmt.Errorf("empty node identifier, fetching node data skipped"))
+	} else {
 		rawEntityID := fmt.Sprintf("%v", statsSummary.Node.Name)
-		nodeData := definition.RawMetrics{
+		g["node"][rawEntityID] = definition.RawMetrics{
 			"nodeName": node.Name,
 			// CPU
 			"usageNanoCores":       node.CPU.UsageNanoCores,
@@ -162,9 +164,6 @@ func GroupStatsSummary(statsSummary *Summary) (definition.RawGroups, []error) {
 			"runtimeInodes":         node.Runtime.ImageFS.Inodes,
 			"runtimeInodesUsed":     node.Runtime.ImageFS.InodesUsed,
 		}
-		g["node"][rawEntityID] = nodeData
-	} else {
-		errs = append(errs, fmt.Errorf("empty node identifier, fetching node data skipped"))
 	}
 
 	for _, pod := range statsSummary.Pods {
