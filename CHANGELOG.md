@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - Adding node metrics. Data is fetched from Kubelet and kube-state-metrics.
+- Adding toleration for the "NoSchedule" taint, so the integration is deployed on all nodes
 
 ### Fixed
 - Integration stops on KSM or Kubelet connection error, instead of continuing.
