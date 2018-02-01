@@ -33,6 +33,7 @@ deps: tools
 validate: deps
 	@echo "=== $(INTEGRATION) === [ validate ]: Validating source code running gometalinter..."
 	@gometalinter.v2 --config=.gometalinter.json ./...
+	@echo "=== $(INTEGRATION) === [ validate ]: Validating licenses of package dependencies required by the project..."
 	@papers-go validate -c ../../.papers_config.yml
 
 compile: deps
