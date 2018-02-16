@@ -1,10 +1,8 @@
 package main
 
 import (
-	"crypto/tls"
 	"errors"
-	"net/http"
-	"net/url"
+	"fmt"
 	"time"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
@@ -21,19 +19,13 @@ import (
 
 type argumentList struct {
 	sdkArgs.DefaultArgumentList
-	KubeStateMetricsURL string `help:"overrides Kube State Metrics schema://host:port URL parts (if not set, it will be self-discovered)."`
-	DebugKubeletURL     string `help:"for debugging purposes. Overrides kubelet schema://host:port URL parts (if not set, it will be self-discovered)"`
-	DebugRole           string `help:"for debugging purposes. Sets the role of the integration (accepted values: kubelet-ksm-rest, kubelet-ksm. If not set, it will be self-discovered)"`
-	IgnoreCerts         bool   `default:"false" help:"disables HTTPS certificate verification for metrics sources"`
-	Timeout             int    `default:"5000" help:"timeout in milliseconds for calling metrics sources"`
-	ClusterName         string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
+	Timeout     int    `default:"5000" help:"timeout in milliseconds for calling metrics sources"`
+	ClusterName string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
 }
 
 const (
 	integrationName    = "com.newrelic.kubernetes"
 	integrationVersion = "1.0.0-beta3"
-	statsSummaryPath   = "/stats/summary"
-	metricsPath        = "/metrics"
 )
 
 var args argumentList
@@ -48,10 +40,14 @@ func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clu
 	}
 
 	ok, err := data.NewK8sPopulator(logger).Populate(groups, mergeableObjectsPopulateSpecs, i, clusterName)
-	fatalIfErr(err)
+	if err != nil {
+		logger.Fatal(err)
+	}
 
 	e, err := i.Entity("nr-errors", "error")
-	fatalIfErr(err)
+	if err != nil {
+		logger.Fatal(err)
+	}
 	if errs != nil {
 		for _, err := range errs.Errors {
 			ms := e.NewMetricSet("K8sDebugErrors")
@@ -73,7 +69,7 @@ func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clu
 	return nil
 }
 
-func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i *sdk.IntegrationProtocol2, ksmClient *http.Client, clusterName string, logger *logrus.Logger) error {
+func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmClient endpoints.Client, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) error {
 	kubeletKSMGroups, errs := kubeletKSMGrouper.Group(kubeletMergeableSpecs)
 	if errs != nil && len(errs.Errors) > 0 {
 		if !errs.Recoverable {
@@ -82,7 +78,7 @@ func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i
 		logger.Warnf("%s", errs.String())
 	}
 
-	g := data.NewKubeletKSMAndRestGrouper(kubeletKSMGroups, ksmMetricsURL, unmergeableObjectsQueries, ksmClient, logger)
+	g := data.NewKubeletKSMAndRestGrouper(kubeletKSMGroups, ksmClient, unmergeableObjectsQueries, logger)
 	groups, errs := g.Group(ksmUnmergeableSpecs)
 	if errs != nil && len(errs.Errors) > 0 {
 		if !errs.Recoverable {
@@ -92,10 +88,14 @@ func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i
 	}
 
 	ok, err := data.NewK8sPopulator(logger).Populate(groups, allObjectsPopulateSpecs, i, clusterName)
-	fatalIfErr(err)
+	if err != nil {
+		logger.Fatal(err)
+	}
 
 	e, err := i.Entity("nr-errors", "error")
-	fatalIfErr(err)
+	if err != nil {
+		logger.Fatal(err)
+	}
 	if errs != nil {
 		for _, err := range errs.Errors {
 			ms := e.NewMetricSet("K8sDebugErrors")
@@ -118,101 +118,59 @@ func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmMetricsURL *url.URL, i
 }
 
 func main() {
-	defer log.Debug("Integration '%s' exited", integrationName)
 	integration, err := sdk.NewIntegrationProtocol2(integrationName, integrationVersion, &args)
-	log.Debug("Integration %q with version %s started", integrationName, integrationVersion)
-	if args.ClusterName == "" {
-		log.Fatal(errors.New("cluster_name argument is mandatory"))
+	exitLog := fmt.Sprintf("Integration %q exited", integrationName)
+	if err != nil {
+		defer log.Debug(exitLog)
+		log.Fatal(err) // Global logs used as args processed inside NewIntegrationProtocol2
 	}
-	fatalIfErr(err)
 
-	var ksmDiscoverer endpoints.Discoverer
+	logger := log.New(args.Verbose)
+
+	defer logger.Debug(exitLog)
+	logger.Debugf("Integration %q with version %s started", integrationName, integrationVersion)
+	if args.ClusterName == "" {
+		logger.Fatal(errors.New("cluster_name argument is mandatory"))
+	}
 
 	if args.All || args.Metrics {
-		if args.DebugKubeletURL != "" {
-			log.Warn("using argument aimed for debugging purposes. debug_kubelet_url=%q", args.DebugKubeletURL)
+		timeout := time.Millisecond * time.Duration(args.Timeout)
+
+		kubeletDiscoverer, err := kubeletEndpoints.NewKubeletDiscoverer(logger)
+		if err != nil {
+			logger.Fatal(err)
 		}
-		kubeletURL, err := url.Parse(args.DebugKubeletURL)
-		fatalIfErr(err)
-
-		ksmURL, err := url.Parse(args.KubeStateMetricsURL)
-		fatalIfErr(err)
-
-		if args.DebugRole != "" {
-			log.Warn("using argument aimed for debugging purposes. debug_role=%q", args.DebugRole)
+		kubeletClient, err := kubeletDiscoverer.Discover(timeout)
+		if err != nil {
+			logger.Fatal(err)
 		}
-		role := args.DebugRole
-		if role == "" {
-			// autodiscover
+		kubeletNodeIP := kubeletClient.NodeIP()
+		logger.Debugf("Kubelet Node = %s", kubeletNodeIP)
 
-			kubeletDiscoverer, err := kubeletEndpoints.NewKubeletDiscoverer()
-			fatalIfErr(err)
-
-			discoveredKubeletURL, err := kubeletDiscoverer.Discover()
-			fatalIfErr(err)
-			kubeletURL = &discoveredKubeletURL
-
-			kubeletNodeIP, err := kubeletDiscoverer.NodeIP()
-			fatalIfErr(err)
-			log.Debug("Kubelet Node = %s", kubeletNodeIP)
-
-			ksmDiscoverer, err = ksmEndpoints.NewKSMDiscoverer()
-			fatalIfErr(err)
-
-			ksmNodeIP, err := ksmDiscoverer.NodeIP()
-			fatalIfErr(err)
-
-			log.Debug("KSM Node = %s", ksmNodeIP)
-
-			discoveredKSMURL, err := ksmDiscoverer.Discover()
-			fatalIfErr(err)
-			ksmURL = &discoveredKSMURL
-
-			// setting role by auto discovery
-			if kubeletNodeIP == ksmNodeIP {
-				role = "kubelet-ksm-rest"
-			} else {
-				role = "kubelet-ksm"
-			}
-			log.Debug("Auto-discovered role = %s", role)
+		ksmDiscoverer, err := ksmEndpoints.NewKSMDiscoverer(logger)
+		if err != nil {
+			logger.Fatal(err)
 		}
-
-		if ksmURL.String() == "" {
-			log.Fatal(errors.New("kube_state_metrics_url should be provided"))
+		ksmClient, err := ksmDiscoverer.Discover(timeout)
+		if err != nil {
+			logger.Fatal(err)
 		}
+		ksmNodeIP := ksmClient.NodeIP()
+		logger.Debugf("KSM Node = %s", ksmNodeIP)
 
-		if kubeletURL.String() == "" {
-			log.Fatal(errors.New("debug_kubelet_url should be provided"))
+		// setting role by auto discovery
+		var role string
+		if kubeletNodeIP == ksmNodeIP {
+			role = "kubelet-ksm-rest"
+		} else {
+			role = "kubelet-ksm"
 		}
-
-		kubeletURL.Path = statsSummaryPath
-		ksmURL.Path = metricsPath
-
-		log.Debug("Kubelet URL = %s", kubeletURL)
-		log.Debug("KSM URL = %s", ksmURL)
-
-		kubeletClient := &http.Client{
-			Timeout: time.Millisecond * time.Duration(args.Timeout),
-		}
-
-		if args.IgnoreCerts && kubeletURL.Scheme == "https" {
-			kubeletClient.Transport = &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			}
-		}
-
-		ksmClient := &http.Client{
-			Timeout: time.Millisecond * time.Duration(args.Timeout),
-		}
-
-		logger := log.New(args.Verbose)
+		logger.Debugf("Auto-discovered role = %s", role)
 
 		switch role {
 		case "kubelet-ksm-rest":
 			// todo fix pointers indirection stuff
 			kubeletKSMGrouper := data.NewKubeletKSMPatchedGrouper(
-				kubeletURL,
-				ksmURL,
 				kubeletClient,
 				ksmClient,
 				mergeableObjectsQueries,
@@ -222,12 +180,13 @@ func main() {
 			)
 
 			// todo fix pointers indirection stuff
-			fatalIfErr(kubeletKSMAndRest(kubeletKSMGrouper, ksmURL, integration, ksmClient, args.ClusterName, logger))
+			err = kubeletKSMAndRest(kubeletKSMGrouper, ksmClient, integration, args.ClusterName, logger)
+			if err != nil {
+				logger.Fatal(err)
+			}
 		case "kubelet-ksm":
 			// todo fix pointers indirection stuff
 			kubeletKSMGrouper := data.NewKubeletKSMGrouper(
-				kubeletURL,
-				ksmURL,
 				kubeletClient,
 				ksmClient,
 				mergeableObjectsQueries,
@@ -235,15 +194,15 @@ func main() {
 				logger,
 			)
 
-			fatalIfErr(kubeletKSM(kubeletKSMGrouper, integration, args.ClusterName, logger))
+			err = kubeletKSM(kubeletKSMGrouper, integration, args.ClusterName, logger)
+			if err != nil {
+				logger.Fatal(err)
+			}
 		}
 	}
 
-	fatalIfErr(integration.Publish())
-}
-
-func fatalIfErr(err error) {
+	err = integration.Publish()
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 }

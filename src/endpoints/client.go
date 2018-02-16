@@ -2,8 +2,10 @@ package endpoints
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,8 +15,8 @@ import (
 
 // KubernetesClient provides an interface to common Kubernetes API operations
 type KubernetesClient interface {
-	// FindNode returns a NodeList reference containing the pod named as the argument, if any
-	FindNode(name string) (*v1.NodeList, error)
+	// FindNode returns a Node reference containing the pod named as the argument, if any
+	FindNode(name string) (*v1.Node, error)
 	// FindPodsByLabel returns a PodList reference containing the pods matching the provided name/value label pair
 	FindPodsByLabel(name, value string) (*v1.PodList, error)
 	// FindPodByName returns a PodList reference that should contain the pod whose name matches with the name argument
@@ -24,71 +26,85 @@ type KubernetesClient interface {
 	// FindServiceByLabel returns a ServiceList containing the services matching the provided name/value label pair
 	// name/value pairs
 	FindServiceByLabel(name, value string) (*v1.ServiceList, error)
-	// IsHTTPS checks whether a connection to a URL is secure or not
-	IsHTTPS(url string) bool
+	// Config returns a config of API client
+	Config() *rest.Config
+	// SecureHTTPClient returns http.Client configured with timeout and CA Cert
+	SecureHTTPClient(time.Duration) (*http.Client, error)
 }
 
 type goClientImpl struct {
 	client *kubernetes.Clientset
+	config *rest.Config
 }
 
-func (ka goClientImpl) FindNode(name string) (*v1.NodeList, error) {
-	return ka.client.CoreV1().Nodes().List(metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("metadata.name=%s", name),
-	})
+func (ka *goClientImpl) Config() *rest.Config {
+	return ka.config
 }
 
-func (ka goClientImpl) FindPodsByLabel(name, value string) (*v1.PodList, error) {
+func (ka *goClientImpl) FindNode(name string) (*v1.Node, error) {
+	return ka.client.CoreV1().Nodes().Get(name, metav1.GetOptions{})
+}
+
+func (ka *goClientImpl) FindPodsByLabel(name, value string) (*v1.PodList, error) {
 	return ka.client.CoreV1().Pods("").List(metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", name, value),
 	})
 }
 
-func (ka goClientImpl) FindPodByName(name string) (*v1.PodList, error) {
+func (ka *goClientImpl) FindPodByName(name string) (*v1.PodList, error) {
 	return ka.client.CoreV1().Pods("").List(metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("metadata.name=%s", name),
 	})
 }
 
-func (ka goClientImpl) FindPodsByHostname(hostname string) (*v1.PodList, error) {
+func (ka *goClientImpl) FindPodsByHostname(hostname string) (*v1.PodList, error) {
 	return ka.client.CoreV1().Pods("").List(metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("spec.hostname=%s", hostname),
 	})
 }
 
-func (ka goClientImpl) FindServiceByLabel(name, value string) (*v1.ServiceList, error) {
+func (ka *goClientImpl) FindServiceByLabel(name, value string) (*v1.ServiceList, error) {
 	return ka.client.CoreV1().Services("").List(metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", name, value),
 	})
 }
 
-func (ka goClientImpl) IsHTTPS(url string) bool {
-	// We ignore certificates only for checking
-	netClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
+func (ka *goClientImpl) SecureHTTPClient(t time.Duration) (*http.Client, error) {
+	c, ok := ka.client.RESTClient().(*rest.RESTClient)
+	if !ok {
+		return nil, errors.New("failed to set up a client for connecting to Kubelet through API proxy")
 	}
+	return c.Client, nil
+}
 
-	resp, err := netClient.Get(url)
-	if err != nil {
-		return false
+// BasicHTTPClient returns http.Client configured with timeout
+func BasicHTTPClient(t time.Duration) *http.Client {
+	return &http.Client{
+		Timeout: t,
 	}
-	resp.Body.Close() // nolint: errcheck
+}
 
-	return resp.TLS != nil
+// InsecureHTTPClient returns http.Client configured with timeout
+// and InsecureSkipVerify flag enabled
+func InsecureHTTPClient(t time.Duration) *http.Client {
+	client := BasicHTTPClient(t)
+	client.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	return client
 }
 
 // NewKubernetesClient instantiates a Kubernetes API client
 func NewKubernetesClient() (KubernetesClient, error) {
-	var ka goClientImpl
+	ka := new(goClientImpl)
+	var err error
 
-	config, err := rest.InClusterConfig()
+	ka.config, err = rest.InClusterConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	ka.client, err = kubernetes.NewForConfig(config)
+	ka.client, err = kubernetes.NewForConfig(ka.config)
 	if err != nil {
 		return nil, err
 	}

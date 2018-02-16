@@ -2,12 +2,11 @@ package data
 
 import (
 	"errors"
-	"net/http"
-	"net/url"
 
 	"fmt"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 	ksmMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
 	kubeletMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
@@ -59,16 +58,13 @@ func NewK8sPopulator(logger *logrus.Logger) Populator {
 }
 
 type ksmGrouper struct {
-	ksmURL     *url.URL
-	queries    []prometheus.Query
-	HTTPClient *http.Client
-	logger     *logrus.Logger
+	queries []prometheus.Query
+	client  endpoints.Client
+	logger  *logrus.Logger
 }
 
 func (r *ksmGrouper) Group(specGroups definition.SpecGroups) (definition.RawGroups, *ErrorGroup) {
-	r.logger.Debugf("Endpoint %q called for getting data from kube-state-metrics service", r.ksmURL)
-
-	mFamily, err := prometheus.Do(r.ksmURL.String(), r.queries, r.HTTPClient)
+	mFamily, err := prometheus.Do(r.client, r.queries)
 	if err != nil {
 		return nil, &ErrorGroup{
 			Recoverable: false,
@@ -84,25 +80,21 @@ func (r *ksmGrouper) Group(specGroups definition.SpecGroups) (definition.RawGrou
 }
 
 // NewKSMGrouper creates a grouper aware of Kube State Metrics raw metrics.
-func NewKSMGrouper(ksmURL *url.URL, queries []prometheus.Query, c *http.Client, logger *logrus.Logger) Grouper {
+func NewKSMGrouper(c endpoints.Client, queries []prometheus.Query, logger *logrus.Logger) Grouper {
 	return &ksmGrouper{
-		ksmURL:     ksmURL,
-		queries:    queries,
-		HTTPClient: c,
-		logger:     logger,
+		queries: queries,
+		client:  c,
+		logger:  logger,
 	}
 }
 
 type kubelet struct {
-	metricsURL *url.URL
-	HTTPClient *http.Client
-	logger     *logrus.Logger
+	client endpoints.Client
+	logger *logrus.Logger
 }
 
 func (r *kubelet) Group(definition.SpecGroups) (definition.RawGroups, *ErrorGroup) {
-	urlString := r.metricsURL.String()
-	r.logger.Debugf("Getting metrics data from: %s", urlString)
-	response, err := kubeletMetric.GetMetricsData(r.HTTPClient, urlString)
+	response, err := kubeletMetric.GetMetricsData(r.client)
 	if err != nil {
 		return nil, &ErrorGroup{
 			Recoverable: false,
@@ -118,20 +110,18 @@ func (r *kubelet) Group(definition.SpecGroups) (definition.RawGroups, *ErrorGrou
 }
 
 // NewKubeletGrouper creates a grouper aware of Kubelet raw metrics.
-func NewKubeletGrouper(metricsURL *url.URL, c *http.Client, logger *logrus.Logger) Grouper {
+func NewKubeletGrouper(c endpoints.Client, logger *logrus.Logger) Grouper {
 	return &kubelet{
-		metricsURL: metricsURL,
-		HTTPClient: c,
-		logger:     logger,
+		client: c,
+		logger: logger,
 	}
 }
 
 type kubeletKSMGrouper struct {
-	ksmMetricsURL     *url.URL
+	ksmClient         endpoints.Client
 	ksmPartialQueries []prometheus.Query
 	ksmSpecGroups     definition.SpecGroups
 	kubeletGrouper    Grouper
-	ksmHTTPClient     *http.Client
 	logger            *logrus.Logger
 	groupPatcher      GroupPatcher
 }
@@ -148,7 +138,7 @@ func (r *kubeletKSMGrouper) Group(specGroups definition.SpecGroups) (definition.
 		}
 	}
 
-	ksmGrouper := NewKSMGrouper(r.ksmMetricsURL, r.ksmPartialQueries, r.ksmHTTPClient, r.logger)
+	ksmGrouper := NewKSMGrouper(r.ksmClient, r.ksmPartialQueries, r.logger)
 	ksmGroups, groupErrs := ksmGrouper.Group(r.ksmSpecGroups)
 	if groupErrs != nil {
 		if groupErrs.Recoverable {
@@ -169,19 +159,18 @@ func (r *kubeletKSMGrouper) Group(specGroups definition.SpecGroups) (definition.
 
 // NewKubeletKSMGrouper creates a grouper that merges groups provided by the
 // kubelet and ksm groupers.
-func NewKubeletKSMGrouper(kubeletURL, ksmMetricsURL *url.URL, kubeletClient *http.Client, ksmClient *http.Client, ksmPodAndContainerQueries []prometheus.Query, ksmSpecGroups definition.SpecGroups, logger *logrus.Logger) Grouper {
-	return NewKubeletKSMPatchedGrouper(kubeletURL, ksmMetricsURL, kubeletClient, ksmClient, ksmPodAndContainerQueries, ksmSpecGroups, logger, nil)
+func NewKubeletKSMGrouper(kubeletClient, ksmClient endpoints.Client, ksmPodAndContainerQueries []prometheus.Query, ksmSpecGroups definition.SpecGroups, logger *logrus.Logger) Grouper {
+	return NewKubeletKSMPatchedGrouper(kubeletClient, ksmClient, ksmPodAndContainerQueries, ksmSpecGroups, logger, nil)
 }
 
 // NewKubeletKSMPatchedGrouper creates a grouper that merges groups provided by
 // the kubeletKSMAndRestGrouper plus some missing ksm raw metrics.
-func NewKubeletKSMPatchedGrouper(kubeletURL, ksmMetricsURL *url.URL, kubeletClient *http.Client, ksmClient *http.Client, ksmPodAndContainerQueries []prometheus.Query, ksmSpecGroups definition.SpecGroups, logger *logrus.Logger, patcher GroupPatcher) Grouper {
+func NewKubeletKSMPatchedGrouper(kubeletClient, ksmClient endpoints.Client, ksmPodAndContainerQueries []prometheus.Query, ksmSpecGroups definition.SpecGroups, logger *logrus.Logger, patcher GroupPatcher) Grouper {
 	return &kubeletKSMGrouper{
-		ksmMetricsURL:     ksmMetricsURL,
+		ksmClient:         ksmClient,
 		ksmPartialQueries: ksmPodAndContainerQueries,
 		ksmSpecGroups:     ksmSpecGroups,
-		kubeletGrouper:    NewKubeletGrouper(kubeletURL, kubeletClient, logger),
-		ksmHTTPClient:     ksmClient,
+		kubeletGrouper:    NewKubeletGrouper(kubeletClient, logger),
 		logger:            logger,
 		groupPatcher:      patcher,
 	}
@@ -189,16 +178,15 @@ func NewKubeletKSMPatchedGrouper(kubeletURL, ksmMetricsURL *url.URL, kubeletClie
 
 type kubeletKSMAndRestGrouper struct {
 	kubeletKSMRawGroups definition.RawGroups
-	ksmMetricsURL       *url.URL
+	ksmClient           endpoints.Client
 	restQueries         []prometheus.Query
-	ksmHTTPClient       *http.Client
 	logger              *logrus.Logger
 }
 
 func (r *kubeletKSMAndRestGrouper) Group(specGroups definition.SpecGroups) (definition.RawGroups, *ErrorGroup) {
 	errs := ErrorGroup{Recoverable: true}
 
-	ksmGrouper := NewKSMGrouper(r.ksmMetricsURL, r.restQueries, r.ksmHTTPClient, r.logger)
+	ksmGrouper := NewKSMGrouper(r.ksmClient, r.restQueries, r.logger)
 	ksmGroups, groupErrs := ksmGrouper.Group(specGroups)
 	if groupErrs != nil {
 		if groupErrs.Recoverable {
@@ -215,12 +203,11 @@ func (r *kubeletKSMAndRestGrouper) Group(specGroups definition.SpecGroups) (defi
 
 // NewKubeletKSMAndRestGrouper creates a grouper that merges groups provided by
 // the kubelet and ksm groupers plus some additional ksm raw metrics.
-func NewKubeletKSMAndRestGrouper(kubeletKSMGroups definition.RawGroups, ksmMetricsURL *url.URL, ksmRestQueries []prometheus.Query, ksmClient *http.Client, logger *logrus.Logger) Grouper {
+func NewKubeletKSMAndRestGrouper(kubeletKSMGroups definition.RawGroups, ksmClient endpoints.Client, ksmRestQueries []prometheus.Query, logger *logrus.Logger) Grouper {
 	return &kubeletKSMAndRestGrouper{
 		kubeletKSMRawGroups: kubeletKSMGroups,
-		ksmMetricsURL:       ksmMetricsURL,
+		ksmClient:           ksmClient,
 		restQueries:         ksmRestQueries,
-		ksmHTTPClient:       ksmClient,
 		logger:              logger,
 	}
 }

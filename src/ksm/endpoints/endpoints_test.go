@@ -29,7 +29,7 @@ func TestKSMDiscover_DNS(t *testing.T) {
 	endpoints := ksmDiscoverer{lookupSRV: fakeLookupSRV}
 
 	// When retrieving the KSM URL
-	kurl, err := endpoints.Discover()
+	kurl, _, err := endpoints.Discover()
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the KSM Service is returned
@@ -55,11 +55,11 @@ func TestKSMDiscover_API(t *testing.T) {
 	// and an Discoverer implementation whose DNS returns empty response
 	endpoints := ksmDiscoverer{
 		lookupSRV: emptyLookupSRV,
-		client:    client,
+		apiClient: client,
 	}
 
 	// When retrieving the KSM URL
-	kurl, err := endpoints.Discover()
+	kurl, _, err := endpoints.Discover()
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the KSM Service is returned
@@ -85,11 +85,11 @@ func TestKSMDiscover_API_afterError(t *testing.T) {
 	// and an Discoverer implementation whose DNS returns an error
 	endpoints := ksmDiscoverer{
 		lookupSRV: failingLookupSRV,
-		client:    client,
+		apiClient: client,
 	}
 
 	// When retrieving the KSM URL
-	kurl, err := endpoints.Discover()
+	kurl, _, err := endpoints.Discover()
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the KSM Service is returned
@@ -118,11 +118,11 @@ func TestKSMDiscover_API_GuessTCPPort(t *testing.T) {
 	// and an Discoverer implementation
 	endpoints := ksmDiscoverer{
 		lookupSRV: emptyLookupSRV,
-		client:    client,
+		apiClient: client,
 	}
 
 	// When retrieving the KSM URL with no port named 'http-metrics'
-	kurl, err := endpoints.Discover()
+	kurl, _, err := endpoints.Discover()
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the first TCP host:port of the KSM Service is returned
@@ -140,7 +140,7 @@ func TestKsmDiscoverer_NodeIP(t *testing.T) {
 
 	// and an Discoverer implementation
 	endpoints := ksmDiscoverer{
-		client: client,
+		apiClient: client,
 	}
 
 	// When getting the Node IP
@@ -163,7 +163,7 @@ func TestKsmDiscoverer_NodeIP_MultiplePods(t *testing.T) {
 
 	// and an Discoverer implementation
 	endpoints := ksmDiscoverer{
-		client: client,
+		apiClient: client,
 	}
 
 	// When getting the Node IP

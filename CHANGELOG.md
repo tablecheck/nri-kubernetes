@@ -10,9 +10,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Adding node metrics. Data is fetched from Kubelet and kube-state-metrics.
 - Adding toleration for the "NoSchedule" taint, so the integration is deployed on all nodes
+- Adding new autodiscovery flow with authentication and authorization mechanisms
 
 ### Fixed
 - Integration stops on KSM or Kubelet connection error, instead of continuing.
+
+### Removed
+- Custom arguments for kubelet and kube-state-metrics endpoints
 
 ## 1.0.0-beta3
 

@@ -9,7 +9,10 @@ import (
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/config"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 )
+
+const statsSummaryPath = "/stats/summary"
 
 // Summary represents list of required data from /stats/summary endpoint
 type Summary struct {
@@ -97,25 +100,28 @@ type ImageFS struct {
 }
 
 // GetMetricsData calls kubelet /stats/summary endpoint and returns unmarshalled response
-func GetMetricsData(netClient *http.Client, URL string) (*Summary, error) {
-	resp, err := netClient.Get(URL)
+func GetMetricsData(c endpoints.Client) (*Summary, error) {
+	resp, err := c.Do(http.MethodGet, statsSummaryPath)
 	if err != nil {
-		return nil, fmt.Errorf("Error trying to connect to '%s'. Got error: %v", URL, err.Error())
+		return nil, err
 	}
 	defer resp.Body.Close() // nolint: errcheck
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("error calling kubelet endpoint. Got status code: %d", resp.StatusCode)
+	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading the response body of '%s'. Got error: %v", URL, err.Error())
+		return nil, fmt.Errorf("error reading the response body of kubelet endpoint. Got error: %v", err.Error())
 	}
 
-	var message = new(Summary)
-	err = json.Unmarshal(body, message)
+	var summary = new(Summary)
+	err = json.Unmarshal(body, summary)
 	if err != nil {
-		return nil, fmt.Errorf("Error unmarshaling the response body. Got error: %v", err.Error())
+		return nil, fmt.Errorf("error unmarshaling the response body. Got error: %v", err.Error())
 	}
 
-	return message, nil
+	return summary, nil
 
 }
 

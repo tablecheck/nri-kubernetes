@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,11 +36,11 @@ func TestKubeletDiscovery(t *testing.T) {
 
 	// and an Discoverer implementation
 	discoverer := kubeletDiscoverer{
-		client: client,
+		apiClient: client,
 	}
 
 	// When retrieving the Kubelet URL
-	kurl, err := discoverer.Discover()
+	kurl, _, err := discoverer.Discover()
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the Kubelet is returned
@@ -76,11 +77,11 @@ func TestKubeletDiscovery_NotFoundByName(t *testing.T) {
 		}}}, nil)
 
 	discoverer := kubeletDiscoverer{
-		client: client,
+		apiClient: client,
 	}
 
 	// When retrieving the Kubelet URL
-	kurl, err := discoverer.Discover()
+	kurl, _, err := discoverer.Discover()
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the Kubelet is returned
@@ -97,11 +98,11 @@ func TestKubeletDiscovery_NotFoundError(t *testing.T) {
 	client.On("FindNode", "the-node-name").Return(&v1.NodeList{Items: []v1.Node{}}, nil)
 
 	discoverer := kubeletDiscoverer{
-		client: client,
+		apiClient: client,
 	}
 
 	// When retrieving the Kubelet URL
-	_, err := discoverer.Discover()
+	_, _, err := discoverer.Discover()
 	// The system returns an error
 	assert.NotNil(t, err, "should return error")
 }
@@ -131,12 +132,14 @@ func TestKubeletDiscovery_HTTP(t *testing.T) {
 				},
 			},
 		}}}, nil)
-	discoverer := kubeletDiscoverer{
-		client: client,
+	d := kubeletDiscoverer{
+		apiClient:  client,
+		httpClient: &http.Client{},
 	}
+	discoverer := &d
 
 	// When retrieving the Kubelet URL for a non-secure discovered port
-	kurl, err := discoverer.Discover()
+	kurl, _, err := discoverer.Discover()
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the Kubelet is returned
@@ -170,9 +173,10 @@ func TestKubeletDiscoverer_NodeIP(t *testing.T) {
 		}}}, nil)
 
 	// and an Discoverer implementation
-	discoverer := kubeletDiscoverer{
-		client: client,
+	d := kubeletDiscoverer{
+		apiClient: client,
 	}
+	discoverer := &d
 
 	// When retrieving the Kubelet Node IP
 	nodeIP, err := discoverer.NodeIP()

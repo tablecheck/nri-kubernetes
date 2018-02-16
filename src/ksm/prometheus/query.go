@@ -1,17 +1,19 @@
 package prometheus
 
 import (
+	"fmt"
 	"io"
-	"log"
 	"net/http"
 
-	"fmt"
-
 	"github.com/matttproud/golang_protobuf_extensions/pbutil"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 	prometheus "github.com/prometheus/client_model/go"
 )
 
-const acceptHeader = `application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;encoding=delimited;q=0.7,text/plain;version=0.0.4;q=0.3`
+const (
+	acceptHeader = `application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;encoding=delimited;q=0.7,text/plain;version=0.0.4;q=0.3`
+	metricsPath  = "/metrics"
+)
 
 //TODO: See https://github.com/prometheus/prom2json/blob/master/prom2json.go#L171 for how to connect, how to parse plain text, etc
 
@@ -96,20 +98,16 @@ func valueFromPrometheus(metricType prometheus.MetricType, metric *prometheus.Me
 }
 
 // Do is the main entry point. It runs queries against the Prometheus metrics provided by the endpoint.
-func Do(endpoint string, queries []Query, c *http.Client) ([]MetricFamily, error) {
-	r, err := http.NewRequest(http.MethodGet, endpoint, nil)
+func Do(c endpoints.Client, queries []Query) ([]MetricFamily, error) {
+	resp, err := c.Do(http.MethodGet, metricsPath)
 	if err != nil {
 		return nil, err
 	}
-
-	r.Header.Set("Accept", acceptHeader)
-
-	resp, err := c.Do(r)
-	if err != nil {
-		return nil, fmt.Errorf("error during the request to %q. %s", endpoint, err)
-	}
-
 	defer resp.Body.Close() // nolint: errcheck
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("error calling kube-state-metrics endpoint. Got status code: %d", resp.StatusCode)
+	}
 
 	metrics := make([]MetricFamily, 0)
 	for {
@@ -121,7 +119,7 @@ func Do(endpoint string, queries []Query, c *http.Client) ([]MetricFamily, error
 				break
 			}
 
-			log.Fatal(err)
+			return nil, err
 		}
 
 		for _, q := range queries {

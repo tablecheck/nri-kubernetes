@@ -1,12 +1,17 @@
 package endpoints
 
-import "net/url"
+import (
+	"net/http"
+	"time"
+)
 
 // Discoverer allows discovering the endpoints from different services in the Kubernetes ecosystem.
 type Discoverer interface {
-	// Discover returns the Endpoint of the Kubelet service that is located in the same node as the invoking pod.
-	Discover() (url.URL, error)
+	Discover(timeout time.Duration) (Client, error)
+}
 
-	// NodeIP returns the IP of the Node that contains the service
-	NodeIP() (string, error)
+// Client allows to connect to the discovered Kubernetes services
+type Client interface {
+	Do(method, path string) (*http.Response, error)
+	NodeIP() string
 }
