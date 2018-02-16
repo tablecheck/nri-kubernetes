@@ -21,7 +21,7 @@ func allOkConnectionChecker(_ *http.Client, _, _ string) error {
 	return nil
 }
 
-func failonInsecureConnection(_ *http.Client, URL, _ string) error {
+func failOnInsecureConnection(_ *http.Client, URL, _ string) error {
 	urlObj, err := url.Parse(URL)
 	if err != nil {
 		return err
@@ -225,7 +225,7 @@ func TestKubeletDiscoveryHTTPS_CheckingConnection(t *testing.T) {
 	// and an Discoverer implementation whose connection check connection fails because it is a secure connection
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
-		connChecker: failonInsecureConnection,
+		connChecker: failOnInsecureConnection,
 		logger:      logrus.StandardLogger(),
 	}
 
