@@ -1,3 +1,37 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: newrelic
+  namespace: kube-system
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: newrelic
+rules:
+- apiGroups: [""]
+  resources:
+    - "nodes"
+    - "nodes/proxy"
+    - "pods"
+    - "services"
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: newrelic
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: newrelic
+subjects:
+- kind: ServiceAccount
+  name: newrelic
+  namespace: kube-system
+---
 apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
@@ -17,6 +51,7 @@ spec:
         scheduler.alpha.kubernetes.io/tolerations: |
           [{"operator": "Exists", "effect": "NoSchedule"}]
     spec:
+      serviceAccountName: newrelic
       containers:
         - name: newrelic-infra
           image: newrelic/ohaik:1.0.0-beta3
