@@ -15,43 +15,43 @@ type MockedClient struct {
 }
 
 // Config mocks Kubernetes Config
-func (m MockedClient) Config() *rest.Config {
+func (m *MockedClient) Config() *rest.Config {
 	args := m.Called()
 	return args.Get(0).(*rest.Config)
 }
 
 // SecureHTTPClient mocks KubernetesClient
-func (m MockedClient) SecureHTTPClient(timeout time.Duration) (*http.Client, error) {
+func (m *MockedClient) SecureHTTPClient(timeout time.Duration) (*http.Client, error) {
 	args := m.Called(timeout)
 	return args.Get(0).(*http.Client), args.Error(1)
 }
 
 // FindNode mocks KubernetesClient
-func (m MockedClient) FindNode(name string) (*v1.Node, error) {
+func (m *MockedClient) FindNode(name string) (*v1.Node, error) {
 	args := m.Called(name)
 	return args.Get(0).(*v1.Node), args.Error(1)
 }
 
 // FindPodsByLabel mocks KubernetesClient
-func (m MockedClient) FindPodsByLabel(name, value string) (*v1.PodList, error) {
+func (m *MockedClient) FindPodsByLabel(name, value string) (*v1.PodList, error) {
 	args := m.Called(name)
 	return args.Get(0).(*v1.PodList), args.Error(1)
 }
 
 // FindPodByName mocks KubernetesClient
-func (m MockedClient) FindPodByName(name string) (*v1.PodList, error) {
+func (m *MockedClient) FindPodByName(name string) (*v1.PodList, error) {
 	args := m.Called(name)
 	return args.Get(0).(*v1.PodList), args.Error(1)
 }
 
 // FindPodsByHostname mocks KubernetesClient
-func (m MockedClient) FindPodsByHostname(hostname string) (*v1.PodList, error) {
+func (m *MockedClient) FindPodsByHostname(hostname string) (*v1.PodList, error) {
 	args := m.Called(hostname)
 	return args.Get(0).(*v1.PodList), args.Error(1)
 }
 
 // FindServiceByLabel mocks KubernetesClient
-func (m MockedClient) FindServiceByLabel(name, value string) (*v1.ServiceList, error) {
+func (m *MockedClient) FindServiceByLabel(name, value string) (*v1.ServiceList, error) {
 	args := m.Called(name, value)
 	return args.Get(0).(*v1.ServiceList), args.Error(1)
 }

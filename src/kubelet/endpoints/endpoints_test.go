@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +16,7 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-const timeout = 1000
+const timeout = time.Second
 
 func allOkConnectionChecker(_ *http.Client, _, _ string) error {
 	return nil
