@@ -7,13 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
+	logSDK "github.com/newrelic/infra-integrations-sdk/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"k8s.io/client-go/rest"
-
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 	"k8s.io/api/core/v1"
+	"k8s.io/client-go/rest"
 )
 
 const timeout = time.Second
@@ -61,7 +60,7 @@ func TestKubeletDiscoveryHTTP_DefaultInsecurePort(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: allOkConnectionChecker,
-		logger:      logrus.StandardLogger(),
+		logger:      logSDK.New(false),
 	}
 
 	// When retrieving the Kubelet URL
@@ -107,7 +106,7 @@ func TestKubeletDiscoveryHTTP_NotFoundByName(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: allOkConnectionChecker,
-		logger:      logrus.StandardLogger(),
+		logger:      logSDK.New(false),
 	}
 
 	// When retrieving the Kubelet URL
@@ -148,7 +147,7 @@ func TestKubeletDiscoveryHTTPS_DefaultSecurePort(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: allOkConnectionChecker,
-		logger:      logrus.StandardLogger(),
+		logger:      logSDK.New(false),
 	}
 
 	// When retrieving the Kubelet URL
@@ -189,7 +188,7 @@ func TestKubeletDiscoveryHTTP_CheckingConnection(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: allOkConnectionChecker,
-		logger:      logrus.StandardLogger(),
+		logger:      logSDK.New(false),
 	}
 
 	// When retrieving the Kubelet URL
@@ -230,7 +229,7 @@ func TestKubeletDiscoveryHTTPS_CheckingConnection(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: failOnInsecureConnection,
-		logger:      logrus.StandardLogger(),
+		logger:      logSDK.New(false),
 	}
 
 	// When retrieving the Kubelet URL
@@ -256,7 +255,7 @@ func TestKubeletDiscovery_NodeNotFoundError(t *testing.T) {
 
 	discoverer := kubeletDiscoverer{
 		apiClient: client,
-		logger:      logrus.StandardLogger(),
+		logger:    logSDK.New(false),
 	}
 
 	// When retrieving the Kubelet URL
@@ -279,7 +278,7 @@ func TestKubeletDiscovery_NilNodeError(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: allOkConnectionChecker,
-		logger:      logrus.StandardLogger(),
+		logger:      logSDK.New(false),
 	}
 
 	// When retrieving the Kubelet URL
@@ -287,4 +286,3 @@ func TestKubeletDiscovery_NilNodeError(t *testing.T) {
 	// The system returns an error
 	assert.NotNil(t, err, "should return error")
 }
-
