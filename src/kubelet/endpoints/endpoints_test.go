@@ -61,6 +61,7 @@ func TestKubeletDiscoveryHTTP_DefaultInsecurePort(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: allOkConnectionChecker,
+		logger:      logrus.StandardLogger(),
 	}
 
 	// When retrieving the Kubelet URL
@@ -106,6 +107,7 @@ func TestKubeletDiscoveryHTTP_NotFoundByName(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: allOkConnectionChecker,
+		logger:      logrus.StandardLogger(),
 	}
 
 	// When retrieving the Kubelet URL
@@ -146,6 +148,7 @@ func TestKubeletDiscoveryHTTPS_DefaultSecurePort(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: allOkConnectionChecker,
+		logger:      logrus.StandardLogger(),
 	}
 
 	// When retrieving the Kubelet URL
@@ -186,6 +189,7 @@ func TestKubeletDiscoveryHTTP_CheckingConnection(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: allOkConnectionChecker,
+		logger:      logrus.StandardLogger(),
 	}
 
 	// When retrieving the Kubelet URL
@@ -252,6 +256,7 @@ func TestKubeletDiscovery_NodeNotFoundError(t *testing.T) {
 
 	discoverer := kubeletDiscoverer{
 		apiClient: client,
+		logger:      logrus.StandardLogger(),
 	}
 
 	// When retrieving the Kubelet URL
@@ -274,6 +279,7 @@ func TestKubeletDiscovery_NilNodeError(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: allOkConnectionChecker,
+		logger:      logrus.StandardLogger(),
 	}
 
 	// When retrieving the Kubelet URL
