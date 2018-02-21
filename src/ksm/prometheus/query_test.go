@@ -5,25 +5,43 @@ import (
 
 	"io"
 	"net/http"
+	"net/http/httptest"
 
 	"github.com/stretchr/testify/assert"
 
-	"net/http/httptest"
 	"os"
 
 	"github.com/golang/protobuf/proto"
+
 	prometheus "github.com/prometheus/client_model/go"
 )
 
-func TestFoo(t *testing.T) {
-	// TODO create or use an agnostic test sample.
-	f, err := os.Open("protobuf/metrics")
-	assert.NoError(t, err)
+type ksm struct {
+	nodeIP string
+}
 
+func (c *ksm) Do(method, path string) (*http.Response, error) {
+	f, err := os.Open("protobuf/metrics")
+	if err != nil {
+		return nil, err
+	}
 	defer f.Close() // nolint: errcheck
 
-	s := httptest.NewServer(mockResponseHandler(f))
-	c := http.DefaultClient
+	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
+	w := httptest.NewRecorder()
+	mockResponseHandler(f)(w, req)
+	return w.Result(), nil
+
+}
+func (c *ksm) NodeIP() string {
+	return c.nodeIP
+}
+
+func TestDo(t *testing.T) {
+	// TODO create or use an agnostic test sample.
+	var c = ksm{
+		nodeIP: "1.2.3.4",
+	}
 
 	queryMetricName := "kube_pod_status_phase"
 	queryLabels := Labels{
@@ -54,7 +72,7 @@ func TestFoo(t *testing.T) {
 		},
 	}
 
-	m, err := Do(s.URL, queries, c)
+	m, err := Do(&c, queries)
 	assert.NoError(t, err)
 
 	assert.Equal(t, expectedMetrics, m)

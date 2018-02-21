@@ -32,7 +32,7 @@ func failOnInsecureConnection(_ *http.Client, URL, _ string) error {
 	return nil
 }
 
-func onlyApiConnectionChecker(_ *http.Client, URL, _ string) error {
+func onlyAPIConnectionChecker(_ *http.Client, URL, _ string) error {
 	purl, _ := url.Parse(URL)
 	if purl.Host == apiHost {
 		return nil
@@ -259,25 +259,25 @@ func TestKubeletDiscoveryHTTPS_ApiConnection(t *testing.T) {
 		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: "the-node-name"}}}}, nil)
 	client.On("FindNode", "the-node-name").
 		Return(&v1.Node{
-		Status: v1.NodeStatus{
-			Addresses: []v1.NodeAddress{
-				{
-					Type:    "InternalIP",
-					Address: "1.2.3.4",
+			Status: v1.NodeStatus{
+				Addresses: []v1.NodeAddress{
+					{
+						Type:    "InternalIP",
+						Address: "1.2.3.4",
+					},
+				},
+				DaemonEndpoints: v1.NodeDaemonEndpoints{
+					KubeletEndpoint: v1.DaemonEndpoint{
+						Port: 55332, // configured without any default port
+					},
 				},
 			},
-			DaemonEndpoints: v1.NodeDaemonEndpoints{
-				KubeletEndpoint: v1.DaemonEndpoint{
-					Port: 55332, // configured without any default port
-				},
-			},
-		},
-	}, nil)
+		}, nil)
 
 	// and an Discoverer implementation whose connection check connection fails because it is a secure connection
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
-		connChecker: onlyApiConnectionChecker,
+		connChecker: onlyAPIConnectionChecker,
 		logger:      logSDK.New(false),
 	}
 

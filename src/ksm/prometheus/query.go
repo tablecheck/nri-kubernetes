@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	acceptHeader = `application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;encoding=delimited;q=0.7,text/plain;version=0.0.4;q=0.3`
-	metricsPath  = "/metrics"
+	metricsPath = "/metrics"
 )
 
 //TODO: See https://github.com/prometheus/prom2json/blob/master/prom2json.go#L171 for how to connect, how to parse plain text, etc
