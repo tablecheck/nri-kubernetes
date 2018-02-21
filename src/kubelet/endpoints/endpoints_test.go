@@ -32,6 +32,14 @@ func failOnInsecureConnection(_ *http.Client, URL, _ string) error {
 	return nil
 }
 
+func onlyApiConnectionChecker(_ *http.Client, URL, _ string) error {
+	purl, _ := url.Parse(URL)
+	if purl.Host == apiHost {
+		return nil
+	}
+	return fmt.Errorf("the connection can't be established")
+}
+
 func TestKubeletDiscoveryHTTP_DefaultInsecurePort(t *testing.T) {
 	// Given a client
 	client := new(endpoints.MockedClient)
@@ -239,6 +247,47 @@ func TestKubeletDiscoveryHTTPS_CheckingConnection(t *testing.T) {
 	// And the discovered host:port of the Kubelet is returned
 	assert.Equal(t, "1.2.3.4", kclient.NodeIP())
 	assert.Equal(t, "1.2.3.4:55332", kclient.(*kubelet).endpoint.Host)
+	assert.Equal(t, "https", kclient.(*kubelet).endpoint.Scheme)
+}
+
+func TestKubeletDiscoveryHTTPS_ApiConnection(t *testing.T) {
+	// Given a client
+	client := new(endpoints.MockedClient)
+	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
+	client.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
+	client.On("FindPodByName", mock.Anything).
+		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: "the-node-name"}}}}, nil)
+	client.On("FindNode", "the-node-name").
+		Return(&v1.Node{
+		Status: v1.NodeStatus{
+			Addresses: []v1.NodeAddress{
+				{
+					Type:    "InternalIP",
+					Address: "1.2.3.4",
+				},
+			},
+			DaemonEndpoints: v1.NodeDaemonEndpoints{
+				KubeletEndpoint: v1.DaemonEndpoint{
+					Port: 55332, // configured without any default port
+				},
+			},
+		},
+	}, nil)
+
+	// and an Discoverer implementation whose connection check connection fails because it is a secure connection
+	discoverer := kubeletDiscoverer{
+		apiClient:   client,
+		connChecker: onlyApiConnectionChecker,
+		logger:      logSDK.New(false),
+	}
+
+	// When retrieving the Kubelet URL
+	kclient, err := discoverer.Discover(timeout)
+	// The call works correctly
+	assert.Nil(t, err, "should not return error")
+	// And the discovered host:port of the Kubelet is returned
+	assert.Equal(t, "1.2.3.4", kclient.NodeIP())
+	assert.Equal(t, apiHost, kclient.(*kubelet).endpoint.Host)
 	assert.Equal(t, "https", kclient.(*kubelet).endpoint.Scheme)
 }
 
