@@ -5,18 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.0.0-beta4
 
 ### Added
 - Adding node metrics. Data is fetched from Kubelet and kube-state-metrics.
-- Adding toleration for the "NoSchedule" taint, so the integration is deployed on all nodes
-- Adding new autodiscovery flow with authentication and authorization mechanisms
+- Adding toleration for the "NoSchedule" taint, so the integration is deployed on all nodes.
+- Adding new autodiscovery flow with authentication and authorization mechanisms.
 
 ### Fixed
 - Integration stops on KSM or Kubelet connection error, instead of continuing.
 
 ### Removed
-- Custom arguments for kubelet and kube-state-metrics endpoints
+- Custom arguments for kubelet and kube-state-metrics endpoints.
 
 ## 1.0.0-beta3
 
