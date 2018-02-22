@@ -2,13 +2,16 @@ package endpoints
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
-	logSDK "github.com/newrelic/infra-integrations-sdk/log"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/api/core/v1"
@@ -17,30 +20,32 @@ import (
 
 const timeout = time.Second
 
-func allOkConnectionChecker(_ *http.Client, _, _ string) error {
+var logger = logrus.StandardLogger()
+
+func allOkConnectionChecker(_ *http.Client, _ url.URL, _, _ string) error {
 	return nil
 }
 
-func failOnInsecureConnection(_ *http.Client, URL, _ string) error {
-	urlObj, err := url.Parse(URL)
-	if err != nil {
-		return err
-	}
-	if urlObj.Scheme != "https" {
+func failOnInsecureConnection(_ *http.Client, URL url.URL, _, _ string) error {
+	if URL.Scheme != "https" {
 		return fmt.Errorf("the connection can't be established")
 	}
 	return nil
 }
 
-func onlyAPIConnectionChecker(_ *http.Client, URL, _ string) error {
-	purl, _ := url.Parse(URL)
-	if purl.Host == apiHost {
+func onlyAPIConnectionChecker(_ *http.Client, URL url.URL, _, _ string) error {
+	if URL.Host == apiHost {
 		return nil
 	}
 	return fmt.Errorf("the connection can't be established")
 }
 
-func TestKubeletDiscoveryHTTP_DefaultInsecurePort(t *testing.T) {
+func mockResponseHandler(mockResponse io.Reader) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		io.Copy(w, mockResponse) // nolint: errcheck
+	}
+}
+func TestDiscoverHTTP_DefaultInsecurePort(t *testing.T) {
 	// Given a client
 	client := new(endpoints.MockedClient)
 	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
@@ -68,7 +73,7 @@ func TestKubeletDiscoveryHTTP_DefaultInsecurePort(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: allOkConnectionChecker,
-		logger:      logSDK.New(false),
+		logger:      logger,
 	}
 
 	// When retrieving the Kubelet URL
@@ -81,7 +86,7 @@ func TestKubeletDiscoveryHTTP_DefaultInsecurePort(t *testing.T) {
 	assert.Equal(t, "http", kclient.(*kubelet).endpoint.Scheme)
 }
 
-func TestKubeletDiscoveryHTTP_NotFoundByName(t *testing.T) {
+func TestDiscoverHTTP_NotFoundByName(t *testing.T) {
 	// Given a client
 	client := new(endpoints.MockedClient)
 	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
@@ -114,7 +119,7 @@ func TestKubeletDiscoveryHTTP_NotFoundByName(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: allOkConnectionChecker,
-		logger:      logSDK.New(false),
+		logger:      logger,
 	}
 
 	// When retrieving the Kubelet URL
@@ -127,7 +132,7 @@ func TestKubeletDiscoveryHTTP_NotFoundByName(t *testing.T) {
 	assert.Equal(t, "http", kclient.(*kubelet).endpoint.Scheme)
 }
 
-func TestKubeletDiscoveryHTTPS_DefaultSecurePort(t *testing.T) {
+func TestDiscoverHTTPS_DefaultSecurePort(t *testing.T) {
 	// Given a client
 	client := new(endpoints.MockedClient)
 	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
@@ -155,7 +160,7 @@ func TestKubeletDiscoveryHTTPS_DefaultSecurePort(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: allOkConnectionChecker,
-		logger:      logSDK.New(false),
+		logger:      logger,
 	}
 
 	// When retrieving the Kubelet URL
@@ -168,7 +173,7 @@ func TestKubeletDiscoveryHTTPS_DefaultSecurePort(t *testing.T) {
 	assert.Equal(t, "https", kclient.(*kubelet).endpoint.Scheme)
 }
 
-func TestKubeletDiscoveryHTTP_CheckingConnection(t *testing.T) {
+func TestDiscoverHTTP_CheckingConnection(t *testing.T) {
 	// Given a client
 	client := new(endpoints.MockedClient)
 	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
@@ -196,7 +201,7 @@ func TestKubeletDiscoveryHTTP_CheckingConnection(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: allOkConnectionChecker,
-		logger:      logSDK.New(false),
+		logger:      logger,
 	}
 
 	// When retrieving the Kubelet URL
@@ -209,7 +214,7 @@ func TestKubeletDiscoveryHTTP_CheckingConnection(t *testing.T) {
 	assert.Equal(t, "http", kclient.(*kubelet).endpoint.Scheme)
 }
 
-func TestKubeletDiscoveryHTTPS_CheckingConnection(t *testing.T) {
+func TestDiscoverHTTPS_CheckingConnection(t *testing.T) {
 	// Given a client
 	client := new(endpoints.MockedClient)
 	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
@@ -237,7 +242,7 @@ func TestKubeletDiscoveryHTTPS_CheckingConnection(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: failOnInsecureConnection,
-		logger:      logSDK.New(false),
+		logger:      logger,
 	}
 
 	// When retrieving the Kubelet URL
@@ -250,7 +255,7 @@ func TestKubeletDiscoveryHTTPS_CheckingConnection(t *testing.T) {
 	assert.Equal(t, "https", kclient.(*kubelet).endpoint.Scheme)
 }
 
-func TestKubeletDiscoveryHTTPS_ApiConnection(t *testing.T) {
+func TestDiscoverHTTPS_ApiConnection(t *testing.T) {
 	// Given a client
 	client := new(endpoints.MockedClient)
 	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
@@ -278,7 +283,7 @@ func TestKubeletDiscoveryHTTPS_ApiConnection(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: onlyAPIConnectionChecker,
-		logger:      logSDK.New(false),
+		logger:      logger,
 	}
 
 	// When retrieving the Kubelet URL
@@ -291,7 +296,7 @@ func TestKubeletDiscoveryHTTPS_ApiConnection(t *testing.T) {
 	assert.Equal(t, "https", kclient.(*kubelet).endpoint.Scheme)
 }
 
-func TestKubeletDiscovery_NodeNotFoundError(t *testing.T) {
+func TestDiscover_NodeNotFoundError(t *testing.T) {
 	// Given a client
 	client := new(endpoints.MockedClient)
 	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
@@ -304,7 +309,7 @@ func TestKubeletDiscovery_NodeNotFoundError(t *testing.T) {
 
 	discoverer := kubeletDiscoverer{
 		apiClient: client,
-		logger:    logSDK.New(false),
+		logger:    logger,
 	}
 
 	// When retrieving the Kubelet URL
@@ -313,7 +318,7 @@ func TestKubeletDiscovery_NodeNotFoundError(t *testing.T) {
 	assert.NotNil(t, err, "should return error")
 }
 
-func TestKubeletDiscovery_NilNodeError(t *testing.T) {
+func TestDiscover_NilNodeError(t *testing.T) {
 	// Given a client
 	client := new(endpoints.MockedClient)
 	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
@@ -327,11 +332,59 @@ func TestKubeletDiscovery_NilNodeError(t *testing.T) {
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
 		connChecker: allOkConnectionChecker,
-		logger:      logSDK.New(false),
+		logger:      logger,
 	}
 
 	// When retrieving the Kubelet URL
 	_, err := discoverer.Discover(timeout)
 	// The system returns an error
 	assert.NotNil(t, err, "should return error")
+}
+
+func TestDo_HTTP(t *testing.T) {
+	endpoint, err := url.Parse("http://example.com/")
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
+	s := httptest.NewServer(mockResponseHandler(strings.NewReader("Foo")))
+	var c = &kubelet{
+		nodeIP:     "1.2.3.4",
+		config:     rest.Config{BearerToken: "Foo"},
+		nodeName:   "nodeFoo",
+		endpoint:   *endpoint,
+		httpClient: s.Client(),
+		logger:     logger,
+	}
+
+	resp, err := c.Do("GET", "foo")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "http://example.com/foo", resp.Request.URL.String())
+	assert.Equal(t, "", resp.Request.Header.Get("Authorization"))
+	assert.Equal(t, "GET", resp.Request.Method)
+	assert.Equal(t, "http://example.com/", endpoint.String())
+}
+
+func TestDo_HTTPS(t *testing.T) {
+	endpoint, err := url.Parse("https://example.com/")
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
+	s := httptest.NewServer(mockResponseHandler(strings.NewReader("Foo")))
+	var c = &kubelet{
+		nodeIP:     "1.2.3.4",
+		config:     rest.Config{BearerToken: "Foo"},
+		nodeName:   "nodeFoo",
+		endpoint:   *endpoint,
+		httpClient: s.Client(),
+		logger:     logger,
+	}
+
+	resp, err := c.Do("GET", "foo")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "https://example.com/foo", resp.Request.URL.String())
+	assert.Equal(t, fmt.Sprintf("Bearer %s", c.config.BearerToken), resp.Request.Header.Get("Authorization"))
+	assert.Equal(t, "GET", resp.Request.Method)
+	assert.Equal(t, "https://example.com/", endpoint.String())
 }
