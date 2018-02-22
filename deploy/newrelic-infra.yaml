@@ -72,6 +72,8 @@ spec:
               value: <YOUR_CLUSTER_NAME>
             - name: NRIA_LICENSE_KEY
               value: <YOUR_LICENSE_KEY>
+            - name: NRIA_VERBOSE
+              value: 0
             - name: NRIA_DISPLAY_NAME
               valueFrom:
                 fieldRef:
