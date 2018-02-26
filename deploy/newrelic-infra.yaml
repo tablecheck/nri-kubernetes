@@ -68,18 +68,18 @@ spec:
             - mountPath: /var/run/docker.sock
               name: host-docker-socket
           env:
-            - name: CLUSTER_NAME
-              value: <YOUR_CLUSTER_NAME>
-            - name: NRIA_LICENSE_KEY
-              value: <YOUR_LICENSE_KEY>
-            - name: NRIA_VERBOSE
-              value: 0
-            - name: NRIA_DISPLAY_NAME
+            - name: "CLUSTER_NAME"
+              value: "<YOUR_CLUSTER_NAME>"
+            - name: "NRIA_LICENSE_KEY"
+              value: "<YOUR_LICENSE_KEY>"
+            - name: "NRIA_VERBOSE"
+              value: "0"
+            - name: "NRIA_DISPLAY_NAME"
               valueFrom:
                 fieldRef:
-                  apiVersion: v1
-                  fieldPath: spec.nodeName
-            - name: NRIA_PASSTHROUGH_ENVIRONMENT
+                  apiVersion: "v1"
+                  fieldPath: "spec.nodeName"
+            - name: "NRIA_PASSTHROUGH_ENVIRONMENT"
               value: "KUBERNETES_SERVICE_HOST,KUBERNETES_SERVICE_PORT,CLUSTER_NAME"
       volumes:
         - name: host-volume
