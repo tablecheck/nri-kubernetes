@@ -41,12 +41,12 @@ func follower(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clust
 
 	ok, err := data.NewK8sPopulator(logger).Populate(groups, mergeableObjectsPopulateSpecs, i, clusterName)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Panic(err)
 	}
 
 	e, err := i.Entity("nr-errors", "error")
 	if err != nil {
-		logger.Fatal(err)
+		logger.Panic(err)
 	}
 	if errs != nil {
 		for _, err := range errs.Errors {
@@ -89,12 +89,12 @@ func leader(kubeletKSMGrouper data.Grouper, ksmClient endpoints.Client, i *sdk.I
 
 	ok, err := data.NewK8sPopulator(logger).Populate(groups, allObjectsPopulateSpecs, i, clusterName)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Panic(err)
 	}
 
 	e, err := i.Entity("nr-errors", "error")
 	if err != nil {
-		logger.Fatal(err)
+		logger.Panic(err)
 	}
 	if errs != nil {
 		for _, err := range errs.Errors {
@@ -126,11 +126,21 @@ func main() {
 	}
 
 	logger := log.New(args.Verbose)
+	defer func() {
+		if r := recover(); r != nil {
+			recErr, ok := r.(*logrus.Entry)
+			if ok {
+				recErr.Fatal(recErr.Message)
+			} else {
+				panic(r)
+			}
+		}
+	}()
 
 	defer logger.Debug(exitLog)
 	logger.Debugf("Integration %q with version %s started", integrationName, integrationVersion)
 	if args.ClusterName == "" {
-		logger.Fatal(errors.New("cluster_name argument is mandatory"))
+		logger.Panic(errors.New("cluster_name argument is mandatory"))
 	}
 
 	if args.All || args.Metrics {
@@ -138,22 +148,22 @@ func main() {
 
 		kubeletDiscoverer, err := kubeletEndpoints.NewKubeletDiscoverer(logger)
 		if err != nil {
-			logger.Fatal(err)
+			logger.Panic(err)
 		}
 		kubeletClient, err := kubeletDiscoverer.Discover(timeout)
 		if err != nil {
-			logger.Fatal(err)
+			logger.Panic(err)
 		}
 		kubeletNodeIP := kubeletClient.NodeIP()
 		logger.Debugf("Kubelet Node = %s", kubeletNodeIP)
 
 		ksmDiscoverer, err := ksmEndpoints.NewKSMDiscoverer(logger)
 		if err != nil {
-			logger.Fatal(err)
+			logger.Panic(err)
 		}
 		ksmClient, err := ksmDiscoverer.Discover(timeout)
 		if err != nil {
-			logger.Fatal(err)
+			logger.Panic(err)
 		}
 		ksmNodeIP := ksmClient.NodeIP()
 		logger.Debugf("KSM Node = %s", ksmNodeIP)
@@ -182,7 +192,7 @@ func main() {
 			// todo fix pointers indirection stuff
 			err = leader(kubeletKSMGrouper, ksmClient, integration, args.ClusterName, logger)
 			if err != nil {
-				logger.Fatal(err)
+				logger.Panic(err)
 			}
 		case "follower":
 			// todo fix pointers indirection stuff
@@ -196,13 +206,13 @@ func main() {
 
 			err = follower(kubeletKSMGrouper, integration, args.ClusterName, logger)
 			if err != nil {
-				logger.Fatal(err)
+				logger.Panic(err)
 			}
 		}
 	}
 
 	err = integration.Publish()
 	if err != nil {
-		logger.Fatal(err)
+		logger.Panic(err)
 	}
 }
