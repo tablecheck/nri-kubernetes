@@ -43,7 +43,7 @@ type connectionParams struct {
 	client *http.Client
 }
 
-type connectionChecker func(client *http.Client, URL, token string) error
+type connectionChecker func(client *http.Client, URL url.URL, path, token string) error
 
 func (c *kubelet) NodeIP() string {
 	return c.nodeIP
@@ -52,11 +52,7 @@ func (c *kubelet) NodeIP() string {
 // Do method calls discovered kubelet endpoint with specified method and path, i.e. "/stats/summary
 func (c *kubelet) Do(method, path string) (*http.Response, error) {
 	e := c.endpoint
-	if c.endpoint.Host == apiHost {
-		e.Path = filepath.Join(c.endpoint.Path, fmt.Sprintf("/api/v1/nodes/%s/proxy/%s", c.nodeName, path))
-	} else {
-		e.Path = filepath.Join(c.endpoint.Path, path)
-	}
+	e.Path = filepath.Join(c.endpoint.Path, path)
 
 	r, err := http.NewRequest(method, e.String(), nil)
 	if err != nil {
@@ -112,7 +108,7 @@ func (sd *kubeletDiscoverer) Discover(timeout time.Duration) (endpoints.Client, 
 			return nil, secErr
 		}
 
-		err = sd.connChecker(c.client, c.url.String(), config.BearerToken)
+		err = sd.connChecker(c.client, c.url, healthzPath, config.BearerToken)
 		if err != nil {
 			sd.logger.Debug(err.Error())
 			continue
@@ -122,6 +118,7 @@ func (sd *kubeletDiscoverer) Discover(timeout time.Duration) (endpoints.Client, 
 			nodeIP: host,
 			endpoint: url.URL{
 				Host:   c.url.Host,
+				Path:   c.url.Path,
 				Scheme: c.url.Scheme,
 			},
 			httpClient: c.client,
@@ -140,7 +137,6 @@ func connectionHTTP(host string, timeout time.Duration) connectionParams {
 	return connectionParams{
 		url: url.URL{
 			Host:   host,
-			Path:   healthzPath,
 			Scheme: "http",
 		},
 		client: endpoints.BasicHTTPClient(timeout),
@@ -151,7 +147,6 @@ func connectionHTTPS(host string, timeout time.Duration) connectionParams {
 	return connectionParams{
 		url: url.URL{
 			Host:   host,
-			Path:   healthzPath,
 			Scheme: "https",
 		},
 		client: endpoints.InsecureHTTPClient(timeout),
@@ -166,29 +161,31 @@ func (sd *kubeletDiscoverer) connectionAPIHTTPS(nodeName string, timeout time.Du
 	return connectionParams{
 		url: url.URL{
 			Host:   apiHost,
-			Path:   fmt.Sprintf("/api/v1/nodes/%s/proxy/healthz", nodeName),
+			Path:   fmt.Sprintf("/api/v1/nodes/%s/proxy/", nodeName),
 			Scheme: "https",
 		},
 		client: secureClient,
 	}, nil
 }
 
-func checkCall(client *http.Client, URL, token string) error {
-	r, err := http.NewRequest(http.MethodGet, URL, nil)
+func checkCall(client *http.Client, URL url.URL, path, token string) error {
+	URL.Path = filepath.Join(URL.Path, path)
+
+	r, err := http.NewRequest(http.MethodGet, URL.String(), nil)
 	if err != nil {
-		return fmt.Errorf("error creating request to: %s. Got error: %s ", URL, err)
+		return fmt.Errorf("error creating request to: %s. Got error: %s ", URL.String(), err)
 	}
 	// TODO: Should we send it for http?
 	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	resp, err := client.Do(r)
 	if err != nil {
-		return fmt.Errorf("error trying to connect to: %s. Got error: %s ", URL, err)
+		return fmt.Errorf("error trying to connect to: %s. Got error: %s ", URL.String(), err)
 	}
 	defer resp.Body.Close() // nolint: errcheck
 	if resp.StatusCode == http.StatusOK {
 		return nil
 	}
-	return fmt.Errorf("error calling endpoint %s. Got status code: %d", URL, resp.StatusCode)
+	return fmt.Errorf("error calling endpoint %s. Got status code: %d", URL.String(), resp.StatusCode)
 }
 
 // NewKubeletDiscoverer instantiates a new Discoverer
