@@ -1,4 +1,4 @@
 {
-  "Enable": ["deadcode", "errcheck", "gofmt", "golint", "goimports", "interfacer", "gosimple"],
+  "Enable": ["deadcode", "errcheck", "gofmt", "golint", "goimports"],
   "Vendor": true
 }
