@@ -2,11 +2,9 @@ package endpoints
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 	"time"
 
@@ -40,11 +38,12 @@ func onlyAPIConnectionChecker(_ *http.Client, URL url.URL, _, _ string) error {
 	return fmt.Errorf("the connection can't be established")
 }
 
-func mockResponseHandler(mockResponse io.Reader) http.HandlerFunc {
+func mockStatusCodeHandler(statusCode int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		io.Copy(w, mockResponse) // nolint: errcheck
+		w.WriteHeader(statusCode)
 	}
 }
+
 func TestDiscoverHTTP_DefaultInsecurePort(t *testing.T) {
 	// Given a client
 	client := new(endpoints.MockedClient)
@@ -342,11 +341,15 @@ func TestDiscover_NilNodeError(t *testing.T) {
 }
 
 func TestDo_HTTP(t *testing.T) {
-	endpoint, err := url.Parse("http://example.com/")
+	s := httptest.NewServer(mockStatusCodeHandler(http.StatusOK))
+	defer s.Close()
+	s.URL = "http://example.com/"
+
+	endpoint, err := url.Parse(s.URL)
 	if err != nil {
 		assert.FailNow(t, err.Error())
 	}
-	s := httptest.NewServer(mockResponseHandler(strings.NewReader("Foo")))
+
 	var c = &kubelet{
 		nodeIP:     "1.2.3.4",
 		config:     rest.Config{BearerToken: "Foo"},
@@ -366,11 +369,15 @@ func TestDo_HTTP(t *testing.T) {
 }
 
 func TestDo_HTTPS(t *testing.T) {
-	endpoint, err := url.Parse("https://example.com/")
+	s := httptest.NewServer(mockStatusCodeHandler(http.StatusOK))
+	defer s.Close()
+	s.URL = "https://example.com"
+
+	endpoint, err := url.Parse(s.URL)
 	if err != nil {
 		assert.FailNow(t, err.Error())
 	}
-	s := httptest.NewServer(mockResponseHandler(strings.NewReader("Foo")))
+
 	var c = &kubelet{
 		nodeIP:     "1.2.3.4",
 		config:     rest.Config{BearerToken: "Foo"},
@@ -386,5 +393,39 @@ func TestDo_HTTPS(t *testing.T) {
 	assert.Equal(t, "https://example.com/foo", resp.Request.URL.String())
 	assert.Equal(t, fmt.Sprintf("Bearer %s", c.config.BearerToken), resp.Request.Header.Get("Authorization"))
 	assert.Equal(t, "GET", resp.Request.Method)
-	assert.Equal(t, "https://example.com/", endpoint.String())
+	assert.Equal(t, "https://example.com", endpoint.String())
+}
+
+func TestCheckCall(t *testing.T) {
+	s := httptest.NewServer(mockStatusCodeHandler(http.StatusOK))
+	defer s.Close()
+
+	endpoint, err := url.Parse(s.URL)
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
+
+	err = checkCall(s.Client(), *endpoint, "foo", "foo token")
+	assert.NoError(t, err)
+}
+
+func TestCheckCall_ErrorNotSuccessStatusCode(t *testing.T) {
+	s := httptest.NewServer(mockStatusCodeHandler(http.StatusNotFound))
+	defer s.Close()
+	s.URL = "https://example.com/"
+
+	endpoint, err := url.Parse(s.URL)
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
+
+	expectedCalledURL := "https://example.com/foo"
+
+	err = checkCall(s.Client(), *endpoint, "foo", "foo token")
+	assert.EqualError(t, err, fmt.Sprintf("error calling endpoint %s. Got status code: %d", expectedCalledURL, http.StatusNotFound))
+}
+
+func TestCheckCall_ErrorConnecting(t *testing.T) {
+	err := checkCall(http.DefaultClient, url.URL{}, "foo", "foo token")
+	assert.NotNil(t, err)
 }
