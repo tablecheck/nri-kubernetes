@@ -30,7 +30,7 @@ const (
 
 var args argumentList
 
-func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) error {
+func follower(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) error {
 	groups, errs := kubeletKSMGrouper.Group(kubeletMergeableSpecs)
 	if errs != nil && len(errs.Errors) > 0 {
 		if !errs.Recoverable {
@@ -69,7 +69,7 @@ func kubeletKSM(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clu
 	return nil
 }
 
-func kubeletKSMAndRest(kubeletKSMGrouper data.Grouper, ksmClient endpoints.Client, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) error {
+func leader(kubeletKSMGrouper data.Grouper, ksmClient endpoints.Client, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) error {
 	kubeletKSMGroups, errs := kubeletKSMGrouper.Group(kubeletMergeableSpecs)
 	if errs != nil && len(errs.Errors) > 0 {
 		if !errs.Recoverable {
@@ -161,14 +161,14 @@ func main() {
 		// setting role by auto discovery
 		var role string
 		if kubeletNodeIP == ksmNodeIP {
-			role = "kubelet-ksm-rest"
+			role = "leader"
 		} else {
-			role = "kubelet-ksm"
+			role = "follower"
 		}
 		logger.Debugf("Auto-discovered role = %s", role)
 
 		switch role {
-		case "kubelet-ksm-rest":
+		case "leader":
 			// todo fix pointers indirection stuff
 			kubeletKSMGrouper := data.NewKubeletKSMPatchedGrouper(
 				kubeletClient,
@@ -180,11 +180,11 @@ func main() {
 			)
 
 			// todo fix pointers indirection stuff
-			err = kubeletKSMAndRest(kubeletKSMGrouper, ksmClient, integration, args.ClusterName, logger)
+			err = leader(kubeletKSMGrouper, ksmClient, integration, args.ClusterName, logger)
 			if err != nil {
 				logger.Fatal(err)
 			}
-		case "kubelet-ksm":
+		case "follower":
 			// todo fix pointers indirection stuff
 			kubeletKSMGrouper := data.NewKubeletKSMGrouper(
 				kubeletClient,
@@ -194,7 +194,7 @@ func main() {
 				logger,
 			)
 
-			err = kubeletKSM(kubeletKSMGrouper, integration, args.ClusterName, logger)
+			err = follower(kubeletKSMGrouper, integration, args.ClusterName, logger)
 			if err != nil {
 				logger.Fatal(err)
 			}
