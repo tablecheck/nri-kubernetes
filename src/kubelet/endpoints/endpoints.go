@@ -58,7 +58,7 @@ func (c *kubelet) Do(method, path string) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error creating %s request to: %s. Got error: %s ", method, e.String(), err)
 	}
-	// TODO: check if this fail if no Bearer token found
+
 	if c.endpoint.Scheme == "https" {
 		r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.config.BearerToken))
 	}
@@ -175,8 +175,9 @@ func checkCall(client *http.Client, URL url.URL, path, token string) error {
 	if err != nil {
 		return fmt.Errorf("error creating request to: %s. Got error: %s ", URL.String(), err)
 	}
-	// TODO: Should we send it for http?
-	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	if URL.Scheme == "https" {
+		r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	}
 	resp, err := client.Do(r)
 	if err != nil {
 		return fmt.Errorf("error trying to connect to: %s. Got error: %s ", URL.String(), err)
