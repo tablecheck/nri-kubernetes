@@ -343,7 +343,6 @@ func TestDiscover_NilNodeError(t *testing.T) {
 func TestDo_HTTP(t *testing.T) {
 	s := httptest.NewServer(mockStatusCodeHandler(http.StatusOK))
 	defer s.Close()
-	s.URL = "http://example.com/"
 
 	endpoint, err := url.Parse(s.URL)
 	if err != nil {
@@ -359,19 +358,20 @@ func TestDo_HTTP(t *testing.T) {
 		logger:     logger,
 	}
 
+	expectedCalledURL := fmt.Sprintf("%s/foo", s.URL)
+
 	resp, err := c.Do("GET", "foo")
 
 	assert.NoError(t, err)
-	assert.Equal(t, "http://example.com/foo", resp.Request.URL.String())
+	assert.Equal(t, expectedCalledURL, resp.Request.URL.String())
 	assert.Equal(t, "", resp.Request.Header.Get("Authorization"))
 	assert.Equal(t, "GET", resp.Request.Method)
-	assert.Equal(t, "http://example.com/", endpoint.String())
+	assert.Equal(t, s.URL, endpoint.String())
 }
 
 func TestDo_HTTPS(t *testing.T) {
-	s := httptest.NewServer(mockStatusCodeHandler(http.StatusOK))
+	s := httptest.NewTLSServer(mockStatusCodeHandler(http.StatusOK))
 	defer s.Close()
-	s.URL = "https://example.com"
 
 	endpoint, err := url.Parse(s.URL)
 	if err != nil {
@@ -387,13 +387,15 @@ func TestDo_HTTPS(t *testing.T) {
 		logger:     logger,
 	}
 
+	expectedCalledURL := fmt.Sprintf("%s/foo", s.URL)
+
 	resp, err := c.Do("GET", "foo")
 
 	assert.NoError(t, err)
-	assert.Equal(t, "https://example.com/foo", resp.Request.URL.String())
+	assert.Equal(t, expectedCalledURL, resp.Request.URL.String())
 	assert.Equal(t, fmt.Sprintf("Bearer %s", c.config.BearerToken), resp.Request.Header.Get("Authorization"))
 	assert.Equal(t, "GET", resp.Request.Method)
-	assert.Equal(t, "https://example.com", endpoint.String())
+	assert.Equal(t, s.URL, endpoint.String())
 }
 
 func TestCheckCall(t *testing.T) {
@@ -410,22 +412,23 @@ func TestCheckCall(t *testing.T) {
 }
 
 func TestCheckCall_ErrorNotSuccessStatusCode(t *testing.T) {
-	s := httptest.NewServer(mockStatusCodeHandler(http.StatusNotFound))
+	s := httptest.NewTLSServer(mockStatusCodeHandler(http.StatusBadRequest))
 	defer s.Close()
-	s.URL = "https://example.com/"
 
 	endpoint, err := url.Parse(s.URL)
 	if err != nil {
 		assert.FailNow(t, err.Error())
 	}
 
-	expectedCalledURL := "https://example.com/foo"
+	expectedCalledURL := fmt.Sprintf("%s/foo", s.URL)
 
 	err = checkCall(s.Client(), *endpoint, "foo", "foo token")
-	assert.EqualError(t, err, fmt.Sprintf("error calling endpoint %s. Got status code: %d", expectedCalledURL, http.StatusNotFound))
+	assert.EqualError(t, err, fmt.Sprintf("error calling endpoint %s. Got status code: %d", expectedCalledURL, http.StatusBadRequest))
 }
 
+// Error comes from http Do method from RoundTripper interface.
+// Empty url is passed to Do method and error unsupported protocol scheme is received
 func TestCheckCall_ErrorConnecting(t *testing.T) {
-	err := checkCall(http.DefaultClient, url.URL{}, "foo", "foo token")
-	assert.NotNil(t, err)
+	err := checkCall(http.DefaultClient, url.URL{}, "", "")
+	assert.Error(t, err)
 }
