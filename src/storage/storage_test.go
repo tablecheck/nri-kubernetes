@@ -176,11 +176,6 @@ func TestDiskStorage_Overwrite(t *testing.T) {
 	rootDir, err := ioutil.TempDir("", "disk_storage")
 	assert.Nil(t, err)
 
-	nowTime := time.Now()
-	setNow(func() time.Time {
-		return nowTime
-	})
-
 	// Given a JSONDiskStorage
 	var ds Storage = NewJSONDiskStorage(rootDir)
 
@@ -209,4 +204,39 @@ func TestDiskStorage_NotFound(t *testing.T) {
 
 	// The storage returns an error
 	assert.NotNil(t, err)
+}
+
+func TestJSONDiskStorage_Delete(t *testing.T) {
+	rootDir, err := ioutil.TempDir("", "disk_storage")
+	assert.Nil(t, err)
+
+	// Given a JSONDiskStorage
+	var ds Storage = NewJSONDiskStorage(rootDir)
+
+	// And a stored record
+	assert.Nil(t, ds.Write("my-storage-test", "initial Value"))
+
+	// When removing the stored record
+	assert.Nil(t, ds.Delete("my-storage-test"))
+
+	// When trying to access an nonexistent record
+	var read string
+	_, err = ds.Read("my-storage-test", &read)
+
+	// The storage returns an error
+	assert.NotNil(t, err)
+}
+
+func TestJSONDiskStorage_DeleteUnexistent(t *testing.T) {
+	rootDir, err := ioutil.TempDir("", "disk_storage")
+	assert.Nil(t, err)
+
+	// Given a JSONDiskStorage
+	var ds Storage = NewJSONDiskStorage(rootDir)
+
+	// When trying to remove a non-existing record
+	err = ds.Delete("my-storage-test")
+
+	// The storage does not return any error
+	assert.Nil(t, err)
 }

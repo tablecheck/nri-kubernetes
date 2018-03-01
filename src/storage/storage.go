@@ -3,6 +3,7 @@ package storage
 import (
 	"encoding/json"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 )
@@ -24,6 +25,9 @@ type Storage interface {
 	// It returns the Unix timestamp when the value was stored (in seconds), or an error if the Read operation failed.
 	// It may return any type of value.
 	Read(key string, valuePtr interface{}) (int64, error)
+	// Delete removes the cached data for the given key. If the data does not exist, the system does not return
+	// any error.
+	Delete(key string) error
 }
 
 // JSONDiskStorage is a Storage implementation that uses the file system as persistence backend, storing
@@ -37,6 +41,11 @@ type JSONDiskStorage struct {
 type jsonEntry struct {
 	Timestamp int64
 	Value     interface{}
+}
+
+// Returns the path to the file for a given key
+func (j JSONDiskStorage) pathFor(key string) string {
+	return filepath.Join(j.rootPath, key+fileExt)
 }
 
 // NewJSONDiskStorage returns a JSONDiskStorage using the rootPath argument as root folder for the persistent entities.
@@ -55,14 +64,14 @@ func (j JSONDiskStorage) Write(key string, value interface{}) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(j.rootPath, key+fileExt), bytes, filePerm)
+	return ioutil.WriteFile(j.pathFor(key), bytes, filePerm)
 }
 
 // Read gets the value associated to a given key and stores it in the value referenced by the pointer passed as
 // second argument
 // This implementation adds a restriction to the key name: it must be a valid file name (without extension).
 func (j JSONDiskStorage) Read(key string, valuePtr interface{}) (int64, error) {
-	bytes, err := ioutil.ReadFile(filepath.Join(j.rootPath, key+fileExt))
+	bytes, err := ioutil.ReadFile(j.pathFor(key))
 	if err != nil {
 		return 0, err
 	}
@@ -73,4 +82,14 @@ func (j JSONDiskStorage) Read(key string, valuePtr interface{}) (int64, error) {
 		return 0, err
 	}
 	return entry.Timestamp, nil
+}
+
+// Delete removes the cached data for the given key. If the data does not exist, the system does not return
+// any error.
+func (j JSONDiskStorage) Delete(key string) error {
+	err := os.Remove(j.pathFor(key))
+	if err != nil && !os.IsNotExist(err.(*os.PathError).Err) {
+		return err
+	}
+	return nil
 }
