@@ -39,6 +39,10 @@ golang:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/metric
+  github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage:
+    license: Unknown
+    license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage
   github.com/newrelic/infra-integrations-beta/vendor/github.com/PuerkitoBio/purell:
     license: BSD-3-Clause
     license_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/PuerkitoBio/purell/LICENSE

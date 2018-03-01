@@ -114,23 +114,26 @@ func (sd *kubeletDiscoverer) Discover(timeout time.Duration) (endpoints.Client, 
 			continue
 		}
 
-		return &kubelet{
-			nodeIP: host,
-			endpoint: url.URL{
-				Host:   c.url.Host,
-				Path:   c.url.Path,
-				Scheme: c.url.Scheme,
-			},
-			httpClient: c.client,
-			config: rest.Config{
-				BearerToken: config.BearerToken,
-			},
-			nodeName: nodeName,
-			logger:   sd.logger,
-		}, nil
-
+		return newKubelet(host, nodeName, c.url, config.BearerToken, c.client, sd.logger), nil
 	}
 	return nil, err
+}
+
+func newKubelet(nodeIP string, nodeName string, endpoint url.URL, bearerToken string, client *http.Client, logger *logrus.Logger) *kubelet {
+	return &kubelet{
+		nodeIP: nodeIP,
+		endpoint: url.URL{
+			Host:   endpoint.Host,
+			Path:   endpoint.Path,
+			Scheme: endpoint.Scheme,
+		},
+		httpClient: client,
+		config: rest.Config{
+			BearerToken: bearerToken,
+		},
+		nodeName: nodeName,
+		logger:   logger,
+	}
 }
 
 func connectionHTTP(host string, timeout time.Duration) connectionParams {

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Replace `log.Fatal()` by `log.Panic()` in order to call all defer statements. 
 
+### Added
+- Caching discovery mechanism on disk.
+
 ## 1.0.0-beta4
 
 ### Added
