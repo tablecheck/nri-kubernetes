@@ -28,6 +28,13 @@ const (
 	defaultSecureKubeletPort   = 10250
 )
 
+// client type (if you need to add new values, do it at the end of the list)
+const (
+	httpBasic = iota
+	httpInsecure
+	httpSecure
+)
+
 // kubelet implements Client interface
 type kubelet struct {
 	httpClient *http.Client
@@ -35,12 +42,14 @@ type kubelet struct {
 	config     rest.Config
 	nodeIP     string
 	nodeName   string
+	httpType   int // httpBasic, httpInsecure, httpSecure
 	logger     *logrus.Logger
 }
 
 type connectionParams struct {
-	url    url.URL
-	client *http.Client
+	url      url.URL
+	client   *http.Client
+	httpType int // httpBasic, httpInsecure, httpSecure
 }
 
 type connectionChecker func(client *http.Client, URL url.URL, path, token string) error
@@ -114,12 +123,12 @@ func (sd *kubeletDiscoverer) Discover(timeout time.Duration) (endpoints.Client, 
 			continue
 		}
 
-		return newKubelet(host, nodeName, c.url, config.BearerToken, c.client, sd.logger), nil
+		return newKubelet(host, nodeName, c.url, config.BearerToken, c.client, c.httpType, sd.logger), nil
 	}
 	return nil, err
 }
 
-func newKubelet(nodeIP string, nodeName string, endpoint url.URL, bearerToken string, client *http.Client, logger *logrus.Logger) *kubelet {
+func newKubelet(nodeIP string, nodeName string, endpoint url.URL, bearerToken string, client *http.Client, httpType int, logger *logrus.Logger) *kubelet {
 	return &kubelet{
 		nodeIP: nodeIP,
 		endpoint: url.URL{
@@ -128,6 +137,7 @@ func newKubelet(nodeIP string, nodeName string, endpoint url.URL, bearerToken st
 			Scheme: endpoint.Scheme,
 		},
 		httpClient: client,
+		httpType:   httpType,
 		config: rest.Config{
 			BearerToken: bearerToken,
 		},
@@ -142,7 +152,8 @@ func connectionHTTP(host string, timeout time.Duration) connectionParams {
 			Host:   host,
 			Scheme: "http",
 		},
-		client: endpoints.BasicHTTPClient(timeout),
+		client:   endpoints.BasicHTTPClient(timeout),
+		httpType: httpBasic,
 	}
 }
 
@@ -152,7 +163,8 @@ func connectionHTTPS(host string, timeout time.Duration) connectionParams {
 			Host:   host,
 			Scheme: "https",
 		},
-		client: endpoints.InsecureHTTPClient(timeout),
+		client:   endpoints.InsecureHTTPClient(timeout),
+		httpType: httpInsecure,
 	}
 }
 
@@ -167,7 +179,8 @@ func (sd *kubeletDiscoverer) connectionAPIHTTPS(nodeName string, timeout time.Du
 			Path:   fmt.Sprintf("/api/v1/nodes/%s/proxy/", nodeName),
 			Scheme: "https",
 		},
-		client: secureClient,
+		client:   secureClient,
+		httpType: httpSecure,
 	}, nil
 }
 

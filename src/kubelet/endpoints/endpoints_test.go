@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -19,6 +20,54 @@ import (
 const timeout = time.Second
 
 var logger = logrus.StandardLogger()
+
+// Kubernetes API client mocks
+
+func failingClientMock() *endpoints.MockedClient {
+	client := new(endpoints.MockedClient)
+	client.On("Config").Return(nil)
+	client.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
+	client.On("FindPodByName", mock.Anything).Return(&v1.PodList{}, errors.New("FindPodByName should not be invoked"))
+	client.On("FindPodsByHostname", mock.Anything).Return(&v1.PodList{}, errors.New("FindPodsByHostname should not be invoked"))
+	client.On("FindNode", mock.Anything).Return(nil, errors.New("FindNode should not be invoked"))
+	return client
+}
+
+// creates a mocked Kubernetes API client
+func mockedClient() *endpoints.MockedClient {
+	client := new(endpoints.MockedClient)
+	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
+	client.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
+	return client
+}
+
+// sets the result of the FindPodByName function in the Kubernetes API Client
+func onFindPodByName(client *endpoints.MockedClient, nodeName string) {
+	client.On("FindPodByName", mock.Anything).
+		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: nodeName}}}}, nil)
+}
+
+// sets the result of the FindNode function in the Kubernetes API Client
+func onFindNode(client *endpoints.MockedClient, nodeName, internalIP string, kubeletPort int) {
+	client.On("FindNode", nodeName).
+		Return(&v1.Node{
+			Status: v1.NodeStatus{
+				Addresses: []v1.NodeAddress{
+					{
+						Type:    "InternalIP",
+						Address: internalIP,
+					},
+				},
+				DaemonEndpoints: v1.NodeDaemonEndpoints{
+					KubeletEndpoint: v1.DaemonEndpoint{
+						Port: int32(kubeletPort),
+					},
+				},
+			},
+		}, nil)
+}
+
+// Connection checker mocks
 
 func allOkConnectionChecker(_ *http.Client, _ url.URL, _, _ string) error {
 	return nil
@@ -44,29 +93,14 @@ func mockStatusCodeHandler(statusCode int) http.HandlerFunc {
 	}
 }
 
+// Tests
+
 func TestDiscoverHTTP_DefaultInsecurePort(t *testing.T) {
 	// Given a client
-	client := new(endpoints.MockedClient)
-	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
-	client.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
-	client.On("FindPodByName", mock.Anything).
-		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: "the-node-name"}}}}, nil)
-	client.On("FindNode", "the-node-name").
-		Return(&v1.Node{
-			Status: v1.NodeStatus{
-				Addresses: []v1.NodeAddress{
-					{
-						Type:    "InternalIP",
-						Address: "1.2.3.4",
-					},
-				},
-				DaemonEndpoints: v1.NodeDaemonEndpoints{
-					KubeletEndpoint: v1.DaemonEndpoint{
-						Port: defaultInsecureKubeletPort,
-					},
-				},
-			},
-		}, nil)
+	client := mockedClient()
+
+	onFindPodByName(client, "the-node-name")
+	onFindNode(client, "the-node-name", "1.2.3.4", defaultInsecureKubeletPort)
 
 	// and an Discoverer implementation
 	discoverer := kubeletDiscoverer{
@@ -87,9 +121,7 @@ func TestDiscoverHTTP_DefaultInsecurePort(t *testing.T) {
 
 func TestDiscoverHTTP_NotFoundByName(t *testing.T) {
 	// Given a client
-	client := new(endpoints.MockedClient)
-	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
-	client.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
+	client := mockedClient()
 
 	// That doesn't find the pod by name
 	client.On("FindPodByName", mock.Anything).
@@ -98,22 +130,7 @@ func TestDiscoverHTTP_NotFoundByName(t *testing.T) {
 	// But finds it by hostname
 	client.On("FindPodsByHostname", mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: "the-node-name"}}}}, nil)
-	client.On("FindNode", "the-node-name").
-		Return(&v1.Node{
-			Status: v1.NodeStatus{
-				Addresses: []v1.NodeAddress{
-					{
-						Type:    "InternalIP",
-						Address: "11.22.33.44",
-					},
-				},
-				DaemonEndpoints: v1.NodeDaemonEndpoints{
-					KubeletEndpoint: v1.DaemonEndpoint{
-						Port: 5432,
-					},
-				},
-			},
-		}, nil)
+	onFindNode(client, "the-node-name", "11.22.33.44", 5432)
 
 	discoverer := kubeletDiscoverer{
 		apiClient:   client,
@@ -133,27 +150,9 @@ func TestDiscoverHTTP_NotFoundByName(t *testing.T) {
 
 func TestDiscoverHTTPS_DefaultSecurePort(t *testing.T) {
 	// Given a client
-	client := new(endpoints.MockedClient)
-	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
-	client.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
-	client.On("FindPodByName", mock.Anything).
-		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: "the-node-name"}}}}, nil)
-	client.On("FindNode", "the-node-name").
-		Return(&v1.Node{
-			Status: v1.NodeStatus{
-				Addresses: []v1.NodeAddress{
-					{
-						Type:    "InternalIP",
-						Address: "1.2.3.4",
-					},
-				},
-				DaemonEndpoints: v1.NodeDaemonEndpoints{
-					KubeletEndpoint: v1.DaemonEndpoint{
-						Port: defaultSecureKubeletPort,
-					},
-				},
-			},
-		}, nil)
+	client := mockedClient()
+	onFindPodByName(client, "the-node-name")
+	onFindNode(client, "the-node-name", "1.2.3.4", defaultSecureKubeletPort)
 
 	// and an Discoverer implementation
 	discoverer := kubeletDiscoverer{
@@ -174,27 +173,10 @@ func TestDiscoverHTTPS_DefaultSecurePort(t *testing.T) {
 
 func TestDiscoverHTTP_CheckingConnection(t *testing.T) {
 	// Given a client
-	client := new(endpoints.MockedClient)
-	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
-	client.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
-	client.On("FindPodByName", mock.Anything).
-		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: "the-node-name"}}}}, nil)
-	client.On("FindNode", "the-node-name").
-		Return(&v1.Node{
-			Status: v1.NodeStatus{
-				Addresses: []v1.NodeAddress{
-					{
-						Type:    "InternalIP",
-						Address: "1.2.3.4",
-					},
-				},
-				DaemonEndpoints: v1.NodeDaemonEndpoints{
-					KubeletEndpoint: v1.DaemonEndpoint{
-						Port: 55332, // configured without any default port
-					},
-				},
-			},
-		}, nil)
+	client := mockedClient()
+	onFindPodByName(client, "the-node-name")
+	// Whose Kubelet has an endpoint in a non-default port
+	onFindNode(client, "the-node-name", "1.2.3.4", 55332)
 
 	// and an Discoverer implementation
 	discoverer := kubeletDiscoverer{
@@ -215,27 +197,10 @@ func TestDiscoverHTTP_CheckingConnection(t *testing.T) {
 
 func TestDiscoverHTTPS_CheckingConnection(t *testing.T) {
 	// Given a client
-	client := new(endpoints.MockedClient)
-	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
-	client.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
-	client.On("FindPodByName", mock.Anything).
-		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: "the-node-name"}}}}, nil)
-	client.On("FindNode", "the-node-name").
-		Return(&v1.Node{
-			Status: v1.NodeStatus{
-				Addresses: []v1.NodeAddress{
-					{
-						Type:    "InternalIP",
-						Address: "1.2.3.4",
-					},
-				},
-				DaemonEndpoints: v1.NodeDaemonEndpoints{
-					KubeletEndpoint: v1.DaemonEndpoint{
-						Port: 55332, // configured without any default port
-					},
-				},
-			},
-		}, nil)
+	client := mockedClient()
+	onFindPodByName(client, "the-node-name")
+	// Whose Kubelet has an endpoint in a non-default port
+	onFindNode(client, "the-node-name", "1.2.3.4", 55332)
 
 	// and an Discoverer implementation whose connection check connection fails because it is a secure connection
 	discoverer := kubeletDiscoverer{
@@ -256,27 +221,10 @@ func TestDiscoverHTTPS_CheckingConnection(t *testing.T) {
 
 func TestDiscoverHTTPS_ApiConnection(t *testing.T) {
 	// Given a client
-	client := new(endpoints.MockedClient)
-	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
-	client.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
-	client.On("FindPodByName", mock.Anything).
-		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: "the-node-name"}}}}, nil)
-	client.On("FindNode", "the-node-name").
-		Return(&v1.Node{
-			Status: v1.NodeStatus{
-				Addresses: []v1.NodeAddress{
-					{
-						Type:    "InternalIP",
-						Address: "1.2.3.4",
-					},
-				},
-				DaemonEndpoints: v1.NodeDaemonEndpoints{
-					KubeletEndpoint: v1.DaemonEndpoint{
-						Port: 55332, // configured without any default port
-					},
-				},
-			},
-		}, nil)
+	client := mockedClient()
+	onFindPodByName(client, "the-node-name")
+	// Whose Kubelet has an endpoint in a non-default port
+	onFindNode(client, "the-node-name", "1.2.3.4", 55332)
 
 	// and an Discoverer implementation whose connection check connection fails because it is a secure connection
 	discoverer := kubeletDiscoverer{
@@ -297,9 +245,7 @@ func TestDiscoverHTTPS_ApiConnection(t *testing.T) {
 
 func TestDiscover_NodeNotFoundError(t *testing.T) {
 	// Given a client
-	client := new(endpoints.MockedClient)
-	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
-	client.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
+	client := mockedClient()
 
 	// That doesn't find the pod neither by name nor hostname
 	client.On("FindPodByName", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
@@ -319,9 +265,7 @@ func TestDiscover_NodeNotFoundError(t *testing.T) {
 
 func TestDiscover_NilNodeError(t *testing.T) {
 	// Given a client
-	client := new(endpoints.MockedClient)
-	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
-	client.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
+	client := mockedClient()
 
 	// That doesn't find the pod neither by name nor hostname
 	client.On("FindPodByName", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)

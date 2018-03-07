@@ -16,29 +16,27 @@ const cachedKSMKey = "ksm-client"
 type cachedKSM struct {
 	Endpoint url.URL
 	NodeIP   string
-	Timeout  time.Duration
 }
 
 // composeKSM implements the ClientComposer function signature
-func composeKSM(source interface{}, cacher *endpoints.DiscoveryCacher) (endpoints.Client, error) {
+func composeKSM(source interface{}, cacher *endpoints.DiscoveryCacher, timeout time.Duration) (endpoints.Client, error) {
 	cached := source.(*cachedKSM)
 	return &ksm{
 		nodeIP:   cached.NodeIP,
 		endpoint: cached.Endpoint,
 		httpClient: &http.Client{
-			Timeout: cached.Timeout,
+			Timeout: timeout,
 		},
 		logger: cacher.Logger,
 	}, nil
 }
 
 // composeKSM implements the ClientDecomposer function signature
-func decomposeKSM(source endpoints.Client, _ *endpoints.DiscoveryCacher) (interface{}, error) {
+func decomposeKSM(source endpoints.Client) (interface{}, error) {
 	ksm := source.(*ksm)
 	return &cachedKSM{
 		Endpoint: ksm.endpoint,
 		NodeIP:   ksm.nodeIP,
-		Timeout:  ksm.httpClient.Timeout,
 	}, nil
 }
 

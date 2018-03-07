@@ -16,7 +16,7 @@ import (
 func TestDiscover_CachedKSM(t *testing.T) {
 	// Setup cache directory
 	tmpDir, err := ioutil.TempDir("", "test_discover")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	// Setup Kubernetes API client
 	client := new(endpoints2.MockedClient)
@@ -43,10 +43,11 @@ func TestDiscover_CachedKSM(t *testing.T) {
 	// When the discovery process is invoked again
 	wrappedDiscoverer.lookupSRV = failingLookupSRV
 	ksmClient, err = cacher.Discover(timeout)
+	assert.NoError(t, err)
 
 	// The cached value has been retrieved, instead of triggered the discovery
 	// (otherwise it would have failed when invoking the `failedLookupSRV` and the unconfigured mock
-	assert.Nil(t, err, "should not return error")
+	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("%s:%v", ksmQualifiedName, 11223), ksmClient.(*ksm).endpoint.Host)
 	assert.Equal(t, "http", ksmClient.(*ksm).endpoint.Scheme)
 	assert.Equal(t, "6.7.8.9", ksmClient.(*ksm).nodeIP)
@@ -55,7 +56,7 @@ func TestDiscover_CachedKSM(t *testing.T) {
 
 func TestDiscover_CachedKSM_BothFail(t *testing.T) {
 	tmpDir, err := ioutil.TempDir("", "test_discover")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	// Given a client that is unable to discover the endpoint
 	client := new(endpoints2.MockedClient)
@@ -77,13 +78,13 @@ func TestDiscover_CachedKSM_BothFail(t *testing.T) {
 
 	// The Discover invocation should return error
 	_, err = cacher.Discover(timeout)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 }
 
 func TestDiscover_LoadCacheFail(t *testing.T) {
 	// Setup cache directory
 	tmpDir, err := ioutil.TempDir("", "test_discover")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	// Setup Kubernetes API client
 	client := new(endpoints2.MockedClient)
@@ -114,7 +115,7 @@ func TestDiscover_LoadCacheFail(t *testing.T) {
 	ksmClient, err = cacher.Discover(timeout)
 
 	// The discovery process has been triggered again
-	assert.Nil(t, err, "should not return error")
+	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("%s:%v", ksmQualifiedName, 11223), ksmClient.(*ksm).endpoint.Host)
 	assert.Equal(t, "http", ksmClient.(*ksm).endpoint.Scheme)
 	assert.Equal(t, "6.7.8.9", ksmClient.(*ksm).nodeIP)
