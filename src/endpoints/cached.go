@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
@@ -35,11 +36,22 @@ type ClientComposer func(source interface{}, cacher *DiscoveryCacher, timeout ti
 func (d *DiscoveryCacher) Discover(timeout time.Duration) (Client, error) {
 	ts, err := d.Storage.Read(d.StorageKey, d.CachedDataPtr)
 	if err == nil {
-		d.Logger.Debug("Found cached copy of %q stored at %s", d.StorageKey, time.Unix(ts, 0))
-		return d.Compose(d.CachedDataPtr, d, timeout)
+		d.Logger.Debugf("Found cached copy of %q stored at %s", d.StorageKey, time.Unix(ts, 0))
+		wrappedClient, err := d.Compose(d.CachedDataPtr, d, timeout)
+		if err != nil {
+			return nil, err
+		}
+		return d.wrap(wrappedClient, timeout), nil
 	}
-	d.Logger.Debug("Cached %q not found. Triggering discovery process", d.StorageKey)
-	// If the load-from-caching process failed, we trigger the discovery process
+	d.Logger.Debugf("Cached %q not found. Triggering discovery process", d.StorageKey)
+	client, err := d.discoverAndCache(timeout)
+	if err != nil {
+		return nil, err
+	}
+	return d.wrap(client, timeout), nil
+}
+
+func (d *DiscoveryCacher) discoverAndCache(timeout time.Duration) (Client, error) {
 	client, err := d.Discoverer.Discover(timeout)
 	if err != nil {
 		return nil, err
@@ -50,7 +62,52 @@ func (d *DiscoveryCacher) Discover(timeout time.Duration) (Client, error) {
 		err = d.Storage.Write(d.StorageKey, toCache)
 	}
 	if err != nil {
-		d.Logger.WithError(err).Warn("while storing %q in the cache", d.StorageKey)
+		d.Logger.WithError(err).Warnf("while storing %q in the cache", d.StorageKey)
 	}
 	return client, nil
+}
+
+func (d *DiscoveryCacher) wrap(client Client, timeout time.Duration) *cacheAwareClient {
+	return &cacheAwareClient{
+		client:  client,
+		cacher:  d,
+		timeout: timeout,
+	}
+}
+
+// cacheAwareClient wraps the cached client and if it fails because it has outdated data, retriggers the
+type cacheAwareClient struct {
+	client  Client
+	cacher  *DiscoveryCacher
+	timeout time.Duration
+}
+
+func (c *cacheAwareClient) Do(method, path string) (*http.Response, error) {
+	response, err := c.client.Do(method, path)
+	if err == nil {
+		return response, nil
+	}
+	// If the Do invocation returns error, retriggers the discovery process.
+	// A response with an HTTP status error is considered successful from the cache side (it discovered correctly
+	// the server that has returned the error)
+	newClient, err := c.cacher.discoverAndCache(c.timeout)
+	if err != nil {
+		// If the client can't be rediscovered, it anyway invalidates the cache
+		if err := c.cacher.Storage.Delete(c.cacher.StorageKey); err != nil {
+			c.cacher.Logger.WithError(err).Debugf("while trying to remove %q from the cache", c.cacher.StorageKey)
+		}
+		return nil, err
+	}
+	c.client = newClient
+	return c.client.Do(method, path)
+}
+
+// this implementation doesn't guarantee the returned NodeIP is valid in the moment of the function invocation.
+func (c *cacheAwareClient) NodeIP() string {
+	return c.client.NodeIP()
+}
+
+// WrappedClient is only aimed for testing. It allows extracting the wrapped client of a given cacheAwareClient.
+func WrappedClient(caClient Client) Client {
+	return caClient.(*cacheAwareClient).client
 }
