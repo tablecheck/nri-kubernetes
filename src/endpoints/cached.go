@@ -20,6 +20,7 @@ type DiscoveryCacher struct {
 	Discoverer Discoverer
 	// Storage for cached data
 	Storage   storage.Storage
+	TTL       time.Duration
 	Logger    *logrus.Logger
 	Compose   ClientComposer
 	Decompose ClientDecomposer
@@ -37,13 +38,18 @@ func (d *DiscoveryCacher) Discover(timeout time.Duration) (Client, error) {
 	ts, err := d.Storage.Read(d.StorageKey, d.CachedDataPtr)
 	if err == nil {
 		d.Logger.Debugf("Found cached copy of %q stored at %s", d.StorageKey, time.Unix(ts, 0))
-		wrappedClient, err := d.Compose(d.CachedDataPtr, d, timeout)
-		if err != nil {
-			return nil, err
+		// Check cached object TTL
+		if time.Now().Unix() < ts+int64(d.TTL.Seconds()) {
+			wrappedClient, err := d.Compose(d.CachedDataPtr, d, timeout)
+			if err != nil {
+				return nil, err
+			}
+			return d.wrap(wrappedClient, timeout), nil
 		}
-		return d.wrap(wrappedClient, timeout), nil
+		d.Logger.Debugf("Cached copy of %q expired. Refreshing", d.StorageKey)
+	} else {
+		d.Logger.Debugf("Cached %q not found. Triggering discovery process", d.StorageKey)
 	}
-	d.Logger.Debugf("Cached %q not found. Triggering discovery process", d.StorageKey)
 	client, err := d.discoverAndCache(timeout)
 	if err != nil {
 		return nil, err

@@ -23,6 +23,7 @@ type argumentList struct {
 	Timeout     int    `default:"5000" help:"timeout in milliseconds for calling metrics sources"`
 	ClusterName string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
 	CacheDir    string `default:"/var/cache/nr-kubernetes" help:"The location of the integration cached values"`
+	CacheTTL    string `default:"1h" help:"The duration since the cached entries are stored until they expire"`
 }
 
 const (
@@ -146,6 +147,12 @@ func main() {
 	}
 
 	if args.All || args.Metrics {
+		ttl, err := time.ParseDuration(args.CacheTTL)
+		if err != nil {
+			logger.WithError(err).Error("while parsing the cache TTL value. Defaulting to 1h")
+			ttl = time.Hour
+		}
+
 		timeout := time.Millisecond * time.Duration(args.Timeout)
 
 		innerKubeletDiscoverer, err := kubeletEndpoints.NewKubeletDiscoverer(logger)
@@ -153,7 +160,7 @@ func main() {
 			logger.Panic(err)
 		}
 		cacheStorage := storage.NewJSONDiskStorage(args.CacheDir)
-		kubeletDiscoverer := kubeletEndpoints.NewKubeletDiscoveryCacher(innerKubeletDiscoverer, cacheStorage, logger)
+		kubeletDiscoverer := kubeletEndpoints.NewKubeletDiscoveryCacher(innerKubeletDiscoverer, cacheStorage, ttl, logger)
 
 		kubeletClient, err := kubeletDiscoverer.Discover(timeout)
 		if err != nil {
@@ -166,7 +173,7 @@ func main() {
 		if err != nil {
 			logger.Panic(err)
 		}
-		ksmDiscoverer := ksmEndpoints.NewKSMDiscoveryCacher(innerKSMDiscoverer, cacheStorage, logger)
+		ksmDiscoverer := ksmEndpoints.NewKSMDiscoveryCacher(innerKSMDiscoverer, cacheStorage, ttl, logger)
 		ksmClient, err := ksmDiscoverer.Discover(timeout)
 		if err != nil {
 			logger.Panic(err)

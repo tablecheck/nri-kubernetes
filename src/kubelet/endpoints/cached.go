@@ -56,12 +56,13 @@ func decomposeKubelet(source endpoints.Client) (interface{}, error) {
 
 // NewKubeletDiscoveryCacher creates a new DiscoveryCacher that wraps a kubeletDiscoverer and caches the data into the
 // specified storage
-func NewKubeletDiscoveryCacher(discoverer endpoints.Discoverer, storage storage.Storage, logger *logrus.Logger) *endpoints.DiscoveryCacher {
+func NewKubeletDiscoveryCacher(discoverer endpoints.Discoverer, storage storage.Storage, ttl time.Duration, logger *logrus.Logger) *endpoints.DiscoveryCacher {
 	return &endpoints.DiscoveryCacher{
 		CachedDataPtr: &cachedKubelet{},
 		StorageKey:    cachedKubeletKey,
 		Discoverer:    discoverer,
 		Storage:       storage,
+		TTL:           ttl,
 		Logger:        logger,
 		Compose:       composeKubelet,
 		Decompose:     decomposeKubelet,

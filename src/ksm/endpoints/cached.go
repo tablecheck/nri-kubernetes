@@ -43,12 +43,13 @@ func decomposeKSM(source endpoints.Client) (interface{}, error) {
 
 // NewKSMDiscoveryCacher creates a new DiscoveryCacher that wraps a ksmDiscoverer and caches the data into the
 // specified storage
-func NewKSMDiscoveryCacher(ksmDiscoverer endpoints.Discoverer, storage storage.Storage, logger *logrus.Logger) endpoints.Discoverer {
+func NewKSMDiscoveryCacher(ksmDiscoverer endpoints.Discoverer, storage storage.Storage, ttl time.Duration, logger *logrus.Logger) endpoints.Discoverer {
 	return &endpoints.DiscoveryCacher{
 		CachedDataPtr: &cachedKSM{},
 		StorageKey:    cachedKSMKey,
 		Discoverer:    ksmDiscoverer,
 		Storage:       storage,
+		TTL:           ttl,
 		Logger:        logger,
 		Compose:       composeKSM,
 		Decompose:     decomposeKSM,
