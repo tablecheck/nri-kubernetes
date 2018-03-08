@@ -161,7 +161,7 @@ func TestGroupStatsSummary_MissingNodeData_ContainerWithTheSameName(t *testing.T
 	assert.NoError(t, err)
 
 	rawData, errs := GroupStatsSummary(summary)
-	assert.EqualError(t, errs[0], "empty node identifier, fetching node data skipped")
+	assert.EqualError(t, errs[0], "node data not found in /stats/summary response, fetching node data skipped")
 	assert.Equal(t, expectedRawData, rawData)
 }
 
@@ -213,7 +213,6 @@ func TestGroupStatsSummary_IncompleteStatsSummaryMessage_MissingNodeData_NoRxByt
 			"kube-system_newrelic-infra-monitoring-pjp0v": definition.RawMetrics{
 				"podName":   "newrelic-infra-monitoring-pjp0v",
 				"namespace": "kube-system",
-				"rxBytes":   0,
 				"errors":    0,
 				"txBytes":   52463212,
 			},
@@ -242,9 +241,54 @@ func TestGroupStatsSummary_EmptyStatsSummaryMessage(t *testing.T) {
 	var summary = new(Summary)
 
 	rawData, errs := GroupStatsSummary(summary)
+
+	assert.Len(t, errs, 2, "Not expected length of errors")
+	assert.Len(t, rawData, 3, "Not expected length of rawData for pods and containers")
+	assert.Empty(t, rawData["pod"])
+	assert.Empty(t, rawData["container"])
+	assert.Empty(t, rawData["node"])
+}
+
+func TestGroupStatsSummary_NilStatsSummaryMessage(t *testing.T) {
+	rawData, errs := GroupStatsSummary(nil)
+
 	assert.Len(t, errs, 1, "Not expected length of errors")
 	assert.Len(t, rawData, 3, "Not expected length of rawData for pods and containers")
 	assert.Empty(t, rawData["pod"])
 	assert.Empty(t, rawData["container"])
 	assert.Empty(t, rawData["node"])
+}
+
+func TestAddIntRawMetric(t *testing.T) {
+	r := definition.RawMetrics{
+		"nodeName": "fooNode",
+	}
+
+	expected := definition.RawMetrics{
+		"nodeName": "fooNode",
+		"foo":      353998913059080,
+	}
+
+	summary, err := toSummary(`{ "node": { "cpu": { "usageCoreNanoSeconds": 353998913059080 } } }`)
+	assert.NoError(t, err)
+
+	AddIntRawMetric(r, "foo", summary.Node.CPU.UsageCoreNanoSeconds)
+	assert.Equal(t, expected, r)
+}
+
+func TestAddStringRawMetric(t *testing.T) {
+	r := definition.RawMetrics{
+		"metric1": "value1",
+	}
+
+	expected := definition.RawMetrics{
+		"metric1":  "value1",
+		"nodeName": "fooNode",
+	}
+
+	summary, err := toSummary(`{ "node": {  "nodeName": "fooNode" } }`)
+	assert.NoError(t, err)
+
+	AddStringRawMetric(r, "nodeName", summary.Node.Name)
+	assert.Equal(t, expected, r)
 }

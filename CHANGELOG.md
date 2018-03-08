@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 ### Fixed
 - Replace `log.Fatal()` by `log.Panic()` in order to call all defer statements. 
+- Skip missing data from /stats/summary endpoint, instead of reporting them as zero values.
 
 ### Added
 - Caching discovery mechanism on disk.

@@ -2,6 +2,7 @@ package metric
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -17,86 +18,86 @@ const statsSummaryPath = "/stats/summary"
 // Summary represents list of required data from /stats/summary endpoint
 type Summary struct {
 	Pods []Pod `json:"pods"`
-	Node Node  `json:"node"`
+	Node *Node `json:"node"`
 }
 
 // Node represents all required node data from kubelet endpoint
 type Node struct {
-	Name    string  `json:"nodeName"`
-	CPU     CPU     `json:"cpu"`
-	Memory  Memory  `json:"memory"`
-	Network Network `json:"network"`
-	Fs      Fs      `json:"fs"`
-	Runtime Runtime `json:"runtime"`
+	Name    *string  `json:"nodeName"`
+	CPU     *CPU     `json:"cpu"`
+	Memory  *Memory  `json:"memory"`
+	Network *Network `json:"network"`
+	Fs      *Fs      `json:"fs"`
+	Runtime *Runtime `json:"runtime"`
 }
 
 // Pod represents all required pod and container data for kubelet integration
 type Pod struct {
-	PodRef     PodRef      `json:"podRef"`
-	Network    Network     `json:"network"`
+	PodRef     *PodRef     `json:"podRef"`
+	Network    *Network    `json:"network"`
 	Containers []Container `json:"containers"`
 }
 
 // PodRef represents name and namespace information of pod
 type PodRef struct {
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
+	Name      *string `json:"name"`
+	Namespace *string `json:"namespace"`
 }
 
 // Network represents network data of pod or node
 type Network struct {
-	RxBytes  int `json:"rxBytes"`
-	TxBytes  int `json:"txBytes"`
-	RxErrors int `json:"rxErrors"`
-	TxErrors int `json:"txErrors"`
+	RxBytes  *int `json:"rxBytes"`
+	TxBytes  *int `json:"txBytes"`
+	RxErrors *int `json:"rxErrors"`
+	TxErrors *int `json:"txErrors"`
 }
 
 // Container represents all required container data for kubelet integration
 type Container struct {
-	Name   string `json:"name"`
-	CPU    CPU    `json:"cpu"`
-	Memory Memory `json:"memory"`
+	Name   *string `json:"name"`
+	CPU    *CPU    `json:"cpu"`
+	Memory *Memory `json:"memory"`
 }
 
 // CPU represents core CPU usage data of container or node
 type CPU struct {
-	UsageNanoCores       int `json:"usageNanoCores"`
-	UsageCoreNanoSeconds int `json:"usageCoreNanoSeconds"`
+	UsageNanoCores       *int `json:"usageNanoCores"`
+	UsageCoreNanoSeconds *int `json:"usageCoreNanoSeconds"`
 }
 
 // Memory represents memory usage data of container or node
 type Memory struct {
-	UsageBytes      int `json:"usageBytes"`
-	AvailableBytes  int `json:"availableBytes"`
-	WorkingSetBytes int `json:"workingSetBytes"`
-	RssBytes        int `json:"rssBytes"`
-	PageFaults      int `json:"pageFaults"`
-	MajorPageFaults int `json:"majorPageFaults"`
+	UsageBytes      *int `json:"usageBytes"`
+	AvailableBytes  *int `json:"availableBytes"`
+	WorkingSetBytes *int `json:"workingSetBytes"`
+	RssBytes        *int `json:"rssBytes"`
+	PageFaults      *int `json:"pageFaults"`
+	MajorPageFaults *int `json:"majorPageFaults"`
 }
 
 // Fs represents filesystem data of a node
 type Fs struct {
-	AvailableBytes int `json:"availableBytes"`
-	CapacityBytes  int `json:"capacityBytes"`
-	UsedBytes      int `json:"usedBytes"`
-	InodesFree     int `json:"inodesFree"`
-	Inodes         int `json:"inodes"`
-	InodesUsed     int `json:"inodesUsed"`
+	AvailableBytes *int `json:"availableBytes"`
+	CapacityBytes  *int `json:"capacityBytes"`
+	UsedBytes      *int `json:"usedBytes"`
+	InodesFree     *int `json:"inodesFree"`
+	Inodes         *int `json:"inodes"`
+	InodesUsed     *int `json:"inodesUsed"`
 }
 
 // Runtime represents runtime image filesystem data of a node
 type Runtime struct {
-	ImageFS ImageFS `json:"imageFs"`
+	ImageFS *ImageFS `json:"imageFs"`
 }
 
 // ImageFS represents image filesystem usage data of a node
 type ImageFS struct {
-	AvailableBytes int `json:"availableBytes"`
-	CapacityBytes  int `json:"capacityBytes"`
-	UsedBytes      int `json:"usedBytes"`
-	InodesFree     int `json:"inodesFree"`
-	Inodes         int `json:"inodes"`
-	InodesUsed     int `json:"inodesUsed"`
+	AvailableBytes *int `json:"availableBytes"`
+	CapacityBytes  *int `json:"capacityBytes"`
+	UsedBytes      *int `json:"usedBytes"`
+	InodesFree     *int `json:"inodesFree"`
+	Inodes         *int `json:"inodes"`
+	InodesUsed     *int `json:"inodesUsed"`
 }
 
 // GetMetricsData calls kubelet /stats/summary endpoint and returns unmarshalled response
@@ -125,83 +126,171 @@ func GetMetricsData(c endpoints.Client) (*Summary, error) {
 
 }
 
+func fetchNodeStats(n *Node) (definition.RawMetrics, string, error) {
+
+	r := make(definition.RawMetrics)
+
+	if n == nil {
+		// TODO: check if better return nil or empty map
+		return r, "", fmt.Errorf("node data not found in %s response, fetching node data skipped", statsSummaryPath)
+	}
+
+	if n.Name == nil || *n.Name == "" {
+		return r, "", fmt.Errorf("node identifier not found in %s response, fetching node data skipped", statsSummaryPath)
+	}
+
+	AddStringRawMetric(r, "nodeName", n.Name)
+
+	if n.CPU != nil {
+		AddIntRawMetric(r, "usageNanoCores", n.CPU.UsageNanoCores)
+		AddIntRawMetric(r, "usageCoreNanoSeconds", n.CPU.UsageCoreNanoSeconds)
+	}
+
+	if n.Memory != nil {
+		AddIntRawMetric(r, "memoryUsageBytes", n.Memory.UsageBytes)
+		AddIntRawMetric(r, "memoryAvailableBytes", n.Memory.AvailableBytes)
+		AddIntRawMetric(r, "memoryWorkingSetBytes", n.Memory.WorkingSetBytes)
+		AddIntRawMetric(r, "memoryRssBytes", n.Memory.RssBytes)
+		AddIntRawMetric(r, "memoryPageFaults", n.Memory.PageFaults)
+		AddIntRawMetric(r, "memoryMajorPageFaults", n.Memory.MajorPageFaults)
+	}
+
+	if n.Network != nil {
+		AddIntRawMetric(r, "rxBytes", n.Network.RxBytes)
+		AddIntRawMetric(r, "txBytes", n.Network.TxBytes)
+		if n.Network.RxErrors != nil && n.Network.TxErrors != nil {
+			r["errors"] = *n.Network.RxErrors + *n.Network.TxErrors
+		}
+	}
+
+	if n.Fs != nil {
+		AddIntRawMetric(r, "fsAvailableBytes", n.Fs.AvailableBytes)
+		AddIntRawMetric(r, "fsCapacityBytes", n.Fs.CapacityBytes)
+		AddIntRawMetric(r, "fsUsedBytes", n.Fs.UsedBytes)
+		AddIntRawMetric(r, "fsInodesFree", n.Fs.InodesFree)
+		AddIntRawMetric(r, "fsInodes", n.Fs.Inodes)
+		AddIntRawMetric(r, "fsInodesUsed", n.Fs.InodesUsed)
+	}
+	if n.Runtime != nil {
+		AddIntRawMetric(r, "runtimeAvailableBytes", n.Runtime.ImageFS.AvailableBytes)
+		AddIntRawMetric(r, "runtimeCapacityBytes", n.Runtime.ImageFS.CapacityBytes)
+		AddIntRawMetric(r, "runtimeUsedBytes", n.Runtime.ImageFS.UsedBytes)
+		AddIntRawMetric(r, "runtimeInodesFree", n.Runtime.ImageFS.InodesFree)
+		AddIntRawMetric(r, "runtimeInodes", n.Runtime.ImageFS.Inodes)
+		AddIntRawMetric(r, "runtimeInodesUsed", n.Runtime.ImageFS.InodesUsed)
+	}
+
+	rawEntityID := fmt.Sprintf("%v", *n.Name)
+
+	return r, rawEntityID, nil
+}
+
+func fetchPodStats(pod *Pod) (definition.RawMetrics, string, error) {
+	r := make(definition.RawMetrics)
+
+	if pod.PodRef == nil {
+		return r, "", errors.New("pod ref data not found")
+	}
+	if pod.PodRef.Name == nil || pod.PodRef.Namespace == nil {
+		return r, "", errors.New("pod identifier not found")
+
+	}
+	if *pod.PodRef.Name == "" || *pod.PodRef.Namespace == "" {
+		return r, "", errors.New("empty pod identifier")
+	}
+	AddStringRawMetric(r, "podName", pod.PodRef.Name)
+	AddStringRawMetric(r, "namespace", pod.PodRef.Namespace)
+
+	if pod.Network != nil {
+		AddIntRawMetric(r, "rxBytes", pod.Network.RxBytes)
+		AddIntRawMetric(r, "txBytes", pod.Network.TxBytes)
+		if pod.Network.RxErrors != nil && pod.Network.TxErrors != nil {
+			r["errors"] = *pod.Network.RxErrors + *pod.Network.TxErrors
+		}
+	}
+
+	rawEntityID := fmt.Sprintf("%s_%s", *pod.PodRef.Namespace, *pod.PodRef.Name)
+
+	return r, rawEntityID, nil
+}
+
+func fetchContainerStats(c *Container) (definition.RawMetrics, error) {
+	r := make(definition.RawMetrics)
+	if c.Name == nil || *c.Name == "" {
+		return r, errors.New("empty container name, fetching container data skipped")
+	}
+
+	AddStringRawMetric(r, "containerName", c.Name)
+
+	if c.CPU != nil {
+		AddIntRawMetric(r, "usageNanoCores", c.CPU.UsageNanoCores)
+	}
+	if c.Memory != nil {
+		AddIntRawMetric(r, "usageBytes", c.Memory.UsageBytes)
+	}
+
+	return r, nil
+
+}
+
 // GroupStatsSummary groups specific data for pods, containers and node
 func GroupStatsSummary(statsSummary *Summary) (definition.RawGroups, []error) {
 	var errs []error
+	var rawEntityID string
 	g := definition.RawGroups{
 		"pod":       {},
 		"container": {},
 		"node":      {},
 	}
 
-	node := statsSummary.Node
-	if node.Name == "" {
-		errs = append(errs, fmt.Errorf("empty node identifier, fetching node data skipped"))
-	} else {
-		rawEntityID := fmt.Sprintf("%v", statsSummary.Node.Name)
-		g["node"][rawEntityID] = definition.RawMetrics{
-			"nodeName": node.Name,
-			// CPU
-			"usageNanoCores":       node.CPU.UsageNanoCores,
-			"usageCoreNanoSeconds": node.CPU.UsageCoreNanoSeconds,
-			// Memory
-			"memoryUsageBytes":      node.Memory.UsageBytes,
-			"memoryAvailableBytes":  node.Memory.AvailableBytes,
-			"memoryWorkingSetBytes": node.Memory.WorkingSetBytes,
-			"memoryRssBytes":        node.Memory.RssBytes,
-			"memoryPageFaults":      node.Memory.PageFaults,
-			"memoryMajorPageFaults": node.Memory.MajorPageFaults,
-			// Network
-			"rxBytes": node.Network.RxBytes,
-			"txBytes": node.Network.TxBytes,
-			"errors":  node.Network.RxErrors + node.Network.TxErrors,
-			// Fs
-			"fsAvailableBytes": node.Fs.AvailableBytes,
-			"fsCapacityBytes":  node.Fs.CapacityBytes,
-			"fsUsedBytes":      node.Fs.UsedBytes,
-			"fsInodesFree":     node.Fs.InodesFree,
-			"fsInodes":         node.Fs.Inodes,
-			"fsInodesUsed":     node.Fs.InodesUsed,
-			// Runtime
-			"runtimeAvailableBytes": node.Runtime.ImageFS.AvailableBytes,
-			"runtimeCapacityBytes":  node.Runtime.ImageFS.CapacityBytes,
-			"runtimeUsedBytes":      node.Runtime.ImageFS.UsedBytes,
-			"runtimeInodesFree":     node.Runtime.ImageFS.InodesFree,
-			"runtimeInodes":         node.Runtime.ImageFS.Inodes,
-			"runtimeInodesUsed":     node.Runtime.ImageFS.InodesUsed,
-		}
+	if statsSummary == nil {
+		errs = append(errs, fmt.Errorf("data not found in %s response", statsSummaryPath))
+		return g, errs
 	}
 
+	rawNodeData, rawEntityID, err := fetchNodeStats(statsSummary.Node)
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	if rawEntityID != "" && len(rawNodeData) > 0 {
+		g["node"][rawEntityID] = rawNodeData
+	}
+
+	if statsSummary.Pods == nil {
+		errs = append(errs, fmt.Errorf("pods data not found in %s response, fetching pod and container data skipped", statsSummaryPath))
+		return g, errs
+	}
+
+PodListLoop:
 	for _, pod := range statsSummary.Pods {
-		if pod.PodRef.Name == "" || pod.PodRef.Namespace == "" {
-			errs = append(errs, fmt.Errorf("empty pod identifier, fetching pod data skipped"))
-			continue
+		rawPodMetrics, rawEntityID, err := fetchPodStats(&pod)
+		if err != nil {
+			errs = append(errs, err)
+			continue PodListLoop
 		}
-		rawEntityID := fmt.Sprintf("%v_%v", pod.PodRef.Namespace, pod.PodRef.Name)
-		podData := definition.RawMetrics{
-			"podName":   pod.PodRef.Name,
-			"namespace": pod.PodRef.Namespace,
-			"rxBytes":   pod.Network.RxBytes,
-			"txBytes":   pod.Network.TxBytes,
-			"errors":    pod.Network.RxErrors + pod.Network.TxErrors,
+		// TODO: check for empty rawEntity and len needed?
+		g["pod"][rawEntityID] = rawPodMetrics
+
+		if pod.Containers == nil {
+			errs = append(errs, fmt.Errorf("container data not found in %s response", statsSummaryPath))
+			continue PodListLoop
 		}
 
-		g["pod"][rawEntityID] = podData
-
+	ContainerListLoop:
 		for _, container := range pod.Containers {
-			if container.Name == "" {
-				errs = append(errs, fmt.Errorf("empty container name, fetching container data skipped"))
-				continue
+			rawContainerMetrics, err := fetchContainerStats(&container)
+			if err != nil {
+				errs = append(errs, err)
+				continue ContainerListLoop
 			}
-			containerData := definition.RawMetrics{
-				"usageBytes":     container.Memory.UsageBytes,
-				"usageNanoCores": container.CPU.UsageNanoCores,
-				"podName":        podData["podName"],
-				"namespace":      podData["namespace"],
-				"containerName":  container.Name,
-			}
-			rawEntityID = fmt.Sprintf("%v_%v_%v", pod.PodRef.Namespace, pod.PodRef.Name, container.Name)
-			g["container"][rawEntityID] = containerData
+			rawContainerMetrics["podName"] = rawPodMetrics["podName"]
+			rawContainerMetrics["namespace"] = rawPodMetrics["namespace"]
+
+			rawEntityID = fmt.Sprintf("%s_%s_%s", rawPodMetrics["namespace"], rawPodMetrics["podName"], rawContainerMetrics["containerName"])
+
+			// TODO: check for empty rawENtity and len needed?
+			g["container"][rawEntityID] = rawContainerMetrics
 		}
 	}
 
@@ -250,4 +339,18 @@ func KubeletNamespaceFetcher(groupLabel, entityID string, groups definition.RawG
 		return config.UnknownNamespace, fmt.Errorf("no namespace found for groupLabel %q and entityID %q", groupLabel, entityID)
 	}
 	return ns.(string), nil
+}
+
+// AddIntRawMetric adds a new metric to a RawMetrics if it exists
+func AddIntRawMetric(r definition.RawMetrics, name string, valuePtr *int) {
+	if valuePtr != nil {
+		r[name] = *valuePtr
+	}
+}
+
+// AddStringRawMetric adds a new metric to a RawMetrics if it exists
+func AddStringRawMetric(r definition.RawMetrics, name string, valuePtr *string) {
+	if valuePtr != nil {
+		r[name] = *valuePtr
+	}
 }
