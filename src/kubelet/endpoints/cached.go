@@ -17,7 +17,7 @@ type cachedKubelet struct {
 	Endpoint    url.URL
 	NodeIP      string
 	NodeName    string
-	HttpType    int
+	HTTPType    int
 	BearerToken string
 }
 
@@ -26,7 +26,7 @@ func composeKubelet(source interface{}, cacher *endpoints.DiscoveryCacher, timeo
 	cached := source.(*cachedKubelet)
 	kd := cacher.Discoverer.(*kubeletDiscoverer)
 	var client *http.Client
-	switch cached.HttpType {
+	switch cached.HTTPType {
 	case httpInsecure:
 		client = endpoints.InsecureHTTPClient(timeout)
 	case httpSecure:
@@ -38,7 +38,7 @@ func composeKubelet(source interface{}, cacher *endpoints.DiscoveryCacher, timeo
 	default:
 		client = endpoints.BasicHTTPClient(timeout)
 	}
-	return newKubelet(cached.NodeIP, cached.NodeName, cached.Endpoint, cached.BearerToken, client, cached.HttpType, kd.logger), nil
+	return newKubelet(cached.NodeIP, cached.NodeName, cached.Endpoint, cached.BearerToken, client, cached.HTTPType, kd.logger), nil
 }
 
 // decomposeKubelet implements the ClientDecomposer function signature
@@ -48,7 +48,7 @@ func decomposeKubelet(source endpoints.Client) (interface{}, error) {
 		Endpoint:    kc.endpoint,
 		NodeIP:      kc.nodeIP,
 		NodeName:    kc.nodeName,
-		HttpType:    kc.httpType,
+		HTTPType:    kc.httpType,
 		BearerToken: kc.config.BearerToken,
 	}, nil
 }
