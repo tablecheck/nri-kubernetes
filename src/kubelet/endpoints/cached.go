@@ -7,6 +7,7 @@ import (
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
+	"github.com/sirupsen/logrus"
 )
 
 const cachedKubeletKey = "kubelet-client"
@@ -55,13 +56,13 @@ func decomposeKubelet(source endpoints.Client) (interface{}, error) {
 
 // NewKubeletDiscoveryCacher creates a new DiscoveryCacher that wraps a kubeletDiscoverer and caches the data into the
 // specified storage
-func NewKubeletDiscoveryCacher(discoverer *kubeletDiscoverer, storage storage.Storage) *endpoints.DiscoveryCacher {
+func NewKubeletDiscoveryCacher(discoverer endpoints.Discoverer, storage storage.Storage, logger *logrus.Logger) *endpoints.DiscoveryCacher {
 	return &endpoints.DiscoveryCacher{
 		CachedDataPtr: &cachedKubelet{},
 		StorageKey:    cachedKubeletKey,
 		Discoverer:    discoverer,
 		Storage:       storage,
-		Logger:        discoverer.logger,
+		Logger:        logger,
 		Compose:       composeKubelet,
 		Decompose:     decomposeKubelet,
 	}

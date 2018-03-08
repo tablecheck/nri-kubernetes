@@ -7,6 +7,7 @@ import (
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
+	"github.com/sirupsen/logrus"
 )
 
 const cachedKSMKey = "ksm-client"
@@ -42,13 +43,13 @@ func decomposeKSM(source endpoints.Client) (interface{}, error) {
 
 // NewKSMDiscoveryCacher creates a new DiscoveryCacher that wraps a ksmDiscoverer and caches the data into the
 // specified storage
-func NewKSMDiscoveryCacher(ksmDiscoverer *ksmDiscoverer, storage storage.Storage) endpoints.Discoverer {
+func NewKSMDiscoveryCacher(ksmDiscoverer endpoints.Discoverer, storage storage.Storage, logger *logrus.Logger) endpoints.Discoverer {
 	return &endpoints.DiscoveryCacher{
 		CachedDataPtr: &cachedKSM{},
 		StorageKey:    cachedKSMKey,
 		Discoverer:    ksmDiscoverer,
 		Storage:       storage,
-		Logger:        ksmDiscoverer.logger,
+		Logger:        logger,
 		Compose:       composeKSM,
 		Decompose:     decomposeKSM,
 	}

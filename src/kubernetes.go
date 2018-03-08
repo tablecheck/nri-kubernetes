@@ -10,6 +10,7 @@ import (
 	ksmEndpoints "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/endpoints"
 	ksmMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
 	kubeletEndpoints "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/endpoints"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
 	sdkArgs "github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/newrelic/infra-integrations-sdk/log"
 	"github.com/newrelic/infra-integrations-sdk/metric"
@@ -21,6 +22,7 @@ type argumentList struct {
 	sdkArgs.DefaultArgumentList
 	Timeout     int    `default:"5000" help:"timeout in milliseconds for calling metrics sources"`
 	ClusterName string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
+	CacheDir    string `default:"/var/cache/nr-kubernetes" help:"The location of the integration cached values"`
 }
 
 const (
@@ -146,10 +148,13 @@ func main() {
 	if args.All || args.Metrics {
 		timeout := time.Millisecond * time.Duration(args.Timeout)
 
-		kubeletDiscoverer, err := kubeletEndpoints.NewKubeletDiscoverer(logger)
+		innerKubeletDiscoverer, err := kubeletEndpoints.NewKubeletDiscoverer(logger)
 		if err != nil {
 			logger.Panic(err)
 		}
+		cacheStorage := storage.NewJSONDiskStorage(args.CacheDir)
+		kubeletDiscoverer := kubeletEndpoints.NewKubeletDiscoveryCacher(innerKubeletDiscoverer, cacheStorage, logger)
+
 		kubeletClient, err := kubeletDiscoverer.Discover(timeout)
 		if err != nil {
 			logger.Panic(err)
@@ -157,10 +162,11 @@ func main() {
 		kubeletNodeIP := kubeletClient.NodeIP()
 		logger.Debugf("Kubelet Node = %s", kubeletNodeIP)
 
-		ksmDiscoverer, err := ksmEndpoints.NewKSMDiscoverer(logger)
+		innerKSMDiscoverer, err := ksmEndpoints.NewKSMDiscoverer(logger)
 		if err != nil {
 			logger.Panic(err)
 		}
+		ksmDiscoverer := ksmEndpoints.NewKSMDiscoveryCacher(innerKSMDiscoverer, cacheStorage, logger)
 		ksmClient, err := ksmDiscoverer.Discover(timeout)
 		if err != nil {
 			logger.Panic(err)

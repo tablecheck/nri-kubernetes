@@ -35,7 +35,7 @@ func TestDiscover_CachedKSM(t *testing.T) {
 		logger:    logger,
 	}
 	// That is wrapped into a Cached Discoverer
-	cacher := NewKSMDiscoveryCacher(&wrappedDiscoverer, &store)
+	cacher := NewKSMDiscoveryCacher(&wrappedDiscoverer, &store, logger)
 
 	// And previously has discovered the KSM endpoint
 	caClient, err := cacher.Discover(timeout)
@@ -76,7 +76,7 @@ func TestDiscover_CachedKSM_BothFail(t *testing.T) {
 			lookupSRV: fakeLookupSRV,
 			apiClient: client,
 			logger:    logger,
-		}, &store)
+		}, &store, logger)
 
 	// The Discover invocation should return error
 	_, err = cacher.Discover(timeout)
@@ -105,7 +105,7 @@ func TestDiscover_LoadCacheFail(t *testing.T) {
 		logger:    logger,
 	}
 	// That is wrapped into a Cached Discoverer
-	cacher := NewKSMDiscoveryCacher(&wrappedDiscoverer, &store)
+	cacher := NewKSMDiscoveryCacher(&wrappedDiscoverer, &store, logger)
 
 	// And previously has discovered the KSM endpoint
 	caClient, err := cacher.Discover(timeout)

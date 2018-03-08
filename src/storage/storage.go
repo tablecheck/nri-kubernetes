@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -50,6 +52,12 @@ func (j JSONDiskStorage) pathFor(key string) string {
 
 // NewJSONDiskStorage returns a JSONDiskStorage using the rootPath argument as root folder for the persistent entities.
 func NewJSONDiskStorage(rootPath string) JSONDiskStorage {
+	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
+		err := os.MkdirAll(rootPath, 0644)
+		if err != nil {
+			logrus.WithError(err).Warnf("can't create storage directory: %s", rootPath)
+		}
+	}
 	return JSONDiskStorage{rootPath: rootPath}
 }
 
