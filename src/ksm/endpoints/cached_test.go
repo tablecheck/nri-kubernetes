@@ -38,20 +38,22 @@ func TestDiscover_CachedKSM(t *testing.T) {
 	cacher := NewKSMDiscoveryCacher(&wrappedDiscoverer, &store)
 
 	// And previously has discovered the KSM endpoint
-	ksmClient, err := cacher.Discover(timeout)
+	caClient, err := cacher.Discover(timeout)
 
 	// When the discovery process is invoked again
 	wrappedDiscoverer.lookupSRV = failingLookupSRV
-	ksmClient, err = cacher.Discover(timeout)
+	caClient, err = cacher.Discover(timeout)
 	assert.NoError(t, err)
 
 	// The cached value has been retrieved, instead of triggered the discovery
 	// (otherwise it would have failed when invoking the `failedLookupSRV` and the unconfigured mock
 	assert.NoError(t, err)
+	ksmClient := endpoints2.WrappedClient(caClient)
 	assert.Equal(t, fmt.Sprintf("%s:%v", ksmQualifiedName, 11223), ksmClient.(*ksm).endpoint.Host)
 	assert.Equal(t, "http", ksmClient.(*ksm).endpoint.Scheme)
 	assert.Equal(t, "6.7.8.9", ksmClient.(*ksm).nodeIP)
 
+	assert.Equal(t, "6.7.8.9", caClient.NodeIP())
 }
 
 func TestDiscover_CachedKSM_BothFail(t *testing.T) {
@@ -106,18 +108,19 @@ func TestDiscover_LoadCacheFail(t *testing.T) {
 	cacher := NewKSMDiscoveryCacher(&wrappedDiscoverer, &store)
 
 	// And previously has discovered the KSM endpoint
-	ksmClient, err := cacher.Discover(timeout)
+	caClient, err := cacher.Discover(timeout)
 
 	// But the cache stored data is corrupted
 	assert.Nil(t, store.Write(cachedKSMKey, "corrupt-data"))
 
 	// When the discovery process is invoked again
-	ksmClient, err = cacher.Discover(timeout)
+	caClient, err = cacher.Discover(timeout)
 
 	// The discovery process has been triggered again
 	assert.NoError(t, err)
+	ksmClient := endpoints2.WrappedClient(caClient)
 	assert.Equal(t, fmt.Sprintf("%s:%v", ksmQualifiedName, 11223), ksmClient.(*ksm).endpoint.Host)
 	assert.Equal(t, "http", ksmClient.(*ksm).endpoint.Scheme)
-	assert.Equal(t, "6.7.8.9", ksmClient.(*ksm).nodeIP)
+	assert.Equal(t, "6.7.8.9", caClient.NodeIP())
 
 }
