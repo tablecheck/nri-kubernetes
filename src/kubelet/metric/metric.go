@@ -2,7 +2,6 @@ package metric
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -49,7 +48,7 @@ func fetchNodeStats(n v1.NodeStats) (definition.RawMetrics, string, error) {
 
 	nodeName := n.NodeName
 	if nodeName == "" {
-		return r, "", fmt.Errorf("empty node identifier found in %s response, fetching node data skipped", StatsSummaryPath)
+		return r, "", fmt.Errorf("empty node identifier, possible data error in %s response", StatsSummaryPath)
 	}
 
 	r["nodeName"] = nodeName
@@ -93,9 +92,7 @@ func fetchNodeStats(n v1.NodeStats) (definition.RawMetrics, string, error) {
 		AddUintRawMetric(r, "runtimeInodesUsed", n.Runtime.ImageFs.InodesUsed)
 	}
 
-	rawEntityID := fmt.Sprintf("%v", nodeName)
-
-	return r, rawEntityID, nil
+	return r, nodeName, nil
 }
 
 func fetchPodStats(pod v1.PodStats) (definition.RawMetrics, string, error) {
@@ -105,7 +102,7 @@ func fetchPodStats(pod v1.PodStats) (definition.RawMetrics, string, error) {
 	namespace := pod.PodRef.Namespace
 
 	if podName == "" || namespace == "" {
-		return r, "", errors.New("empty pod identifiers")
+		return r, "", fmt.Errorf("empty pod identifier, possible data error in %s response", statsSummaryPath)
 	}
 
 	r["podName"] = podName
@@ -128,7 +125,7 @@ func fetchContainerStats(c v1.ContainerStats) (definition.RawMetrics, error) {
 	r := make(definition.RawMetrics)
 
 	if c.Name == "" {
-		return r, errors.New("empty container name, fetching container data skipped")
+		return r, fmt.Errorf("empty container identifier, possible data error in %s response", statsSummaryPath)
 	}
 	r["containerName"] = c.Name
 
@@ -161,7 +158,7 @@ func GroupStatsSummary(statsSummary v1.Summary) (definition.RawGroups, []error) 
 	}
 
 	if statsSummary.Pods == nil {
-		errs = append(errs, fmt.Errorf("pods data not found in %s response, fetching pod and container data skipped", StatsSummaryPath))
+		errs = append(errs, fmt.Errorf("pods data not found, possible data error in %s response", StatsSummaryPath))
 		return g, errs
 	}
 
@@ -175,7 +172,7 @@ PodListLoop:
 		g["pod"][rawEntityID] = rawPodMetrics
 
 		if pod.Containers == nil {
-			errs = append(errs, fmt.Errorf("container data not found in %s response", StatsSummaryPath))
+			errs = append(errs, fmt.Errorf("containers data not found, possible data error in %s response", StatsSummaryPath))
 			continue PodListLoop
 		}
 

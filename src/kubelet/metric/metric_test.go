@@ -165,7 +165,7 @@ func TestGroupStatsSummary_MissingNodeData_ContainerWithTheSameName(t *testing.T
 	assert.NoError(t, err)
 
 	rawData, errs := GroupStatsSummary(summary)
-	assert.EqualError(t, errs[0], "empty node identifier found in /stats/summary response, fetching node data skipped")
+	assert.EqualError(t, errs[0], "empty node identifier, possible data error in /stats/summary response")
 	assert.Equal(t, expectedRawData, rawData)
 }
 
