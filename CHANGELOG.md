@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - Caching discovery mechanism on disk.
+- Implementation of Time-To-Live (TTL) mechanisms in cache.
 
 ## 1.0.0-beta4
 
