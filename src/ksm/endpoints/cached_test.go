@@ -171,7 +171,6 @@ func TestDiscover_CacheTTLExpiry(t *testing.T) {
 	wrappedDiscoverer.lookupSRV = failingLookupSRV
 	cacher.(*endpoints2.DiscoveryCacher).TTL = time.Hour
 	caClient, err = cacher.Discover(timeout)
-	assert.NoError(t, err)
 	// (otherwise it would have failed when invoking the `failedLookupSRV` and the unconfigured mock
 	assert.NoError(t, err)
 	ksmClient = endpoints2.WrappedClient(caClient)

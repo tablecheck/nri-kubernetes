@@ -23,7 +23,7 @@ type argumentList struct {
 	Timeout     int    `default:"5000" help:"timeout in milliseconds for calling metrics sources"`
 	ClusterName string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
 	CacheDir    string `default:"/var/cache/nr-kubernetes" help:"The location of the integration cached values"`
-	CacheTTL    string `default:"1h" help:"The duration since the cached entries are stored until they expire"`
+	CacheTTL    string `default:"1h" help:"Duration since the cache entries are stored until they expire. Valid time units: 'ns', 'us', 'ms', 's', 'm', 'h'"`
 }
 
 const (
