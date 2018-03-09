@@ -25,10 +25,10 @@ import (
 
 type argumentList struct {
 	sdkArgs.DefaultArgumentList
-	Timeout     int    `default:"5000" help:"timeout in milliseconds for calling metrics sources"`
-	ClusterName string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
-	CacheDir    string `default:"/var/cache/nr-kubernetes" help:"The location of the integration cached values"`
-	CacheTTL    string `default:"1h" help:"Duration since the cache entries are stored until they expire. Valid time units: 'ns', 'us', 'ms', 's', 'm', 'h'"`
+	Timeout           int    `default:"5000" help:"timeout in milliseconds for calling metrics sources"`
+	ClusterName       string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
+	DiscoveryCacheDir string `default:"/var/cache/nr-kubernetes" help:"The location of the cached values for discovered endpoints."`
+	DiscoveryCacheTTL string `default:"1h" help:"Duration since the discovered endpoints are stored in the cache until they expire. Valid time units: 'ns', 'us', 'ms', 's', 'm', 'h'"`
 }
 
 const (
@@ -112,7 +112,7 @@ func main() {
 	}
 
 	if args.All || args.Metrics {
-		ttl, err := time.ParseDuration(args.CacheTTL)
+		ttl, err := time.ParseDuration(args.DiscoveryCacheTTL)
 		if err != nil {
 			logger.WithError(err).Error("while parsing the cache TTL value. Defaulting to 1h")
 			ttl = time.Hour
@@ -124,7 +124,7 @@ func main() {
 		if err != nil {
 			logger.Panic(err)
 		}
-		cacheStorage := storage.NewJSONDiskStorage(args.CacheDir)
+		cacheStorage := storage.NewJSONDiskStorage(args.DiscoveryCacheDir)
 		kubeletDiscoverer := kubeletEndpoints.NewKubeletDiscoveryCacher(innerKubeletDiscoverer, cacheStorage, ttl, logger)
 
 		kubeletClient, err := kubeletDiscoverer.Discover(timeout)

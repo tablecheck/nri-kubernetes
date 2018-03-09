@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Skip missing data from /stats/summary endpoint, instead of reporting them as zero values.
 
 ### Added
-- Caching discovery mechanism on disk.
-- Implementation of Time-To-Live (TTL) mechanisms in cache.
+- Caching discovered endpoints on disk.
+- Implementation of Time-To-Live (TTL) cache expiry functionality.
 - Added the concept of Leader and Follower roles. 
   - Leader represents the node where Kube State Metrics is installed (so only 1 by cluster).
   - Follower represents any other node.
