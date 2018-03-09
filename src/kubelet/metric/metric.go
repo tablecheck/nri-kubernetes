@@ -13,7 +13,8 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 )
 
-const statsSummaryPath = "/stats/summary"
+// StatsSummaryPath is the path where kubelet serves a summary with several information.
+const StatsSummaryPath = "/stats/summary"
 
 // Summary represents list of required data from /stats/summary endpoint
 type Summary struct {
@@ -102,7 +103,7 @@ type ImageFS struct {
 
 // GetMetricsData calls kubelet /stats/summary endpoint and returns unmarshalled response
 func GetMetricsData(c endpoints.Client) (*Summary, error) {
-	resp, err := c.Do(http.MethodGet, statsSummaryPath)
+	resp, err := c.Do(http.MethodGet, StatsSummaryPath)
 	if err != nil {
 		return nil, err
 	}
@@ -132,11 +133,11 @@ func fetchNodeStats(n *Node) (definition.RawMetrics, string, error) {
 
 	if n == nil {
 		// TODO: check if better return nil or empty map
-		return r, "", fmt.Errorf("node data not found in %s response, fetching node data skipped", statsSummaryPath)
+		return r, "", fmt.Errorf("node data not found in %s response, fetching node data skipped", StatsSummaryPath)
 	}
 
 	if n.Name == nil || *n.Name == "" {
-		return r, "", fmt.Errorf("node identifier not found in %s response, fetching node data skipped", statsSummaryPath)
+		return r, "", fmt.Errorf("node identifier not found in %s response, fetching node data skipped", StatsSummaryPath)
 	}
 
 	AddStringRawMetric(r, "nodeName", n.Name)
@@ -244,7 +245,7 @@ func GroupStatsSummary(statsSummary *Summary) (definition.RawGroups, []error) {
 	}
 
 	if statsSummary == nil {
-		errs = append(errs, fmt.Errorf("data not found in %s response", statsSummaryPath))
+		errs = append(errs, fmt.Errorf("data not found in %s response", StatsSummaryPath))
 		return g, errs
 	}
 
@@ -258,7 +259,7 @@ func GroupStatsSummary(statsSummary *Summary) (definition.RawGroups, []error) {
 	}
 
 	if statsSummary.Pods == nil {
-		errs = append(errs, fmt.Errorf("pods data not found in %s response, fetching pod and container data skipped", statsSummaryPath))
+		errs = append(errs, fmt.Errorf("pods data not found in %s response, fetching pod and container data skipped", StatsSummaryPath))
 		return g, errs
 	}
 
@@ -273,7 +274,7 @@ PodListLoop:
 		g["pod"][rawEntityID] = rawPodMetrics
 
 		if pod.Containers == nil {
-			errs = append(errs, fmt.Errorf("container data not found in %s response", statsSummaryPath))
+			errs = append(errs, fmt.Errorf("container data not found in %s response", StatsSummaryPath))
 			continue PodListLoop
 		}
 

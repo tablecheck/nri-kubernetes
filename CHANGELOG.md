@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - Caching discovery mechanism on disk.
+- Added the concept of Leader and Follower roles. 
+  - Leader represents the node where Kube State Metrics is installed (so only 1 by cluster).
+  - Follower represents any other node.
+- Both Follower and Leader call kubelet /pods endpoint in order to get metrics that were previously fetched from KSM.
+  
+### Removed
+- Follower does not call KSM endpoints anymore. 
 
 ## 1.0.0-beta4
 
