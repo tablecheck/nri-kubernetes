@@ -6,14 +6,19 @@ import (
 	"time"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
+
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm"
 	ksmEndpoints "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/endpoints"
-	ksmMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet"
+
 	kubeletEndpoints "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/endpoints"
+	metric2 "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
 	sdkArgs "github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/newrelic/infra-integrations-sdk/log"
-	"github.com/newrelic/infra-integrations-sdk/metric"
+	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
 	"github.com/sirupsen/logrus"
 )
@@ -32,8 +37,8 @@ const (
 
 var args argumentList
 
-func follower(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) error {
-	groups, errs := kubeletKSMGrouper.Group(kubeletMergeableSpecs)
+func group(grouper data.Grouper, specs definition.SpecGroups, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) error {
+	groups, errs := grouper.Group(specs)
 	if errs != nil && len(errs.Errors) > 0 {
 		if !errs.Recoverable {
 			return errors.New(errs.String())
@@ -41,9 +46,17 @@ func follower(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clust
 		logger.Warnf("%s", errs.String())
 	}
 
-	ok, err := data.NewK8sPopulator(logger).Populate(groups, mergeableObjectsPopulateSpecs, i, clusterName)
+	ok, err := metric.NewK8sPopulator().Populate(groups, specs, i, clusterName)
 	if err != nil {
-		logger.Panic(err)
+		if multiple, ok := err.(metric.MultipleErrs); ok {
+			if multiple.Recoverable {
+				logger.WithError(multiple).Debug("populating metrics")
+			} else {
+				logger.WithError(multiple).Panic("populating metrics")
+			}
+		} else {
+			logger.Panic(err)
+		}
 	}
 
 	e, err := i.Entity("nr-errors", "error")
@@ -53,59 +66,11 @@ func follower(kubeletKSMGrouper data.Grouper, i *sdk.IntegrationProtocol2, clust
 	if errs != nil {
 		for _, err := range errs.Errors {
 			ms := e.NewMetricSet("K8sDebugErrors")
-			mserr := ms.SetMetric("error", err.Error(), metric.ATTRIBUTE)
+			mserr := ms.SetMetric("error", err.Error(), sdkMetric.ATTRIBUTE)
 			if mserr != nil {
 				logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "error", "K8sDebugErrors", mserr)
 			}
-			mserr = ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
-			if mserr != nil {
-				logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "clusterName", "K8sDebugErrors", mserr)
-			}
-		}
-	}
-
-	if !ok {
-		// TODO better error
-		return errors.New("no data was populated")
-	}
-	return nil
-}
-
-func leader(kubeletKSMGrouper data.Grouper, ksmClient endpoints.Client, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) error {
-	kubeletKSMGroups, errs := kubeletKSMGrouper.Group(kubeletMergeableSpecs)
-	if errs != nil && len(errs.Errors) > 0 {
-		if !errs.Recoverable {
-			return errors.New(errs.String())
-		}
-		logger.Warnf("%s", errs.String())
-	}
-
-	g := data.NewKubeletKSMAndRestGrouper(kubeletKSMGroups, ksmClient, unmergeableObjectsQueries, logger)
-	groups, errs := g.Group(ksmUnmergeableSpecs)
-	if errs != nil && len(errs.Errors) > 0 {
-		if !errs.Recoverable {
-			return errors.New(errs.String())
-		}
-		logger.Warnf("%s", errs.String())
-	}
-
-	ok, err := data.NewK8sPopulator(logger).Populate(groups, allObjectsPopulateSpecs, i, clusterName)
-	if err != nil {
-		logger.Panic(err)
-	}
-
-	e, err := i.Entity("nr-errors", "error")
-	if err != nil {
-		logger.Panic(err)
-	}
-	if errs != nil {
-		for _, err := range errs.Errors {
-			ms := e.NewMetricSet("K8sDebugErrors")
-			mserr := ms.SetMetric("error", err.Error(), metric.ATTRIBUTE)
-			if mserr != nil {
-				logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "error", "K8sDebugErrors", mserr)
-			}
-			mserr = ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
+			mserr = ms.SetMetric("clusterName", clusterName, sdkMetric.ATTRIBUTE)
 			if mserr != nil {
 				logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "clusterName", "K8sDebugErrors", mserr)
 			}
@@ -183,34 +148,22 @@ func main() {
 		}
 		logger.Debugf("Auto-discovered role = %s", role)
 
+		kubeletGrouper := kubelet.NewGrouper(kubeletClient, logger, metric2.PodsFetchFunc(kubeletClient))
+
 		switch role {
 		case "leader":
-			// todo fix pointers indirection stuff
-			kubeletKSMGrouper := data.NewKubeletKSMPatchedGrouper(
-				kubeletClient,
-				ksmClient,
-				mergeableObjectsQueries,
-				ksmMergeableSpecs,
-				logger,
-				ksmMetric.UnscheduledItemsPatcher,
-			)
+			err = group(kubeletGrouper, metric.KubeletSpecs, integration, args.ClusterName, logger)
+			if err != nil {
+				logger.Panic(err)
+			}
 
-			// todo fix pointers indirection stuff
-			err = leader(kubeletKSMGrouper, ksmClient, integration, args.ClusterName, logger)
+			ksmGrouper := ksm.NewGrouper(ksmClient, metric.KSMQueries, logger)
+			err = group(ksmGrouper, metric.KSMSpecs, integration, args.ClusterName, logger)
 			if err != nil {
 				logger.Panic(err)
 			}
 		case "follower":
-			// todo fix pointers indirection stuff
-			kubeletKSMGrouper := data.NewKubeletKSMGrouper(
-				kubeletClient,
-				ksmClient,
-				mergeableObjectsQueries,
-				ksmMergeableSpecs,
-				logger,
-			)
-
-			err = follower(kubeletKSMGrouper, integration, args.ClusterName, logger)
+			err = group(kubeletGrouper, metric.KubeletSpecs, integration, args.ClusterName, logger)
 			if err != nil {
 				logger.Panic(err)
 			}
