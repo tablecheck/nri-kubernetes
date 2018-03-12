@@ -54,42 +54,42 @@ func fetchNodeStats(n v1.NodeStats) (definition.RawMetrics, string, error) {
 	r["nodeName"] = nodeName
 
 	if n.CPU != nil {
-		AddUintRawMetric(r, "usageNanoCores", n.CPU.UsageNanoCores)
-		AddUintRawMetric(r, "usageCoreNanoSeconds", n.CPU.UsageCoreNanoSeconds)
+		AddUint64RawMetric(r, "usageNanoCores", n.CPU.UsageNanoCores)
+		AddUint64RawMetric(r, "usageCoreNanoSeconds", n.CPU.UsageCoreNanoSeconds)
 	}
 
 	if n.Memory != nil {
-		AddUintRawMetric(r, "memoryUsageBytes", n.Memory.UsageBytes)
-		AddUintRawMetric(r, "memoryAvailableBytes", n.Memory.AvailableBytes)
-		AddUintRawMetric(r, "memoryWorkingSetBytes", n.Memory.WorkingSetBytes)
-		AddUintRawMetric(r, "memoryRssBytes", n.Memory.RSSBytes)
-		AddUintRawMetric(r, "memoryPageFaults", n.Memory.PageFaults)
-		AddUintRawMetric(r, "memoryMajorPageFaults", n.Memory.MajorPageFaults)
+		AddUint64RawMetric(r, "memoryUsageBytes", n.Memory.UsageBytes)
+		AddUint64RawMetric(r, "memoryAvailableBytes", n.Memory.AvailableBytes)
+		AddUint64RawMetric(r, "memoryWorkingSetBytes", n.Memory.WorkingSetBytes)
+		AddUint64RawMetric(r, "memoryRssBytes", n.Memory.RSSBytes)
+		AddUint64RawMetric(r, "memoryPageFaults", n.Memory.PageFaults)
+		AddUint64RawMetric(r, "memoryMajorPageFaults", n.Memory.MajorPageFaults)
 	}
 
 	if n.Network != nil {
-		AddUintRawMetric(r, "rxBytes", n.Network.RxBytes)
-		AddUintRawMetric(r, "txBytes", n.Network.TxBytes)
+		AddUint64RawMetric(r, "rxBytes", n.Network.RxBytes)
+		AddUint64RawMetric(r, "txBytes", n.Network.TxBytes)
 		if n.Network.RxErrors != nil && n.Network.TxErrors != nil {
 			r["errors"] = *n.Network.RxErrors + *n.Network.TxErrors
 		}
 	}
 
 	if n.Fs != nil {
-		AddUintRawMetric(r, "fsAvailableBytes", n.Fs.AvailableBytes)
-		AddUintRawMetric(r, "fsCapacityBytes", n.Fs.CapacityBytes)
-		AddUintRawMetric(r, "fsUsedBytes", n.Fs.UsedBytes)
-		AddUintRawMetric(r, "fsInodesFree", n.Fs.InodesFree)
-		AddUintRawMetric(r, "fsInodes", n.Fs.Inodes)
-		AddUintRawMetric(r, "fsInodesUsed", n.Fs.InodesUsed)
+		AddUint64RawMetric(r, "fsAvailableBytes", n.Fs.AvailableBytes)
+		AddUint64RawMetric(r, "fsCapacityBytes", n.Fs.CapacityBytes)
+		AddUint64RawMetric(r, "fsUsedBytes", n.Fs.UsedBytes)
+		AddUint64RawMetric(r, "fsInodesFree", n.Fs.InodesFree)
+		AddUint64RawMetric(r, "fsInodes", n.Fs.Inodes)
+		AddUint64RawMetric(r, "fsInodesUsed", n.Fs.InodesUsed)
 	}
 	if n.Runtime != nil && n.Runtime.ImageFs != nil {
-		AddUintRawMetric(r, "runtimeAvailableBytes", n.Runtime.ImageFs.AvailableBytes)
-		AddUintRawMetric(r, "runtimeCapacityBytes", n.Runtime.ImageFs.CapacityBytes)
-		AddUintRawMetric(r, "runtimeUsedBytes", n.Runtime.ImageFs.UsedBytes)
-		AddUintRawMetric(r, "runtimeInodesFree", n.Runtime.ImageFs.InodesFree)
-		AddUintRawMetric(r, "runtimeInodes", n.Runtime.ImageFs.Inodes)
-		AddUintRawMetric(r, "runtimeInodesUsed", n.Runtime.ImageFs.InodesUsed)
+		AddUint64RawMetric(r, "runtimeAvailableBytes", n.Runtime.ImageFs.AvailableBytes)
+		AddUint64RawMetric(r, "runtimeCapacityBytes", n.Runtime.ImageFs.CapacityBytes)
+		AddUint64RawMetric(r, "runtimeUsedBytes", n.Runtime.ImageFs.UsedBytes)
+		AddUint64RawMetric(r, "runtimeInodesFree", n.Runtime.ImageFs.InodesFree)
+		AddUint64RawMetric(r, "runtimeInodes", n.Runtime.ImageFs.Inodes)
+		AddUint64RawMetric(r, "runtimeInodesUsed", n.Runtime.ImageFs.InodesUsed)
 	}
 
 	return r, nodeName, nil
@@ -98,25 +98,22 @@ func fetchNodeStats(n v1.NodeStats) (definition.RawMetrics, string, error) {
 func fetchPodStats(pod v1.PodStats) (definition.RawMetrics, string, error) {
 	r := make(definition.RawMetrics)
 
-	podName := pod.PodRef.Name
-	namespace := pod.PodRef.Namespace
-
-	if podName == "" || namespace == "" {
-		return r, "", fmt.Errorf("empty pod identifier, possible data error in %s response", statsSummaryPath)
+	if pod.PodRef.Name == "" || pod.PodRef.Namespace == "" {
+		return r, "", fmt.Errorf("empty pod identifier, possible data error in %s response", StatsSummaryPath)
 	}
 
-	r["podName"] = podName
-	r["namespace"] = namespace
+	r["podName"] = pod.PodRef.Name
+	r["namespace"] = pod.PodRef.Namespace
 
 	if pod.Network != nil {
-		AddUintRawMetric(r, "rxBytes", pod.Network.RxBytes)
-		AddUintRawMetric(r, "txBytes", pod.Network.TxBytes)
+		AddUint64RawMetric(r, "rxBytes", pod.Network.RxBytes)
+		AddUint64RawMetric(r, "txBytes", pod.Network.TxBytes)
 		if pod.Network.RxErrors != nil && pod.Network.TxErrors != nil {
 			r["errors"] = *pod.Network.RxErrors + *pod.Network.TxErrors
 		}
 	}
 
-	rawEntityID := fmt.Sprintf("%s_%s", namespace, podName)
+	rawEntityID := fmt.Sprintf("%s_%s", r["namespace"], r["podName"])
 
 	return r, rawEntityID, nil
 }
@@ -125,15 +122,15 @@ func fetchContainerStats(c v1.ContainerStats) (definition.RawMetrics, error) {
 	r := make(definition.RawMetrics)
 
 	if c.Name == "" {
-		return r, fmt.Errorf("empty container identifier, possible data error in %s response", statsSummaryPath)
+		return r, fmt.Errorf("empty container identifier, possible data error in %s response", StatsSummaryPath)
 	}
 	r["containerName"] = c.Name
 
 	if c.CPU != nil {
-		AddUintRawMetric(r, "usageNanoCores", c.CPU.UsageNanoCores)
+		AddUint64RawMetric(r, "usageNanoCores", c.CPU.UsageNanoCores)
 	}
 	if c.Memory != nil {
-		AddUintRawMetric(r, "usageBytes", c.Memory.UsageBytes)
+		AddUint64RawMetric(r, "usageBytes", c.Memory.UsageBytes)
 	}
 
 	return r, nil
@@ -239,8 +236,8 @@ func KubeletNamespaceFetcher(groupLabel, entityID string, groups definition.RawG
 	return ns.(string), nil
 }
 
-// AddUintRawMetric adds a new metric to a RawMetrics if it exists
-func AddUintRawMetric(r definition.RawMetrics, name string, valuePtr *uint64) {
+// AddUint64RawMetric adds a new metric to a RawMetrics if it exists
+func AddUint64RawMetric(r definition.RawMetrics, name string, valuePtr *uint64) {
 	if valuePtr != nil {
 		r[name] = *valuePtr
 	}
