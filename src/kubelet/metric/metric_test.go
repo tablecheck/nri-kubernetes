@@ -253,7 +253,7 @@ func TestGroupStatsSummary_EmptyStatsSummaryMessage(t *testing.T) {
 	assert.Empty(t, rawData["node"])
 }
 
-func TestAddIntRawMetric(t *testing.T) {
+func TestAddUint64RawMetric(t *testing.T) {
 	r := definition.RawMetrics{
 		"nodeName": "fooNode",
 	}
@@ -266,7 +266,7 @@ func TestAddIntRawMetric(t *testing.T) {
 	summary, err := toSummary(`{ "node": { "cpu": { "usageCoreNanoSeconds": 353998913059080 } } }`)
 	assert.NoError(t, err)
 
-	AddUintRawMetric(r, "foo", summary.Node.CPU.UsageCoreNanoSeconds)
+	AddUint64RawMetric(r, "foo", summary.Node.CPU.UsageCoreNanoSeconds)
 	assert.Equal(t, expected, r)
 }
 

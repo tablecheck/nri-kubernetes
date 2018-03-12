@@ -31,7 +31,7 @@ var expectedMetrics = []*sdk.EntityData{
 				"event_type":                     "K8sPodSample",
 				"net.rxBytesPerSecond":           0., // 106175985, but is RATE
 				"net.txBytesPerSecond":           0., // 35714359, but is RATE
-				"net.errorCount":                 0,
+				"net.errorCount":                 uint64(0),
 				"createdAt":                      parseTime("2018-02-14T16:26:33Z").Unix(),
 				"startTime":                      parseTime("2018-02-14T16:26:33Z").Unix(),
 				"createdKind":                    "DaemonSet",
@@ -54,7 +54,7 @@ var expectedMetrics = []*sdk.EntityData{
 			{
 				"entityName":           "k8s:test-cluster:kube-system:pod:newrelic-infra-rz225",
 				"event_type":           "K8sContainerSample",
-				"memoryUsedBytes":      18083840,
+				"memoryUsedBytes":      uint64(18083840),
 				"cpuUsedCores":         0.01742824,
 				"containerName":        "newrelic-infra",
 				"containerID":          "docker://ef0b60ee1eea54af356847a5c99a3ec91a57bae627028e3efe41c1a29fe641e5",

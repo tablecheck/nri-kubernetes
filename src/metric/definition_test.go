@@ -9,7 +9,8 @@ import (
 )
 
 func TestFromNano(t *testing.T) {
-	assert.Equal(t, 0.123456789, fromNano(123456789))
+	assert.Equal(t, 0.123456789, fromNano(uint64(123456789)))
+	assert.Equal(t, 123456789, fromNano(123456789))
 	assert.Equal(t, "not-valid", fromNano("not-valid"))
 }
 
