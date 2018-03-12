@@ -201,8 +201,9 @@ var KubeletSpecs = definition.SpecGroups{
 
 // Used to transform from usageNanoCores to cpuUsedCores
 func fromNano(value definition.FetchedValue) definition.FetchedValue {
-	v, ok := value.(int)
+	v, ok := value.(uint64)
 	if !ok {
+		// TODO: is it correct to return original value?
 		return value
 	}
 
