@@ -1,4 +1,4 @@
-package endpoints
+package client
 
 import (
 	"crypto/tls"

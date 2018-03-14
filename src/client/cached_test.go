@@ -1,4 +1,4 @@
-package endpoints
+package client
 
 import (
 	"fmt"
@@ -50,17 +50,17 @@ func (f *fakeStorage) Delete(key string) error {
 	return nil
 }
 
-func discoveryCacher(client Client, discoverer Discoverer, st storage.Storage) *DiscoveryCacher {
+func discoveryCacher(client HTTPClient, discoverer Discoverer, st storage.Storage) *DiscoveryCacher {
 	return &DiscoveryCacher{
 		StorageKey: storageKey,
 		Discoverer: discoverer,
 		Storage:    st,
 		Logger:     logger,
 		// Since we use just memory, Compose and Decompose are just identity functions
-		Compose: func(source interface{}, _ *DiscoveryCacher, _ time.Duration) (Client, error) {
-			return source.(Client), nil
+		Compose: func(source interface{}, _ *DiscoveryCacher, _ time.Duration) (HTTPClient, error) {
+			return source.(HTTPClient), nil
 		},
-		Decompose: func(source Client) (interface{}, error) {
+		Decompose: func(source HTTPClient) (interface{}, error) {
 			return client, nil
 		},
 	}
@@ -71,7 +71,7 @@ func TestCacheAwareClient_CachedClientWorks(t *testing.T) {
 	store := newFakeStorage()
 
 	// Setup discovered client
-	wrappedClient := new(MockDiscoveredClient)
+	wrappedClient := new(MockDiscoveredHTTPClient)
 	wrappedClient.On("NodeIP").Return("1.2.3.4")
 	wrappedClient.On("Do", mock.Anything, mock.Anything).Return(&http.Response{StatusCode: 200}, nil)
 
@@ -101,7 +101,7 @@ func TestCacheAwareClient_CachedClientDoesNotWork(t *testing.T) {
 	store := newFakeStorage()
 
 	// Setup discovered client
-	wrappedClient := new(MockDiscoveredClient)
+	wrappedClient := new(MockDiscoveredHTTPClient)
 	wrappedClient.On("NodeIP").Return("1.2.3.4")
 	// After the error on the first call, the second call returns a correct value
 	wrappedClient.On("Do", mock.Anything, mock.Anything).
@@ -135,7 +135,7 @@ func TestCacheAwareClient_RediscoveryDoesntWork(t *testing.T) {
 	store := newFakeStorage()
 
 	// Setup discovered client
-	wrappedClient := new(MockDiscoveredClient)
+	wrappedClient := new(MockDiscoveredHTTPClient)
 	wrappedClient.On("NodeIP").Return("1.2.3.4")
 	wrappedClient.On("Do", mock.Anything, mock.Anything).
 		Return(nil, fmt.Errorf("patapum"))
@@ -144,7 +144,7 @@ func TestCacheAwareClient_RediscoveryDoesntWork(t *testing.T) {
 	discoverer := new(MockDiscoverer)
 	// Expectations: the discovery process will work but the "re-discovery" in case of failure, not
 	discoverer.On("Discover", mock.Anything).Return(wrappedClient, nil).Once()
-	discoverer.On("Discover", mock.Anything).Return((*MockDiscoveredClient)(nil), fmt.Errorf("discovery failed"))
+	discoverer.On("Discover", mock.Anything).Return((*MockDiscoveredHTTPClient)(nil), fmt.Errorf("discovery failed"))
 
 	// Given a DiscoveryCacher
 	cacher := discoveryCacher(wrappedClient, discoverer, store)

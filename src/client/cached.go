@@ -1,4 +1,4 @@
-package endpoints
+package client
 
 import (
 	"net/http"
@@ -22,19 +22,19 @@ type DiscoveryCacher struct {
 	Storage   storage.Storage
 	TTL       time.Duration
 	Logger    *logrus.Logger
-	Compose   ClientComposer
-	Decompose ClientDecomposer
+	Compose   Composer
+	Decompose Decomposer
 }
 
-// ClientDecomposer implementors must convert a Client into a data structure that can be Stored in the cache.
-type ClientDecomposer func(source Client) (interface{}, error)
+// Decomposer implementors must convert a HTTPClient into a data structure that can be Stored in the cache.
+type Decomposer func(source HTTPClient) (interface{}, error)
 
-// ClientComposer implementors must convert the data from the cached entities to a Client.
-type ClientComposer func(source interface{}, cacher *DiscoveryCacher, timeout time.Duration) (Client, error)
+// Composer implementors must convert the data from the cached entities to a Client.
+type Composer func(source interface{}, cacher *DiscoveryCacher, timeout time.Duration) (HTTPClient, error)
 
-// Discover tries to retrieve a Client from the cache, and otherwise engage the discovery process from the wrapped
+// Discover tries to retrieve a HTTPClient from the cache, and otherwise engage the discovery process from the wrapped
 // Discoverer
-func (d *DiscoveryCacher) Discover(timeout time.Duration) (Client, error) {
+func (d *DiscoveryCacher) Discover(timeout time.Duration) (HTTPClient, error) {
 	ts, err := d.Storage.Read(d.StorageKey, d.CachedDataPtr)
 	if err == nil {
 		d.Logger.Debugf("Found cached copy of %q stored at %s", d.StorageKey, time.Unix(ts, 0))
@@ -57,7 +57,7 @@ func (d *DiscoveryCacher) Discover(timeout time.Duration) (Client, error) {
 	return d.wrap(client, timeout), nil
 }
 
-func (d *DiscoveryCacher) discoverAndCache(timeout time.Duration) (Client, error) {
+func (d *DiscoveryCacher) discoverAndCache(timeout time.Duration) (HTTPClient, error) {
 	client, err := d.Discoverer.Discover(timeout)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (d *DiscoveryCacher) discoverAndCache(timeout time.Duration) (Client, error
 	return client, nil
 }
 
-func (d *DiscoveryCacher) wrap(client Client, timeout time.Duration) *cacheAwareClient {
+func (d *DiscoveryCacher) wrap(client HTTPClient, timeout time.Duration) *cacheAwareClient {
 	return &cacheAwareClient{
 		client:  client,
 		cacher:  d,
@@ -83,7 +83,7 @@ func (d *DiscoveryCacher) wrap(client Client, timeout time.Duration) *cacheAware
 
 // cacheAwareClient wraps the cached client and if it fails because it has outdated data, retriggers the
 type cacheAwareClient struct {
-	client  Client
+	client  HTTPClient
 	cacher  *DiscoveryCacher
 	timeout time.Duration
 }
@@ -114,6 +114,6 @@ func (c *cacheAwareClient) NodeIP() string {
 }
 
 // WrappedClient is only aimed for testing. It allows extracting the wrapped client of a given cacheAwareClient.
-func WrappedClient(caClient Client) Client {
+func WrappedClient(caClient HTTPClient) HTTPClient {
 	return caClient.(*cacheAwareClient).client
 }
