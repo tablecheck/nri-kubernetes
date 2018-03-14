@@ -12,7 +12,7 @@ import (
 
 	"fmt"
 
-	endpoints2 "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
+	k8sClient "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -45,7 +45,7 @@ var logger = logrus.StandardLogger()
 // Testing Discover() method
 func TestDiscover_portThroughDNS(t *testing.T) {
 	// Given a client
-	client := new(endpoints2.MockedClient)
+	client := new(k8sClient.MockedClient)
 	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{
 			Status: v1.PodStatus{HostIP: "6.7.8.9"},
@@ -70,7 +70,7 @@ func TestDiscover_portThroughDNS(t *testing.T) {
 
 func TestDiscover_portThroughDNSAndGuessedNodeIPFromMultiplePods(t *testing.T) {
 	// Given a client
-	client := new(endpoints2.MockedClient)
+	client := new(k8sClient.MockedClient)
 	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{
 			{Status: v1.PodStatus{HostIP: "6.7.8.9"}},
@@ -97,7 +97,7 @@ func TestDiscover_portThroughDNSAndGuessedNodeIPFromMultiplePods(t *testing.T) {
 }
 func TestDiscover_metricsPortThroughAPIWhenDNSEmptyResponse(t *testing.T) {
 	// Given a client
-	client := new(endpoints2.MockedClient)
+	client := new(k8sClient.MockedClient)
 	client.On("FindServiceByLabel", mock.Anything, mock.Anything).
 		Return(&v1.ServiceList{Items: []v1.Service{{
 			Spec: v1.ServiceSpec{
@@ -135,7 +135,7 @@ func TestDiscover_metricsPortThroughAPIWhenDNSEmptyResponse(t *testing.T) {
 
 func TestDiscover_metricsPortThroughAPIWhenDNSError(t *testing.T) {
 	// Given a client
-	client := new(endpoints2.MockedClient)
+	client := new(k8sClient.MockedClient)
 	client.On("FindServiceByLabel", mock.Anything, mock.Anything).
 		Return(&v1.ServiceList{Items: []v1.Service{{
 			Spec: v1.ServiceSpec{
@@ -172,7 +172,7 @@ func TestDiscover_metricsPortThroughAPIWhenDNSError(t *testing.T) {
 
 func TestDiscover_guessedTCPPortThroughAPIWhenDNSEmptyResponse(t *testing.T) {
 	// Given a client
-	client := new(endpoints2.MockedClient)
+	client := new(k8sClient.MockedClient)
 	client.On("FindServiceByLabel", mock.Anything, mock.Anything).
 		Return(&v1.ServiceList{Items: []v1.Service{{
 			Spec: v1.ServiceSpec{
@@ -212,7 +212,7 @@ func TestDiscover_guessedTCPPortThroughAPIWhenDNSEmptyResponse(t *testing.T) {
 
 func TestDiscover_errorRetrievingPortWhenDNSAndAPIResponsesEmpty(t *testing.T) {
 	// Given a client
-	client := new(endpoints2.MockedClient)
+	client := new(k8sClient.MockedClient)
 	// And FindServiceByLabel returns empty list
 	client.On("FindServiceByLabel", mock.Anything, mock.Anything).
 		Return(&v1.ServiceList{}, nil)
@@ -239,7 +239,7 @@ func TestDiscover_errorRetrievingPortWhenDNSAndAPIResponsesEmpty(t *testing.T) {
 
 func TestDiscover_errorRetrievingPortWhenDNSAndAPIErrors(t *testing.T) {
 	// Given a client
-	client := new(endpoints2.MockedClient)
+	client := new(k8sClient.MockedClient)
 	// And FindServiceByLabel returns error
 	client.On("FindServiceByLabel", mock.Anything, mock.Anything).
 		Return(&v1.ServiceList{}, errors.New("failure"))
@@ -265,7 +265,7 @@ func TestDiscover_errorRetrievingPortWhenDNSAndAPIErrors(t *testing.T) {
 }
 func TestDiscover_errorRetrievingNodeIPWhenPodListEmpty(t *testing.T) {
 	// Given a client
-	client := new(endpoints2.MockedClient)
+	client := new(k8sClient.MockedClient)
 	// And FindPodsByLabel returns empty list
 	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{}, nil)
@@ -287,7 +287,7 @@ func TestDiscover_errorRetrievingNodeIPWhenPodListEmpty(t *testing.T) {
 
 func TestDiscover_errorRetrievingNodeIPWhenErrorFindingPod(t *testing.T) {
 	// Given a client
-	client := new(endpoints2.MockedClient)
+	client := new(k8sClient.MockedClient)
 	// And FindPodsByLabel returns error
 	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{}, errors.New("failure"))

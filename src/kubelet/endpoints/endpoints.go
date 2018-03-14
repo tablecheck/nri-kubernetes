@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
@@ -16,7 +16,7 @@ import (
 
 // kubeletDiscoverer implements Discoverer interface by using official Kubernetes' Go client
 type kubeletDiscoverer struct {
-	apiClient   endpoints.KubernetesClient
+	apiClient   client.KubernetesClient
 	logger      *logrus.Logger
 	connChecker connectionChecker
 }
@@ -76,7 +76,7 @@ func (c *kubelet) Do(method, path string) (*http.Response, error) {
 	return c.httpClient.Do(r)
 }
 
-func (sd *kubeletDiscoverer) Discover(timeout time.Duration) (endpoints.Client, error) {
+func (sd *kubeletDiscoverer) Discover(timeout time.Duration) (client.HTTPClient, error) {
 	pod, err := sd.getPod()
 	if err != nil {
 		return nil, err
@@ -152,7 +152,7 @@ func connectionHTTP(host string, timeout time.Duration) connectionParams {
 			Host:   host,
 			Scheme: "http",
 		},
-		client:   endpoints.BasicHTTPClient(timeout),
+		client:   client.BasicHTTPClient(timeout),
 		httpType: httpBasic,
 	}
 }
@@ -163,7 +163,7 @@ func connectionHTTPS(host string, timeout time.Duration) connectionParams {
 			Host:   host,
 			Scheme: "https",
 		},
-		client:   endpoints.InsecureHTTPClient(timeout),
+		client:   client.InsecureHTTPClient(timeout),
 		httpType: httpInsecure,
 	}
 }
@@ -206,11 +206,11 @@ func checkCall(client *http.Client, URL url.URL, path, token string) error {
 }
 
 // NewKubeletDiscoverer instantiates a new Discoverer
-func NewKubeletDiscoverer(logger *logrus.Logger) (endpoints.Discoverer, error) {
+func NewKubeletDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
 	var discoverer kubeletDiscoverer
 	var err error
 
-	discoverer.apiClient, err = endpoints.NewKubernetesClient()
+	discoverer.apiClient, err = client.NewKubernetesClient()
 	if err != nil {
 		return nil, err
 	}

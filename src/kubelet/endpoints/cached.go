@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
+	k8sClient "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
 	"github.com/sirupsen/logrus"
 )
@@ -23,13 +23,13 @@ type cachedKubelet struct {
 }
 
 // composeKubelet implements the ClientComposer function signature
-func composeKubelet(source interface{}, cacher *endpoints.DiscoveryCacher, timeout time.Duration) (endpoints.Client, error) {
+func composeKubelet(source interface{}, cacher *k8sClient.DiscoveryCacher, timeout time.Duration) (k8sClient.HTTPClient, error) {
 	cached := source.(*cachedKubelet)
 	kd := cacher.Discoverer.(*kubeletDiscoverer)
 	var client *http.Client
 	switch cached.HTTPType {
 	case httpInsecure:
-		client = endpoints.InsecureHTTPClient(timeout)
+		client = k8sClient.InsecureHTTPClient(timeout)
 	case httpSecure:
 		api, err := kd.connectionAPIHTTPS(cached.NodeName, timeout)
 		if err != nil {
@@ -37,13 +37,13 @@ func composeKubelet(source interface{}, cacher *endpoints.DiscoveryCacher, timeo
 		}
 		client = api.client
 	default:
-		client = endpoints.BasicHTTPClient(timeout)
+		client = k8sClient.BasicHTTPClient(timeout)
 	}
 	return newKubelet(cached.NodeIP, cached.NodeName, cached.Endpoint, cached.BearerToken, client, cached.HTTPType, kd.logger), nil
 }
 
 // decomposeKubelet implements the ClientDecomposer function signature
-func decomposeKubelet(source endpoints.Client) (interface{}, error) {
+func decomposeKubelet(source k8sClient.HTTPClient) (interface{}, error) {
 	kc := source.(*kubelet)
 	return &cachedKubelet{
 		Endpoint:    kc.endpoint,
@@ -56,8 +56,8 @@ func decomposeKubelet(source endpoints.Client) (interface{}, error) {
 
 // NewKubeletDiscoveryCacher creates a new DiscoveryCacher that wraps a kubeletDiscoverer and caches the data into the
 // specified storage
-func NewKubeletDiscoveryCacher(discoverer endpoints.Discoverer, storage storage.Storage, ttl time.Duration, logger *logrus.Logger) *endpoints.DiscoveryCacher {
-	return &endpoints.DiscoveryCacher{
+func NewKubeletDiscoveryCacher(discoverer k8sClient.Discoverer, storage storage.Storage, ttl time.Duration, logger *logrus.Logger) *k8sClient.DiscoveryCacher {
+	return &k8sClient.DiscoveryCacher{
 		CachedDataPtr: &cachedKubelet{},
 		StorageKey:    cachedKubeletKey,
 		Discoverer:    discoverer,

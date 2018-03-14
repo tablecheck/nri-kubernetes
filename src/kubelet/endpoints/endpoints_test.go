@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
+	k8sClient "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -23,8 +23,8 @@ var logger = logrus.StandardLogger()
 
 // Kubernetes API client mocks
 
-func failingClientMock() *endpoints.MockedClient {
-	client := new(endpoints.MockedClient)
+func failingClientMock() *k8sClient.MockedClient {
+	client := new(k8sClient.MockedClient)
 	client.On("Config").Return(nil)
 	client.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
 	client.On("FindPodByName", mock.Anything).Return(&v1.PodList{}, errors.New("FindPodByName should not be invoked"))
@@ -34,21 +34,21 @@ func failingClientMock() *endpoints.MockedClient {
 }
 
 // creates a mocked Kubernetes API client
-func mockedClient() *endpoints.MockedClient {
-	client := new(endpoints.MockedClient)
+func mockedClient() *k8sClient.MockedClient {
+	client := new(k8sClient.MockedClient)
 	client.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
 	client.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
 	return client
 }
 
 // sets the result of the FindPodByName function in the Kubernetes API Client
-func onFindPodByName(client *endpoints.MockedClient, nodeName string) {
+func onFindPodByName(client *k8sClient.MockedClient, nodeName string) {
 	client.On("FindPodByName", mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: nodeName}}}}, nil)
 }
 
 // sets the result of the FindNode function in the Kubernetes API Client
-func onFindNode(client *endpoints.MockedClient, nodeName, internalIP string, kubeletPort int) {
+func onFindNode(client *k8sClient.MockedClient, nodeName, internalIP string, kubeletPort int) {
 	client.On("FindNode", nodeName).
 		Return(&v1.Node{
 			Status: v1.NodeStatus{

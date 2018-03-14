@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
+	k8sClient "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -38,13 +38,13 @@ func TestDiscover_CachedKubelet_HTTP(t *testing.T) {
 
 	// That successfully retrieved the insecure Kubelet URL
 	caClient, err := cacher.Discover(timeout)
-	kclient := endpoints.WrappedClient(caClient)
+	kclient := k8sClient.WrappedClient(caClient)
 	assert.Equal(t, "d34db33f", kclient.(*kubelet).config.BearerToken)
 
 	// When invoking again the discovery process, it should not use the API client
 	wrappedDiscoverer.apiClient = failingClientMock()
 	caClient, err = cacher.Discover(timeout)
-	kclient = endpoints.WrappedClient(caClient)
+	kclient = k8sClient.WrappedClient(caClient)
 
 	// And the returned cached instance should be correctly configured
 	assert.NoError(t, err)
@@ -87,7 +87,7 @@ func TestDiscover_CachedKubelet_HTTPS_InsecureClient(t *testing.T) {
 	// The call works correctly
 	assert.NoError(t, err)
 	// And the cached host:port of the Kubelet is returned
-	kclient := endpoints.WrappedClient(caClient)
+	kclient := k8sClient.WrappedClient(caClient)
 	assert.Equal(t, "1.2.3.4", kclient.NodeIP())
 	assert.Equal(t, "1.2.3.4:10250", kclient.(*kubelet).endpoint.Host)
 	assert.Equal(t, "https", kclient.(*kubelet).endpoint.Scheme)
@@ -127,7 +127,7 @@ func TestDiscover_CachedKubelet_HTTPS_SecureClient(t *testing.T) {
 	// The call works correctly
 	assert.NoError(t, err)
 	// And the cached host:port of the Kubelet is returned
-	kclient := endpoints.WrappedClient(caClient)
+	kclient := k8sClient.WrappedClient(caClient)
 	assert.Equal(t, "1.2.3.4", kclient.NodeIP())
 	assert.Equal(t, apiHost, kclient.(*kubelet).endpoint.Host)
 	assert.Equal(t, "https", kclient.(*kubelet).endpoint.Scheme)

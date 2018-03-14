@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	endpoints2 "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
+	k8sClient "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
 	"k8s.io/api/core/v1"
 
@@ -21,7 +21,7 @@ func TestDiscover_CachedKSM(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Setup Kubernetes API client
-	client := new(endpoints2.MockedClient)
+	client := new(k8sClient.MockedClient)
 	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{
 			Status: v1.PodStatus{HostIP: "6.7.8.9"},
@@ -50,7 +50,7 @@ func TestDiscover_CachedKSM(t *testing.T) {
 	// The cached value has been retrieved, instead of triggered the discovery
 	// (otherwise it would have failed when invoking the `failedLookupSRV` and the unconfigured mock
 	assert.NoError(t, err)
-	ksmClient := endpoints2.WrappedClient(caClient)
+	ksmClient := k8sClient.WrappedClient(caClient)
 	assert.Equal(t, fmt.Sprintf("%s:%v", ksmQualifiedName, 11223), ksmClient.(*ksm).endpoint.Host)
 	assert.Equal(t, "http", ksmClient.(*ksm).endpoint.Scheme)
 	assert.Equal(t, "6.7.8.9", caClient.NodeIP())
@@ -61,7 +61,7 @@ func TestDiscover_CachedKSM_BothFail(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Given a client that is unable to discover the endpoint
-	client := new(endpoints2.MockedClient)
+	client := new(k8sClient.MockedClient)
 	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{}}, fmt.Errorf("error invoking Kubernetes API"))
 	client.On("FindServiceByLabel", mock.Anything, mock.Anything).
@@ -89,7 +89,7 @@ func TestDiscover_LoadCacheFail(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Setup Kubernetes API client
-	client := new(endpoints2.MockedClient)
+	client := new(k8sClient.MockedClient)
 	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{
 			Status: v1.PodStatus{HostIP: "6.7.8.9"},
@@ -118,7 +118,7 @@ func TestDiscover_LoadCacheFail(t *testing.T) {
 
 	// The discovery process has been triggered again
 	assert.NoError(t, err)
-	ksmClient := endpoints2.WrappedClient(caClient)
+	ksmClient := k8sClient.WrappedClient(caClient)
 	assert.Equal(t, fmt.Sprintf("%s:%v", ksmQualifiedName, 11223), ksmClient.(*ksm).endpoint.Host)
 	assert.Equal(t, "http", ksmClient.(*ksm).endpoint.Scheme)
 	assert.Equal(t, "6.7.8.9", caClient.NodeIP())
@@ -130,7 +130,7 @@ func TestDiscover_CacheTTLExpiry(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Setup Kubernetes API client
-	client := new(endpoints2.MockedClient)
+	client := new(k8sClient.MockedClient)
 	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{
 			Status: v1.PodStatus{HostIP: "6.7.8.9"},
@@ -162,18 +162,18 @@ func TestDiscover_CacheTTLExpiry(t *testing.T) {
 	// The outdated version of the object has been invalidated
 	// and the discovery process has been triggered again
 	assert.NoError(t, err)
-	ksmClient := endpoints2.WrappedClient(caClient)
+	ksmClient := k8sClient.WrappedClient(caClient)
 	assert.Equal(t, fmt.Sprintf("%s:%v", ksmQualifiedName, 11223), ksmClient.(*ksm).endpoint.Host)
 	assert.Equal(t, "http", ksmClient.(*ksm).endpoint.Scheme)
 	assert.Equal(t, "6.7.8.9", caClient.NodeIP())
 
 	// And the new object has been cached back
 	wrappedDiscoverer.lookupSRV = failingLookupSRV
-	cacher.(*endpoints2.DiscoveryCacher).TTL = time.Hour
+	cacher.(*k8sClient.DiscoveryCacher).TTL = time.Hour
 	caClient, err = cacher.Discover(timeout)
 	// (otherwise it would have failed when invoking the `failedLookupSRV` and the unconfigured mock
 	assert.NoError(t, err)
-	ksmClient = endpoints2.WrappedClient(caClient)
+	ksmClient = k8sClient.WrappedClient(caClient)
 	assert.Equal(t, fmt.Sprintf("%s:%v", ksmQualifiedName, 11223), ksmClient.(*ksm).endpoint.Host)
 	assert.Equal(t, "http", ksmClient.(*ksm).endpoint.Scheme)
 	assert.Equal(t, "6.7.8.9", caClient.NodeIP())

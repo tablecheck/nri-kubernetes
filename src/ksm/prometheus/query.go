@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/matttproud/golang_protobuf_extensions/pbutil"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	prometheus "github.com/prometheus/client_model/go"
 )
 
@@ -97,7 +97,7 @@ func valueFromPrometheus(metricType prometheus.MetricType, metric *prometheus.Me
 }
 
 // Do is the main entry point. It runs queries against the Prometheus metrics provided by the endpoint.
-func Do(c endpoints.Client, queries []Query) ([]MetricFamily, error) {
+func Do(c client.HTTPClient, queries []Query) ([]MetricFamily, error) {
 	resp, err := c.Do(http.MethodGet, metricsPath)
 	if err != nil {
 		return nil, err

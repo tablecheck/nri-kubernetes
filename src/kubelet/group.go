@@ -3,15 +3,15 @@ package kubelet
 import (
 	"fmt"
 
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
 	"github.com/sirupsen/logrus"
 )
 
 type kubelet struct {
-	client   endpoints.Client
+	client   client.HTTPClient
 	fetchers []data.FetchFunc
 	logger   *logrus.Logger
 }
@@ -49,7 +49,7 @@ func (r *kubelet) Group(definition.SpecGroups) (definition.RawGroups, *data.Erro
 }
 
 // NewGrouper creates a grouper aware of Kubelet raw metrics.
-func NewGrouper(c endpoints.Client, logger *logrus.Logger, fetchers ...data.FetchFunc) data.Grouper {
+func NewGrouper(c client.HTTPClient, logger *logrus.Logger, fetchers ...data.FetchFunc) data.Grouper {
 	return &kubelet{
 		client:   c,
 		logger:   logger,

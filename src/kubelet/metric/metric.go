@@ -9,16 +9,16 @@ import (
 
 	v1 "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/config"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 )
 
 // StatsSummaryPath is the path where kubelet serves a summary with several information.
 const StatsSummaryPath = "/stats/summary"
 
 // GetMetricsData calls kubelet /stats/summary endpoint and returns unmarshalled response
-func GetMetricsData(c endpoints.Client) (v1.Summary, error) {
+func GetMetricsData(c client.HTTPClient) (v1.Summary, error) {
 	resp, err := c.Do(http.MethodGet, StatsSummaryPath)
 	if err != nil {
 		return v1.Summary{}, err

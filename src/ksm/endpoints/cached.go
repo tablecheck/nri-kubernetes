@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
 	"github.com/sirupsen/logrus"
 )
@@ -20,7 +20,7 @@ type cachedKSM struct {
 }
 
 // composeKSM implements the ClientComposer function signature
-func composeKSM(source interface{}, cacher *endpoints.DiscoveryCacher, timeout time.Duration) (endpoints.Client, error) {
+func composeKSM(source interface{}, cacher *client.DiscoveryCacher, timeout time.Duration) (client.HTTPClient, error) {
 	cached := source.(*cachedKSM)
 	return &ksm{
 		nodeIP:   cached.NodeIP,
@@ -33,7 +33,7 @@ func composeKSM(source interface{}, cacher *endpoints.DiscoveryCacher, timeout t
 }
 
 // composeKSM implements the ClientDecomposer function signature
-func decomposeKSM(source endpoints.Client) (interface{}, error) {
+func decomposeKSM(source client.HTTPClient) (interface{}, error) {
 	ksm := source.(*ksm)
 	return &cachedKSM{
 		Endpoint: ksm.endpoint,
@@ -43,8 +43,8 @@ func decomposeKSM(source endpoints.Client) (interface{}, error) {
 
 // NewKSMDiscoveryCacher creates a new DiscoveryCacher that wraps a ksmDiscoverer and caches the data into the
 // specified storage
-func NewKSMDiscoveryCacher(ksmDiscoverer endpoints.Discoverer, storage storage.Storage, ttl time.Duration, logger *logrus.Logger) endpoints.Discoverer {
-	return &endpoints.DiscoveryCacher{
+func NewKSMDiscoveryCacher(ksmDiscoverer client.Discoverer, storage storage.Storage, ttl time.Duration, logger *logrus.Logger) client.Discoverer {
+	return &client.DiscoveryCacher{
 		CachedDataPtr: &cachedKSM{},
 		StorageKey:    cachedKSMKey,
 		Discoverer:    ksmDiscoverer,

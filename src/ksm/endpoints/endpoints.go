@@ -11,7 +11,7 @@ import (
 
 	"strings"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -30,7 +30,7 @@ const (
 // ksmDiscoverer implements Discoverer interface by using official Kubernetes' Go client
 type ksmDiscoverer struct {
 	lookupSRV func(service, proto, name string) (cname string, addrs []*net.SRV, err error)
-	apiClient endpoints.KubernetesClient
+	apiClient client.KubernetesClient
 	logger    *logrus.Logger
 }
 
@@ -42,8 +42,7 @@ type ksm struct {
 	logger     *logrus.Logger
 }
 
-// TODO: cache it
-func (sd *ksmDiscoverer) Discover(timeout time.Duration) (endpoints.Client, error) {
+func (sd *ksmDiscoverer) Discover(timeout time.Duration) (client.HTTPClient, error) {
 
 	var endpoint url.URL
 	endpoint, err := sd.dnsDiscover()
@@ -162,11 +161,11 @@ func (sd *ksmDiscoverer) nodeIP() (string, error) {
 }
 
 // NewKSMDiscoverer instantiates a new Discoverer
-func NewKSMDiscoverer(logger *logrus.Logger) (endpoints.Discoverer, error) {
+func NewKSMDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
 	var discoverer ksmDiscoverer
 	var err error
 
-	discoverer.apiClient, err = endpoints.NewKubernetesClient()
+	discoverer.apiClient, err = client.NewKubernetesClient()
 	if err != nil {
 		return nil, err
 	}

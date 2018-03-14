@@ -13,9 +13,9 @@ import (
 
 	"time"
 
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/endpoints"
 	"k8s.io/api/core/v1"
 )
 
@@ -23,7 +23,7 @@ import (
 const KubeletPodsPath = "/pods"
 
 // PodsFetchFunc creates a FetchFunc that fetches data from the kubelet pods path.
-func PodsFetchFunc(c endpoints.Client) data.FetchFunc {
+func PodsFetchFunc(c client.HTTPClient) data.FetchFunc {
 	return func() (definition.RawGroups, error) {
 		r, err := c.Do(http.MethodGet, KubeletPodsPath)
 		if err != nil {
