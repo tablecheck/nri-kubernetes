@@ -33,7 +33,7 @@ func (e MultipleErrs) Error() string {
 
 // Populate populates k8s raw data to sdk metrics.
 func (p *k8sPopulator) Populate(groups definition.RawGroups, specGroups definition.SpecGroups, i *sdk.IntegrationProtocol2, clusterName string) (bool, error) {
-	populatorFunc := definition.IntegrationProtocol2PopulateFunc(i, clusterName, K8sMetricSetTypeGuesser, K8sMetricSetEntityTypeGuesser, K8sEntityMetricsManipulator, K8sClusterMetricsManipulator)
+	populatorFunc := definition.IntegrationProtocol2PopulateFunc(i, clusterName, K8sMetricSetTypeGuesser, K8sEntityMetricsManipulator, K8sClusterMetricsManipulator)
 	ok, errs := populatorFunc(groups, specGroups)
 
 	if len(errs) > 0 {
