@@ -4,8 +4,11 @@ import (
 	sdk "github.com/newrelic/infra-integrations-sdk/metric"
 )
 
-// MetricSetEntityIDGeneratorFunc generates an entity ID that will be used as metric set entity ID.
-type MetricSetEntityIDGeneratorFunc func(groupLabel, rawEntityID string, g RawGroups) (string, error)
+// EntityIDGeneratorFunc generates an entity ID.
+type EntityIDGeneratorFunc func(groupLabel, rawEntityID string, g RawGroups) (string, error)
+
+// EntityTypeGeneratorFunc generates an entity type.
+type EntityTypeGeneratorFunc func(groupLabel, rawEntityID string, g RawGroups) (string, error)
 
 // Spec is a metric specification.
 type Spec struct {
@@ -16,8 +19,9 @@ type Spec struct {
 
 // SpecGroup represents a bunch of specs that share logic.
 type SpecGroup struct {
-	IDGenerator MetricSetEntityIDGeneratorFunc
-	Specs       []Spec
+	IDGenerator   EntityIDGeneratorFunc
+	TypeGenerator EntityTypeGeneratorFunc
+	Specs         []Spec
 }
 
 // SpecGroups is a map of groups indexed by group name.

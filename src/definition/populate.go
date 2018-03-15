@@ -17,10 +17,11 @@ type PopulateFunc func(RawGroups, SpecGroups) (bool, []error)
 type MetricSetManipulator func(ms metric.MetricSet, entity sdk.Entity, clusterName string) error
 
 // IntegrationProtocol2PopulateFunc populates an integration protocol v2 with the given metrics and definition.
-func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName string, msTypeGuesser, msEntityTypeGuesser GuessFunc, msManipulators ...MetricSetManipulator) PopulateFunc {
+func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName string, msTypeGuesser GuessFunc, msManipulators ...MetricSetManipulator) PopulateFunc {
 	return func(groups RawGroups, specs SpecGroups) (bool, []error) {
 		var populated bool
 		var errs []error
+		var msEntityType string
 		for groupLabel, entities := range groups {
 			for entityID := range entities {
 
@@ -35,14 +36,15 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName s
 					if err != nil {
 						errs = append(errs, fmt.Errorf("error generating entity ID for: %s: %s", entityID, err))
 					}
-
 					msEntityID = generatedEntityID
 				}
 
-				msEntityType, err := msEntityTypeGuesser(clusterName, groupLabel, entityID, groups)
-				if err != nil {
-					errs = append(errs, err)
-					continue
+				if generatorType := specs[groupLabel].TypeGenerator; generatorType != nil {
+					generatedEntityType, err := generatorType(groupLabel, entityID, groups)
+					if err != nil {
+						errs = append(errs, fmt.Errorf("error generating entity type for: %s: %s", entityID, err))
+					}
+					msEntityType = fmt.Sprintf("k8s:%s:%s", clusterName, generatedEntityType)
 				}
 
 				e, err := i.Entity(msEntityID, msEntityType)
