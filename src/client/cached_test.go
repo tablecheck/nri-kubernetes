@@ -33,11 +33,11 @@ func (f *fakeStorage) Write(key string, value interface{}) error {
 }
 
 func (f *fakeStorage) Read(key string, valuePtr interface{}) (int64, error) {
-	valPtr, ok := f.values[key].(*MockedClient)
+	valPtr, ok := f.values[key].(*MockedKubernetes)
 	if !ok {
 		return 0, fmt.Errorf("key not found: %s", key)
 	}
-	*(valuePtr.(*MockedClient)) = *valPtr
+	*(valuePtr.(*MockedKubernetes)) = *valPtr
 	return int64(1234567), nil
 }
 

@@ -16,7 +16,7 @@ import (
 
 // kubeletDiscoverer implements Discoverer interface by using official Kubernetes' Go client
 type kubeletDiscoverer struct {
-	apiClient   client.KubernetesClient
+	apiClient   client.Kubernetes
 	logger      *logrus.Logger
 	connChecker connectionChecker
 }
@@ -210,7 +210,7 @@ func NewKubeletDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
 	var discoverer kubeletDiscoverer
 	var err error
 
-	discoverer.apiClient, err = client.NewKubernetesClient()
+	discoverer.apiClient, err = client.NewKubernetes()
 	if err != nil {
 		return nil, err
 	}

@@ -30,7 +30,7 @@ const (
 // ksmDiscoverer implements Discoverer interface by using official Kubernetes' Go client
 type ksmDiscoverer struct {
 	lookupSRV func(service, proto, name string) (cname string, addrs []*net.SRV, err error)
-	apiClient client.KubernetesClient
+	apiClient client.Kubernetes
 	logger    *logrus.Logger
 }
 
@@ -165,7 +165,7 @@ func NewKSMDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
 	var discoverer ksmDiscoverer
 	var err error
 
-	discoverer.apiClient, err = client.NewKubernetesClient()
+	discoverer.apiClient, err = client.NewKubernetes()
 	if err != nil {
 		return nil, err
 	}

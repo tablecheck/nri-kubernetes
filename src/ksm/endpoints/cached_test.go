@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	k8sClient "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
 	"k8s.io/api/core/v1"
 
@@ -21,8 +21,8 @@ func TestDiscover_CachedKSM(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Setup Kubernetes API client
-	client := new(k8sClient.MockedClient)
-	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
+	c := new(client.MockedKubernetes)
+	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{
 			Status: v1.PodStatus{HostIP: "6.7.8.9"},
 		}}}, nil)
@@ -33,7 +33,7 @@ func TestDiscover_CachedKSM(t *testing.T) {
 	// Given a KSM discoverer
 	wrappedDiscoverer := ksmDiscoverer{
 		lookupSRV: fakeLookupSRV,
-		apiClient: client,
+		apiClient: c,
 		logger:    logger,
 	}
 	// That is wrapped into a Cached Discoverer
@@ -50,7 +50,7 @@ func TestDiscover_CachedKSM(t *testing.T) {
 	// The cached value has been retrieved, instead of triggered the discovery
 	// (otherwise it would have failed when invoking the `failedLookupSRV` and the unconfigured mock
 	assert.NoError(t, err)
-	ksmClient := k8sClient.WrappedClient(caClient)
+	ksmClient := client.WrappedClient(caClient)
 	assert.Equal(t, fmt.Sprintf("%s:%v", ksmQualifiedName, 11223), ksmClient.(*ksm).endpoint.Host)
 	assert.Equal(t, "http", ksmClient.(*ksm).endpoint.Scheme)
 	assert.Equal(t, "6.7.8.9", caClient.NodeIP())
@@ -61,10 +61,10 @@ func TestDiscover_CachedKSM_BothFail(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Given a client that is unable to discover the endpoint
-	client := new(k8sClient.MockedClient)
-	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
+	c := new(client.MockedKubernetes)
+	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{}}, fmt.Errorf("error invoking Kubernetes API"))
-	client.On("FindServiceByLabel", mock.Anything, mock.Anything).
+	c.On("FindServiceByLabel", mock.Anything, mock.Anything).
 		Return(&v1.ServiceList{Items: []v1.Service{}}, fmt.Errorf("error invoking Kubernetes API"))
 
 	// And a cache that does not store any cached copy
@@ -74,7 +74,7 @@ func TestDiscover_CachedKSM_BothFail(t *testing.T) {
 	cacher := NewKSMDiscoveryCacher(
 		&ksmDiscoverer{
 			lookupSRV: fakeLookupSRV,
-			apiClient: client,
+			apiClient: c,
 			logger:    logger,
 		}, &store, time.Hour, logger)
 
@@ -89,8 +89,8 @@ func TestDiscover_LoadCacheFail(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Setup Kubernetes API client
-	client := new(k8sClient.MockedClient)
-	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
+	c := new(client.MockedKubernetes)
+	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{
 			Status: v1.PodStatus{HostIP: "6.7.8.9"},
 		}}}, nil)
@@ -101,7 +101,7 @@ func TestDiscover_LoadCacheFail(t *testing.T) {
 	// Given a KSM discoverer
 	wrappedDiscoverer := ksmDiscoverer{
 		lookupSRV: fakeLookupSRV,
-		apiClient: client,
+		apiClient: c,
 		logger:    logger,
 	}
 	// That is wrapped into a Cached Discoverer
@@ -118,7 +118,7 @@ func TestDiscover_LoadCacheFail(t *testing.T) {
 
 	// The discovery process has been triggered again
 	assert.NoError(t, err)
-	ksmClient := k8sClient.WrappedClient(caClient)
+	ksmClient := client.WrappedClient(caClient)
 	assert.Equal(t, fmt.Sprintf("%s:%v", ksmQualifiedName, 11223), ksmClient.(*ksm).endpoint.Host)
 	assert.Equal(t, "http", ksmClient.(*ksm).endpoint.Scheme)
 	assert.Equal(t, "6.7.8.9", caClient.NodeIP())
@@ -130,8 +130,8 @@ func TestDiscover_CacheTTLExpiry(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Setup Kubernetes API client
-	client := new(k8sClient.MockedClient)
-	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
+	c := new(client.MockedKubernetes)
+	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{
 			Status: v1.PodStatus{HostIP: "6.7.8.9"},
 		}}}, nil)
@@ -150,7 +150,7 @@ func TestDiscover_CacheTTLExpiry(t *testing.T) {
 	// And a KSM discoverer
 	wrappedDiscoverer := ksmDiscoverer{
 		lookupSRV: fakeLookupSRV,
-		apiClient: client,
+		apiClient: c,
 		logger:    logger,
 	}
 	// That is wrapped into a Cached Discoverer
@@ -162,18 +162,18 @@ func TestDiscover_CacheTTLExpiry(t *testing.T) {
 	// The outdated version of the object has been invalidated
 	// and the discovery process has been triggered again
 	assert.NoError(t, err)
-	ksmClient := k8sClient.WrappedClient(caClient)
+	ksmClient := client.WrappedClient(caClient)
 	assert.Equal(t, fmt.Sprintf("%s:%v", ksmQualifiedName, 11223), ksmClient.(*ksm).endpoint.Host)
 	assert.Equal(t, "http", ksmClient.(*ksm).endpoint.Scheme)
 	assert.Equal(t, "6.7.8.9", caClient.NodeIP())
 
 	// And the new object has been cached back
 	wrappedDiscoverer.lookupSRV = failingLookupSRV
-	cacher.(*k8sClient.DiscoveryCacher).TTL = time.Hour
+	cacher.(*client.DiscoveryCacher).TTL = time.Hour
 	caClient, err = cacher.Discover(timeout)
 	// (otherwise it would have failed when invoking the `failedLookupSRV` and the unconfigured mock
 	assert.NoError(t, err)
-	ksmClient = k8sClient.WrappedClient(caClient)
+	ksmClient = client.WrappedClient(caClient)
 	assert.Equal(t, fmt.Sprintf("%s:%v", ksmQualifiedName, 11223), ksmClient.(*ksm).endpoint.Host)
 	assert.Equal(t, "http", ksmClient.(*ksm).endpoint.Scheme)
 	assert.Equal(t, "6.7.8.9", caClient.NodeIP())

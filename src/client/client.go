@@ -13,8 +13,8 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// KubernetesClient provides an interface to common Kubernetes API operations
-type KubernetesClient interface {
+// Kubernetes provides an interface to common Kubernetes API operations
+type Kubernetes interface {
 	// FindNode returns a Node reference containing the pod named as the argument, if any
 	FindNode(name string) (*v1.Node, error)
 	// FindPodsByLabel returns a PodList reference containing the pods matching the provided name/value label pair
@@ -94,8 +94,8 @@ func InsecureHTTPClient(t time.Duration) *http.Client {
 	return client
 }
 
-// NewKubernetesClient instantiates a Kubernetes API client
-func NewKubernetesClient() (KubernetesClient, error) {
+// NewKubernetes instantiates a Kubernetes API client
+func NewKubernetes() (Kubernetes, error) {
 	ka := new(goClientImpl)
 	var err error
 

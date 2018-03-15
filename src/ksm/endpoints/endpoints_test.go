@@ -12,7 +12,7 @@ import (
 
 	"fmt"
 
-	k8sClient "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -45,15 +45,15 @@ var logger = logrus.StandardLogger()
 // Testing Discover() method
 func TestDiscover_portThroughDNS(t *testing.T) {
 	// Given a client
-	client := new(k8sClient.MockedClient)
-	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
+	c := new(client.MockedKubernetes)
+	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{
 			Status: v1.PodStatus{HostIP: "6.7.8.9"},
 		}}}, nil)
 	// And an Discoverer implementation
 	endpoints := ksmDiscoverer{
 		lookupSRV: fakeLookupSRV,
-		apiClient: client,
+		apiClient: c,
 		logger:    logger,
 	}
 
@@ -70,8 +70,8 @@ func TestDiscover_portThroughDNS(t *testing.T) {
 
 func TestDiscover_portThroughDNSAndGuessedNodeIPFromMultiplePods(t *testing.T) {
 	// Given a client
-	client := new(k8sClient.MockedClient)
-	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
+	c := new(client.MockedKubernetes)
+	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{
 			{Status: v1.PodStatus{HostIP: "6.7.8.9"}},
 			{Status: v1.PodStatus{HostIP: "162.178.1.1"}},
@@ -81,7 +81,7 @@ func TestDiscover_portThroughDNSAndGuessedNodeIPFromMultiplePods(t *testing.T) {
 	// and an Discoverer implementation
 	endpoints := ksmDiscoverer{
 		lookupSRV: fakeLookupSRV,
-		apiClient: client,
+		apiClient: c,
 		logger:    logger,
 	}
 	// When retrieving the KSM client with no port named 'http-metrics'
@@ -97,8 +97,8 @@ func TestDiscover_portThroughDNSAndGuessedNodeIPFromMultiplePods(t *testing.T) {
 }
 func TestDiscover_metricsPortThroughAPIWhenDNSEmptyResponse(t *testing.T) {
 	// Given a client
-	client := new(k8sClient.MockedClient)
-	client.On("FindServiceByLabel", mock.Anything, mock.Anything).
+	c := new(client.MockedKubernetes)
+	c.On("FindServiceByLabel", mock.Anything, mock.Anything).
 		Return(&v1.ServiceList{Items: []v1.Service{{
 			Spec: v1.ServiceSpec{
 				ClusterIP: "1.2.3.4",
@@ -109,7 +109,7 @@ func TestDiscover_metricsPortThroughAPIWhenDNSEmptyResponse(t *testing.T) {
 			},
 		},
 		}}, nil)
-	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
+	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{
 			Status: v1.PodStatus{HostIP: "6.7.8.9"},
 		}}}, nil)
@@ -117,7 +117,7 @@ func TestDiscover_metricsPortThroughAPIWhenDNSEmptyResponse(t *testing.T) {
 	// and an Discoverer implementation whose DNS returns empty response
 	endpoints := ksmDiscoverer{
 		lookupSRV: emptyLookupSRV,
-		apiClient: client,
+		apiClient: c,
 		logger:    logger,
 	}
 
@@ -135,8 +135,8 @@ func TestDiscover_metricsPortThroughAPIWhenDNSEmptyResponse(t *testing.T) {
 
 func TestDiscover_metricsPortThroughAPIWhenDNSError(t *testing.T) {
 	// Given a client
-	client := new(k8sClient.MockedClient)
-	client.On("FindServiceByLabel", mock.Anything, mock.Anything).
+	c := new(client.MockedKubernetes)
+	c.On("FindServiceByLabel", mock.Anything, mock.Anything).
 		Return(&v1.ServiceList{Items: []v1.Service{{
 			Spec: v1.ServiceSpec{
 				ClusterIP: "1.2.3.4",
@@ -147,7 +147,7 @@ func TestDiscover_metricsPortThroughAPIWhenDNSError(t *testing.T) {
 			},
 		},
 		}}, nil)
-	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
+	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{
 			Status: v1.PodStatus{HostIP: "6.7.8.9"},
 		}}}, nil)
@@ -155,7 +155,7 @@ func TestDiscover_metricsPortThroughAPIWhenDNSError(t *testing.T) {
 	// and an Discoverer implementation whose DNS returns an error
 	endpoints := ksmDiscoverer{
 		lookupSRV: failingLookupSRV,
-		apiClient: client,
+		apiClient: c,
 		logger:    logger,
 	}
 
@@ -172,8 +172,8 @@ func TestDiscover_metricsPortThroughAPIWhenDNSError(t *testing.T) {
 
 func TestDiscover_guessedTCPPortThroughAPIWhenDNSEmptyResponse(t *testing.T) {
 	// Given a client
-	client := new(k8sClient.MockedClient)
-	client.On("FindServiceByLabel", mock.Anything, mock.Anything).
+	c := new(client.MockedKubernetes)
+	c.On("FindServiceByLabel", mock.Anything, mock.Anything).
 		Return(&v1.ServiceList{Items: []v1.Service{{
 			Spec: v1.ServiceSpec{
 				ClusterIP: "11.22.33.44",
@@ -187,7 +187,7 @@ func TestDiscover_guessedTCPPortThroughAPIWhenDNSEmptyResponse(t *testing.T) {
 					Port:     8081,
 				}},
 			}}}}, nil)
-	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
+	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{
 			Status: v1.PodStatus{HostIP: "6.7.8.9"},
 		}}}, nil)
@@ -195,7 +195,7 @@ func TestDiscover_guessedTCPPortThroughAPIWhenDNSEmptyResponse(t *testing.T) {
 	// and an Discoverer implementation whose DNS returns empty response
 	endpoints := ksmDiscoverer{
 		lookupSRV: emptyLookupSRV,
-		apiClient: client,
+		apiClient: c,
 		logger:    logger,
 	}
 	// When retrieving the KSM client with no port named 'http-metrics'
@@ -212,11 +212,11 @@ func TestDiscover_guessedTCPPortThroughAPIWhenDNSEmptyResponse(t *testing.T) {
 
 func TestDiscover_errorRetrievingPortWhenDNSAndAPIResponsesEmpty(t *testing.T) {
 	// Given a client
-	client := new(k8sClient.MockedClient)
+	c := new(client.MockedKubernetes)
 	// And FindServiceByLabel returns empty list
-	client.On("FindServiceByLabel", mock.Anything, mock.Anything).
+	c.On("FindServiceByLabel", mock.Anything, mock.Anything).
 		Return(&v1.ServiceList{}, nil)
-	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
+	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{
 			Status: v1.PodStatus{HostIP: "6.7.8.9"},
 		}}}, nil)
@@ -224,7 +224,7 @@ func TestDiscover_errorRetrievingPortWhenDNSAndAPIResponsesEmpty(t *testing.T) {
 	// and an Discoverer implementation whose DNS returns empty response
 	endpoints := ksmDiscoverer{
 		lookupSRV: emptyLookupSRV,
-		apiClient: client,
+		apiClient: c,
 		logger:    logger,
 	}
 
@@ -239,11 +239,11 @@ func TestDiscover_errorRetrievingPortWhenDNSAndAPIResponsesEmpty(t *testing.T) {
 
 func TestDiscover_errorRetrievingPortWhenDNSAndAPIErrors(t *testing.T) {
 	// Given a client
-	client := new(k8sClient.MockedClient)
+	c := new(client.MockedKubernetes)
 	// And FindServiceByLabel returns error
-	client.On("FindServiceByLabel", mock.Anything, mock.Anything).
+	c.On("FindServiceByLabel", mock.Anything, mock.Anything).
 		Return(&v1.ServiceList{}, errors.New("failure"))
-	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
+	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{{
 			Status: v1.PodStatus{HostIP: "6.7.8.9"},
 		}}}, nil)
@@ -251,7 +251,7 @@ func TestDiscover_errorRetrievingPortWhenDNSAndAPIErrors(t *testing.T) {
 	// and an Discoverer implementation whose DNS returns an error
 	endpoints := ksmDiscoverer{
 		lookupSRV: failingLookupSRV,
-		apiClient: client,
+		apiClient: c,
 		logger:    logger,
 	}
 
@@ -265,14 +265,14 @@ func TestDiscover_errorRetrievingPortWhenDNSAndAPIErrors(t *testing.T) {
 }
 func TestDiscover_errorRetrievingNodeIPWhenPodListEmpty(t *testing.T) {
 	// Given a client
-	client := new(k8sClient.MockedClient)
+	c := new(client.MockedKubernetes)
 	// And FindPodsByLabel returns empty list
-	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
+	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{}, nil)
 	// And an Discoverer implementation
 	endpoints := ksmDiscoverer{
 		lookupSRV: fakeLookupSRV,
-		apiClient: client,
+		apiClient: c,
 		logger:    logger,
 	}
 
@@ -287,14 +287,14 @@ func TestDiscover_errorRetrievingNodeIPWhenPodListEmpty(t *testing.T) {
 
 func TestDiscover_errorRetrievingNodeIPWhenErrorFindingPod(t *testing.T) {
 	// Given a client
-	client := new(k8sClient.MockedClient)
+	c := new(client.MockedKubernetes)
 	// And FindPodsByLabel returns error
-	client.On("FindPodsByLabel", mock.Anything, mock.Anything).
+	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{}, errors.New("failure"))
 	// And an Discoverer implementation
 	endpoints := ksmDiscoverer{
 		lookupSRV: fakeLookupSRV,
-		apiClient: client,
+		apiClient: c,
 		logger:    logger,
 	}
 
@@ -316,9 +316,9 @@ func TestNodeIP(t *testing.T) {
 		httpClient: http.DefaultClient,
 		logger:     logger,
 	}
-	var client = &c
+	var cl = &c
 	// When retrieving node IP
-	nodeIP := client.NodeIP()
+	nodeIP := cl.NodeIP()
 	// The call works correctly
 	assert.Equal(t, "1.2.3.4", nodeIP)
 }
