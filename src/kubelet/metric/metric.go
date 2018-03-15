@@ -10,7 +10,6 @@ import (
 	v1 "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/config"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 )
 
@@ -193,7 +192,7 @@ PodListLoop:
 }
 
 // FromRawGroupsEntityIDGenerator generates an entityID from the pod name from kubelet. It's only used for k8s containers.
-func FromRawGroupsEntityIDGenerator(key string) definition.MetricSetEntityIDGeneratorFunc {
+func FromRawGroupsEntityIDGenerator(key string) definition.EntityIDGeneratorFunc {
 	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
 		v, ok := g[groupLabel][rawEntityID][key]
 		if !ok {
@@ -205,7 +204,7 @@ func FromRawGroupsEntityIDGenerator(key string) definition.MetricSetEntityIDGene
 
 // FromRawEntityIDGroupEntityIDGenerator generates an entityID from the raw entity ID
 // which is composed of namespace and pod name. It's used only for k8s pods.
-func FromRawEntityIDGroupEntityIDGenerator(key string) definition.MetricSetEntityIDGeneratorFunc {
+func FromRawEntityIDGroupEntityIDGenerator(key string) definition.EntityIDGeneratorFunc {
 	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
 		toRemove := g[groupLabel][rawEntityID][key]
 		v := strings.TrimPrefix(rawEntityID, fmt.Sprintf("%s_", toRemove))
@@ -218,22 +217,44 @@ func FromRawEntityIDGroupEntityIDGenerator(key string) definition.MetricSetEntit
 	}
 }
 
-// KubeletNamespaceFetcher fetches the namespace from a Kubelet RawGroups information
-func KubeletNamespaceFetcher(groupLabel, entityID string, groups definition.RawGroups) (string, error) {
-	gl, ok := groups[groupLabel]
-	if !ok {
-		return config.UnknownNamespace, fmt.Errorf("no grouplabel %q found", groupLabel)
-	}
-	en, ok := gl[entityID]
-	if !ok {
-		return config.UnknownNamespace, fmt.Errorf("no entityID %q found for grouplabel %q", entityID, groupLabel)
-	}
+// FromRawEntityIDGroupEntityTypeGenerator generates the entity type depending on a given a group label.
+// If group label is different than "namespace" or "node", then entity type is composed of group label
+// and specified key value (in case of error fetching the key, default value is used).
+// Otherwise entity type is the same as group label.
+func FromRawEntityIDGroupEntityTypeGenerator(key, defaultValue string) definition.EntityTypeGeneratorFunc {
+	// TODO: working here with rawEntityID not entityID, could it be a problem?
+	return func(groupLabel string, rawEntityID string, groups definition.RawGroups) (string, error) {
+		var actualGroupLabel string
+		switch groupLabel {
+		case "namespace", "node":
+			return fmt.Sprintf("%s", groupLabel), nil
+		case "container":
+			actualGroupLabel = "pod"
+		default:
+			actualGroupLabel = groupLabel
+		}
 
-	ns, ok := en["namespace"]
-	if !ok {
-		return config.UnknownNamespace, fmt.Errorf("no namespace found for groupLabel %q and entityID %q", groupLabel, entityID)
+		gl, ok := groups[groupLabel]
+		if !ok {
+			return fmt.Sprintf("%s:%s", defaultValue, actualGroupLabel), fmt.Errorf("groupLabel %q not found", groupLabel)
+		}
+		en, ok := gl[rawEntityID]
+		if !ok {
+			return fmt.Sprintf("%s:%s", defaultValue, actualGroupLabel), fmt.Errorf("no entityID %q found for grouplabel %q", rawEntityID, groupLabel)
+		}
+
+		v, ok := en[key]
+		if !ok {
+			return fmt.Sprintf("%s:%s", defaultValue, actualGroupLabel), fmt.Errorf("%s not found for groupLabel %q and entityID %q", key, groupLabel, rawEntityID)
+		}
+
+		v, ok = v.(string)
+		if !ok {
+			return fmt.Sprintf("%s:%s", defaultValue, actualGroupLabel), fmt.Errorf("incorrect type of %s for groupLabel %q and entityID %q", key, groupLabel, rawEntityID)
+		}
+
+		return fmt.Sprintf("%s:%s", v, actualGroupLabel), nil
 	}
-	return ns.(string), nil
 }
 
 // AddUint64RawMetric adds a new metric to a RawMetrics if it exists

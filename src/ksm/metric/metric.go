@@ -5,40 +5,62 @@ import (
 
 	"strings"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/config"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
 )
 
-var nsKeyForGroup = map[string]string{
-	"pod":        "kube_pod_info",
-	"replicaset": "kube_replicaset_created",
-	"container":  "kube_pod_container_info",
-	"namespace":  "kube_namespace_created",
-	"deployment": "kube_deployment_labels",
-}
+// FromPrometheusLabelValueEntityTypeGenerator generates the entity type depending on a given a group label.
+// If group label is different than "namespace" or "node", then entity type is composed of group label
+// and specified label value, which is fetched from kube-state-metrics (in case of error fetching the label,
+// default value is used). Otherwise entity type is the same as group label.
+func FromPrometheusLabelValueEntityTypeGenerator(key, label, defaultValue string) definition.EntityTypeGeneratorFunc {
+	// TODO: working here with rawEntityID not entityID, could it be a problem?
+	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
+		var actualGroupLabel string
+		switch groupLabel {
+		case "namespace", "node":
+			return fmt.Sprintf("%s", groupLabel), nil
+		case "container":
+			actualGroupLabel = "pod"
+		default:
+			actualGroupLabel = groupLabel
+		}
 
-// KsmNamespaceFetcher fetches the namespace from a KSM RawGroups information
-func KsmNamespaceFetcher(groupLabel, entityID string, groups definition.RawGroups) (string, error) {
-	ns, err := FromPrometheusLabelValue(nsKeyForGroup[groupLabel], "namespace")(groupLabel, entityID, groups)
-	if err != nil {
-		return config.UnknownNamespace, fmt.Errorf("error fetching namespace for groupLabel %q and entityID %q: %v", groupLabel, entityID, err.Error())
+		v, err := FromPrometheusLabelValue(key, label)(groupLabel, rawEntityID, g)
+		if err != nil {
+			return fmt.Sprintf("%s:%s", defaultValue, actualGroupLabel), fmt.Errorf("error fetching %s for groupLabel %q and entityID %q: %v", label, groupLabel, rawEntityID, err.Error())
+		}
+		if v == nil {
+			return fmt.Sprintf("%s:%s", defaultValue, actualGroupLabel), fmt.Errorf("%s not found for groupLabel %q and entityID %q", label, groupLabel, rawEntityID)
+		}
+
+		val, ok := v.(string)
+		if !ok {
+			return fmt.Sprintf("%s:%s", defaultValue, actualGroupLabel), fmt.Errorf("incorrect type of %s for groupLabel %q and entityID %q", label, groupLabel, rawEntityID)
+		}
+
+		return fmt.Sprintf("%s:%s", val, actualGroupLabel), nil
 	}
-	if ns == nil {
-		return config.UnknownNamespace, fmt.Errorf("namespace not found for groupLabel %q and entityID %q", groupLabel, entityID)
-	}
-	return ns.(string), nil
 }
 
 // FromPrometheusLabelValueEntityIDGenerator generates an entityID from the pod name. It's only used for k8s containers.
-func FromPrometheusLabelValueEntityIDGenerator(key, label string) definition.MetricSetEntityIDGeneratorFunc {
+func FromPrometheusLabelValueEntityIDGenerator(key, label string) definition.EntityIDGeneratorFunc {
 	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
 		v, err := FromPrometheusLabelValue(key, label)(groupLabel, rawEntityID, g)
-		if v == nil {
-			return "", fmt.Errorf("error generating metric set entity id from prometheus label value. Key: %v, Label: %v", key, label)
+		if err != nil {
+			return "", fmt.Errorf("error generating entity id from prometheus label %q for key: %q. Error: %v", label, key, err)
 		}
 
-		return v.(string), err
+		if v == nil {
+			return "", fmt.Errorf("error generating entity id from prometheus label %q for key: %q", key, label)
+		}
+
+		val, ok := v.(string)
+		if !ok {
+			return "", fmt.Errorf("error generating entity id from prometheus label %q for key: %q. Incorrect type", label, key)
+		}
+
+		return val, err
 	}
 }
 
