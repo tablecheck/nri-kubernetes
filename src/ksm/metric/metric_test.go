@@ -483,7 +483,7 @@ func TestFromPrometheusLabelValueEntityIDGenerator(t *testing.T) {
 func TestFromPrometheusLabelValueEntityIDGenerator_NotFound(t *testing.T) {
 	fetchedValue, err := FromPrometheusLabelValueEntityIDGenerator("non-existent-metric-key", "pod")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Empty(t, fetchedValue)
-	assert.EqualError(t, err, "error generating metric set entity id from prometheus label value. Key: non-existent-metric-key, Label: pod")
+	assert.Error(t, err, "error was expected")
 }
 
 // --------------- InheritSpecificPrometheusLabelValuesFrom ---------------
