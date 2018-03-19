@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+### Changed
+- Rename `endpoints` package to `client` package.
+
 ### Fixed
 - Replace `log.Fatal()` by `log.Panic()` in order to call all defer statements. 
 - Skip missing data from /stats/summary endpoint, instead of reporting them as zero values.
