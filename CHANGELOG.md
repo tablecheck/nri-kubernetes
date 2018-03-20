@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Skip missing data from /stats/summary endpoint, instead of reporting them as zero values.
 
 ### Added
+- TypeGenerator for entities.
 - Caching discovered endpoints on disk.
 - Implementation of Time-To-Live (TTL) cache expiry functionality.
 - Added the concept of Leader and Follower roles. 
