@@ -1,0 +1,14 @@
+apiVersion: skaffold/v1alpha1
+kind: Config
+build:
+  artifacts:
+  - imageName: ohaik/nr-k8s-integration-dev # Only suitable for local development since it does not really exists.
+    workspace: .
+  local: {}
+deploy:
+  kubectl:
+    manifests:
+    - paths:
+      - deploy/local.yaml
+      parameters:
+        IMAGE_NAME: ohaik/nr-k8s-integration-dev
