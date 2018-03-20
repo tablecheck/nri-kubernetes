@@ -8,7 +8,7 @@ import (
 type EntityIDGeneratorFunc func(groupLabel, rawEntityID string, g RawGroups) (string, error)
 
 // EntityTypeGeneratorFunc generates an entity type.
-type EntityTypeGeneratorFunc func(groupLabel, rawEntityID string, g RawGroups) (string, error)
+type EntityTypeGeneratorFunc func(groupLabel, rawEntityID string, g RawGroups, prefix string) (string, error)
 
 // Spec is a metric specification.
 type Spec struct {
