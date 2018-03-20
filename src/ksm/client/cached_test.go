@@ -1,4 +1,4 @@
-package endpoints
+package client
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestDiscover_CachedKSM(t *testing.T) {
+func TestDiscover_Cache(t *testing.T) {
 	// Setup cache directory
 	tmpDir, err := ioutil.TempDir("", "test_discover")
 	assert.NoError(t, err)
@@ -31,15 +31,15 @@ func TestDiscover_CachedKSM(t *testing.T) {
 	store := storage.NewJSONDiskStorage(tmpDir)
 
 	// Given a KSM discoverer
-	wrappedDiscoverer := ksmDiscoverer{
+	wrappedDiscoverer := discoverer{
 		lookupSRV: fakeLookupSRV,
 		apiClient: c,
 		logger:    logger,
 	}
 	// That is wrapped into a Cached Discoverer
-	cacher := NewKSMDiscoveryCacher(&wrappedDiscoverer, &store, time.Hour, logger)
+	cacher := NewDiscoveryCacher(&wrappedDiscoverer, &store, time.Hour, logger)
 
-	// And previously has discovered the KSM endpoint
+	// And previously has discovered the HTTP Client
 	caClient, err := cacher.Discover(timeout)
 
 	// When the discovery process is invoked again
@@ -56,7 +56,7 @@ func TestDiscover_CachedKSM(t *testing.T) {
 	assert.Equal(t, "6.7.8.9", caClient.NodeIP())
 }
 
-func TestDiscover_CachedKSM_BothFail(t *testing.T) {
+func TestDiscover_Cache_BothFail(t *testing.T) {
 	tmpDir, err := ioutil.TempDir("", "test_discover")
 	assert.NoError(t, err)
 
@@ -71,8 +71,8 @@ func TestDiscover_CachedKSM_BothFail(t *testing.T) {
 	store := storage.NewJSONDiskStorage(tmpDir)
 
 	// And a Cached KSM discoverer
-	cacher := NewKSMDiscoveryCacher(
-		&ksmDiscoverer{
+	cacher := NewDiscoveryCacher(
+		&discoverer{
 			lookupSRV: fakeLookupSRV,
 			apiClient: c,
 			logger:    logger,
@@ -99,19 +99,19 @@ func TestDiscover_LoadCacheFail(t *testing.T) {
 	store := storage.NewJSONDiskStorage(tmpDir)
 
 	// Given a KSM discoverer
-	wrappedDiscoverer := ksmDiscoverer{
+	wrappedDiscoverer := discoverer{
 		lookupSRV: fakeLookupSRV,
 		apiClient: c,
 		logger:    logger,
 	}
 	// That is wrapped into a Cached Discoverer
-	cacher := NewKSMDiscoveryCacher(&wrappedDiscoverer, &store, time.Hour, logger)
+	cacher := NewDiscoveryCacher(&wrappedDiscoverer, &store, time.Hour, logger)
 
 	// And previously has discovered the KSM endpoint
 	caClient, err := cacher.Discover(timeout)
 
 	// But the cache stored data is corrupted
-	assert.Nil(t, store.Write(cachedKSMKey, "corrupt-data"))
+	assert.Nil(t, store.Write(cachedKey, "corrupt-data"))
 
 	// When the discovery process is invoked again
 	caClient, err = cacher.Discover(timeout)
@@ -141,20 +141,20 @@ func TestDiscover_CacheTTLExpiry(t *testing.T) {
 
 	// Given an outdated version of a stored object
 	tu, _ := url.Parse("http://1.2.3.4")
-	outdatedData := cachedKSM{
+	outdatedData := cache{
 		Endpoint: *tu,
 		NodeIP:   "1.2.3.4",
 	}
-	assert.NoError(t, store.Write(cachedKSMKey, &outdatedData))
+	assert.NoError(t, store.Write(cachedKey, &outdatedData))
 
 	// And a KSM discoverer
-	wrappedDiscoverer := ksmDiscoverer{
+	wrappedDiscoverer := discoverer{
 		lookupSRV: fakeLookupSRV,
 		apiClient: c,
 		logger:    logger,
 	}
 	// That is wrapped into a Cached Discoverer
-	cacher := NewKSMDiscoveryCacher(&wrappedDiscoverer, &store, -time.Second, logger)
+	cacher := NewDiscoveryCacher(&wrappedDiscoverer, &store, -time.Second, logger)
 
 	// When the discovery process tries to get the data from the cache
 	caClient, err := cacher.Discover(timeout)

@@ -1,4 +1,4 @@
-package endpoints
+package client
 
 import (
 	"net/http"
@@ -10,11 +10,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const cachedKubeletKey = "kubelet-client"
+const cachedKey = "kubelet-client"
 
-// cachedKubelet holds the data to be cached for a Kubelet client.
+// cache holds the data to be cached for a Kubelet client.
 // Its fields must be public to make them visible for the JSON Marshaller.
-type cachedKubelet struct {
+type cache struct {
 	Endpoint    url.URL
 	NodeIP      string
 	NodeName    string
@@ -22,10 +22,10 @@ type cachedKubelet struct {
 	BearerToken string
 }
 
-// composeKubelet implements the ClientComposer function signature
-func composeKubelet(source interface{}, cacher *client.DiscoveryCacher, timeout time.Duration) (client.HTTPClient, error) {
-	cached := source.(*cachedKubelet)
-	kd := cacher.Discoverer.(*kubeletDiscoverer)
+// compose implements the ClientComposer function signature
+func compose(source interface{}, cacher *client.DiscoveryCacher, timeout time.Duration) (client.HTTPClient, error) {
+	cached := source.(*cache)
+	kd := cacher.Discoverer.(*discoverer)
 	var c *http.Client
 	switch cached.HTTPType {
 	case httpInsecure:
@@ -42,10 +42,10 @@ func composeKubelet(source interface{}, cacher *client.DiscoveryCacher, timeout 
 	return newKubelet(cached.NodeIP, cached.NodeName, cached.Endpoint, cached.BearerToken, c, cached.HTTPType, kd.logger), nil
 }
 
-// decomposeKubelet implements the ClientDecomposer function signature
-func decomposeKubelet(source client.HTTPClient) (interface{}, error) {
+// decompose implements the ClientDecomposer function signature
+func decompose(source client.HTTPClient) (interface{}, error) {
 	kc := source.(*kubelet)
-	return &cachedKubelet{
+	return &cache{
 		Endpoint:    kc.endpoint,
 		NodeIP:      kc.nodeIP,
 		NodeName:    kc.nodeName,
@@ -54,17 +54,17 @@ func decomposeKubelet(source client.HTTPClient) (interface{}, error) {
 	}, nil
 }
 
-// NewKubeletDiscoveryCacher creates a new DiscoveryCacher that wraps a kubeletDiscoverer and caches the data into the
+// NewDiscoveryCacher creates a new DiscoveryCacher that wraps a discoverer and caches the data into the
 // specified storage
-func NewKubeletDiscoveryCacher(discoverer client.Discoverer, storage storage.Storage, ttl time.Duration, logger *logrus.Logger) *client.DiscoveryCacher {
+func NewDiscoveryCacher(discoverer client.Discoverer, storage storage.Storage, ttl time.Duration, logger *logrus.Logger) *client.DiscoveryCacher {
 	return &client.DiscoveryCacher{
-		CachedDataPtr: &cachedKubelet{},
-		StorageKey:    cachedKubeletKey,
+		CachedDataPtr: &cache{},
+		StorageKey:    cachedKey,
 		Discoverer:    discoverer,
 		Storage:       storage,
 		TTL:           ttl,
 		Logger:        logger,
-		Compose:       composeKubelet,
-		Decompose:     decomposeKubelet,
+		Compose:       compose,
+		Decompose:     decompose,
 	}
 }

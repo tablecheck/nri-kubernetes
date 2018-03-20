@@ -1,4 +1,4 @@
-package endpoints
+package client
 
 import (
 	"fmt"
@@ -14,8 +14,8 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// kubeletDiscoverer implements Discoverer interface by using official Kubernetes' Go client
-type kubeletDiscoverer struct {
+// discoverer implements Discoverer interface by using official Kubernetes' Go client
+type discoverer struct {
 	apiClient   client.Kubernetes
 	logger      *logrus.Logger
 	connChecker connectionChecker
@@ -76,7 +76,7 @@ func (c *kubelet) Do(method, path string) (*http.Response, error) {
 	return c.httpClient.Do(r)
 }
 
-func (sd *kubeletDiscoverer) Discover(timeout time.Duration) (client.HTTPClient, error) {
+func (sd *discoverer) Discover(timeout time.Duration) (client.HTTPClient, error) {
 	pod, err := sd.getPod()
 	if err != nil {
 		return nil, err
@@ -168,7 +168,7 @@ func connectionHTTPS(host string, timeout time.Duration) connectionParams {
 	}
 }
 
-func (sd *kubeletDiscoverer) connectionAPIHTTPS(nodeName string, timeout time.Duration) (connectionParams, error) {
+func (sd *discoverer) connectionAPIHTTPS(nodeName string, timeout time.Duration) (connectionParams, error) {
 	secureClient, err := sd.apiClient.SecureHTTPClient(timeout)
 	if err != nil {
 		return connectionParams{}, err
@@ -205,9 +205,9 @@ func checkCall(client *http.Client, URL url.URL, path, token string) error {
 	return fmt.Errorf("error calling endpoint %s. Got status code: %d", URL.String(), resp.StatusCode)
 }
 
-// NewKubeletDiscoverer instantiates a new Discoverer
-func NewKubeletDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
-	var discoverer kubeletDiscoverer
+// NewDiscoverer instantiates a new Discoverer
+func NewDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
+	var discoverer discoverer
 	var err error
 
 	discoverer.apiClient, err = client.NewKubernetes()
@@ -220,7 +220,7 @@ func NewKubeletDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
 	return &discoverer, nil
 }
 
-func (sd *kubeletDiscoverer) getPod() (v1.Pod, error) {
+func (sd *discoverer) getPod() (v1.Pod, error) {
 	var pod v1.Pod
 	hostname, _ := os.Hostname()
 
@@ -252,7 +252,7 @@ func getNodeName(pod v1.Pod) string {
 	return pod.Spec.NodeName
 }
 
-func (sd *kubeletDiscoverer) getNode(nodeName string) (*v1.Node, error) {
+func (sd *discoverer) getNode(nodeName string) (*v1.Node, error) {
 	var node = new(v1.Node)
 	var err error
 	// Get the containing node and discover the InternalIP and Kubelet port

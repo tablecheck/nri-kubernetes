@@ -1,4 +1,4 @@
-package endpoints
+package client
 
 import (
 	"fmt"
@@ -14,9 +14,7 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-// Tests
-
-func TestDiscover_CachedKubelet_HTTP(t *testing.T) {
+func TestDiscover_Cache_HTTP(t *testing.T) {
 	// Given a Kubernetes API client
 	c := mockedClient()
 	onFindPodByName(c, "the-node-name")
@@ -27,14 +25,14 @@ func TestDiscover_CachedKubelet_HTTP(t *testing.T) {
 	assert.NoError(t, err)
 	storage := storage.NewJSONDiskStorage(tmpDir)
 	// and an Discoverer implementation
-	wrappedDiscoverer := kubeletDiscoverer{
+	wrappedDiscoverer := discoverer{
 		apiClient:   c,
 		connChecker: allOkConnectionChecker,
 		logger:      logger,
 	}
 
 	// And a Kubelet Discovery Cacher
-	cacher := NewKubeletDiscoveryCacher(&wrappedDiscoverer, storage, time.Hour, logger)
+	cacher := NewDiscoveryCacher(&wrappedDiscoverer, storage, time.Hour, logger)
 
 	// That successfully retrieved the insecure Kubelet URL
 	caClient, err := cacher.Discover(timeout)
@@ -57,7 +55,7 @@ func TestDiscover_CachedKubelet_HTTP(t *testing.T) {
 	assert.Nil(t, kclient.(*kubelet).httpClient.Transport)
 }
 
-func TestDiscover_CachedKubelet_HTTPS_InsecureClient(t *testing.T) {
+func TestDiscover_Cache_HTTPS_InsecureClient(t *testing.T) {
 	// Given a Kubernetes API Client
 	c := mockedClient()
 	onFindPodByName(c, "the-node-name")
@@ -68,14 +66,14 @@ func TestDiscover_CachedKubelet_HTTPS_InsecureClient(t *testing.T) {
 	assert.NoError(t, err)
 	storage := storage.NewJSONDiskStorage(tmpDir)
 	// and an Discoverer implementation
-	wrappedDiscoverer := kubeletDiscoverer{
+	wrappedDiscoverer := discoverer{
 		apiClient:   c,
 		connChecker: allOkConnectionChecker,
 		logger:      logger,
 	}
 
 	// And a Kubelet Discovery Cacher
-	cacher := NewKubeletDiscoveryCacher(&wrappedDiscoverer, storage, time.Hour, logger)
+	cacher := NewDiscoveryCacher(&wrappedDiscoverer, storage, time.Hour, logger)
 
 	// That successfully retrieved the secure Kubelet URL
 	caClient, err := cacher.Discover(timeout)
@@ -96,7 +94,7 @@ func TestDiscover_CachedKubelet_HTTPS_InsecureClient(t *testing.T) {
 	assert.True(t, kclient.(*kubelet).httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify)
 }
 
-func TestDiscover_CachedKubelet_HTTPS_SecureClient(t *testing.T) {
+func TestDiscover_Cache_HTTPS_SecureClient(t *testing.T) {
 	// Given a Kubernetes API Client
 	c := mockedClient()
 	onFindPodByName(c, "the-node-name")
@@ -108,14 +106,14 @@ func TestDiscover_CachedKubelet_HTTPS_SecureClient(t *testing.T) {
 	assert.NoError(t, err)
 	storage := storage.NewJSONDiskStorage(tmpDir)
 	// and an Discoverer implementation
-	wrappedDiscoverer := kubeletDiscoverer{
+	wrappedDiscoverer := discoverer{
 		apiClient:   c,
 		connChecker: onlyAPIConnectionChecker,
 		logger:      logger,
 	}
 
 	// And a Kubelet Discovery Cacher
-	cacher := NewKubeletDiscoveryCacher(&wrappedDiscoverer, storage, time.Hour, logger)
+	cacher := NewDiscoveryCacher(&wrappedDiscoverer, storage, time.Hour, logger)
 
 	// That successfully retrieved the secure Kubelet API URL
 	caClient, err := cacher.Discover(timeout)
@@ -135,7 +133,7 @@ func TestDiscover_CachedKubelet_HTTPS_SecureClient(t *testing.T) {
 	assert.Equal(t, "d34db33f", kclient.(*kubelet).config.BearerToken)
 }
 
-func TestDiscover_CachedKubelet_DiscoveryError(t *testing.T) {
+func TestDiscover_Cache_DiscoveryError(t *testing.T) {
 	// Given a Kubernetes API Client
 	c := mockedClient()
 
@@ -149,16 +147,16 @@ func TestDiscover_CachedKubelet_DiscoveryError(t *testing.T) {
 	assert.NoError(t, err)
 	storage := storage.NewJSONDiskStorage(tmpDir)
 	// and an Discoverer implementation
-	wrappedDiscoverer := kubeletDiscoverer{
+	wrappedDiscoverer := discoverer{
 		apiClient:   c,
 		connChecker: onlyAPIConnectionChecker,
 		logger:      logger,
 	}
 
 	// And a Kubelet Discovery Cacher without any cached data
-	cacher := NewKubeletDiscoveryCacher(&wrappedDiscoverer, storage, time.Hour, logger)
+	cacher := NewDiscoveryCacher(&wrappedDiscoverer, storage, time.Hour, logger)
 
-	// When retrieving the Kubelet URL
+	// When retrieving the Kubelet client
 	_, err = cacher.Discover(timeout)
 	// The system returns an error
 	assert.Error(t, err)

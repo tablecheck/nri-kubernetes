@@ -1,4 +1,4 @@
-package endpoints
+package client
 
 import (
 	"io"
@@ -51,14 +51,14 @@ func TestDiscover_portThroughDNS(t *testing.T) {
 			Status: v1.PodStatus{HostIP: "6.7.8.9"},
 		}}}, nil)
 	// And an Discoverer implementation
-	endpoints := ksmDiscoverer{
+	d := discoverer{
 		lookupSRV: fakeLookupSRV,
 		apiClient: c,
 		logger:    logger,
 	}
 
 	// When retrieving the KSM client
-	ksmClient, err := endpoints.Discover(timeout)
+	ksmClient, err := d.Discover(timeout)
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the KSM Service is returned
@@ -79,13 +79,13 @@ func TestDiscover_portThroughDNSAndGuessedNodeIPFromMultiplePods(t *testing.T) {
 		}}, nil)
 
 	// and an Discoverer implementation
-	endpoints := ksmDiscoverer{
+	d := discoverer{
 		lookupSRV: fakeLookupSRV,
 		apiClient: c,
 		logger:    logger,
 	}
 	// When retrieving the KSM client with no port named 'http-metrics'
-	ksmClient, err := endpoints.Discover(timeout)
+	ksmClient, err := d.Discover(timeout)
 
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
@@ -115,14 +115,14 @@ func TestDiscover_metricsPortThroughAPIWhenDNSEmptyResponse(t *testing.T) {
 		}}}, nil)
 
 	// and an Discoverer implementation whose DNS returns empty response
-	endpoints := ksmDiscoverer{
+	d := discoverer{
 		lookupSRV: emptyLookupSRV,
 		apiClient: c,
 		logger:    logger,
 	}
 
 	// When discovering the KSM client
-	ksmClient, err := endpoints.Discover(timeout)
+	ksmClient, err := d.Discover(timeout)
 
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
@@ -153,14 +153,14 @@ func TestDiscover_metricsPortThroughAPIWhenDNSError(t *testing.T) {
 		}}}, nil)
 
 	// and an Discoverer implementation whose DNS returns an error
-	endpoints := ksmDiscoverer{
+	d := discoverer{
 		lookupSRV: failingLookupSRV,
 		apiClient: c,
 		logger:    logger,
 	}
 
 	// When retrieving the KSM client
-	ksmClient, err := endpoints.Discover(timeout)
+	ksmClient, err := d.Discover(timeout)
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the KSM Service is returned
@@ -193,13 +193,13 @@ func TestDiscover_guessedTCPPortThroughAPIWhenDNSEmptyResponse(t *testing.T) {
 		}}}, nil)
 
 	// and an Discoverer implementation whose DNS returns empty response
-	endpoints := ksmDiscoverer{
+	d := discoverer{
 		lookupSRV: emptyLookupSRV,
 		apiClient: c,
 		logger:    logger,
 	}
 	// When retrieving the KSM client with no port named 'http-metrics'
-	ksmClient, err := endpoints.Discover(timeout)
+	ksmClient, err := d.Discover(timeout)
 
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
@@ -222,14 +222,14 @@ func TestDiscover_errorRetrievingPortWhenDNSAndAPIResponsesEmpty(t *testing.T) {
 		}}}, nil)
 
 	// and an Discoverer implementation whose DNS returns empty response
-	endpoints := ksmDiscoverer{
+	d := discoverer{
 		lookupSRV: emptyLookupSRV,
 		apiClient: c,
 		logger:    logger,
 	}
 
 	// When retrieving the KSM client
-	ksmClient, err := endpoints.Discover(timeout)
+	ksmClient, err := d.Discover(timeout)
 	// The call returns the error
 	assert.EqualError(t, err, "failed to discover kube-state-metrics endpoint, got error: no service found by label k8s-app=kube-state-metrics")
 
@@ -249,14 +249,14 @@ func TestDiscover_errorRetrievingPortWhenDNSAndAPIErrors(t *testing.T) {
 		}}}, nil)
 
 	// and an Discoverer implementation whose DNS returns an error
-	endpoints := ksmDiscoverer{
+	d := discoverer{
 		lookupSRV: failingLookupSRV,
 		apiClient: c,
 		logger:    logger,
 	}
 
 	// When retrieving the KSM client
-	ksmClient, err := endpoints.Discover(timeout)
+	ksmClient, err := d.Discover(timeout)
 	// The call returns the error
 	assert.EqualError(t, err, "failed to discover kube-state-metrics endpoint, got error: failure")
 
@@ -270,14 +270,14 @@ func TestDiscover_errorRetrievingNodeIPWhenPodListEmpty(t *testing.T) {
 	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{}, nil)
 	// And an Discoverer implementation
-	endpoints := ksmDiscoverer{
+	d := discoverer{
 		lookupSRV: fakeLookupSRV,
 		apiClient: c,
 		logger:    logger,
 	}
 
 	// When retrieving the KSM client
-	ksmClient, err := endpoints.Discover(timeout)
+	ksmClient, err := d.Discover(timeout)
 	// The call returns the error
 	assert.EqualError(t, err, "failed to discover nodeIP with kube-state-metrics, got error: no pod found by label k8s-app=kube-state-metrics")
 
@@ -292,14 +292,14 @@ func TestDiscover_errorRetrievingNodeIPWhenErrorFindingPod(t *testing.T) {
 	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{}, errors.New("failure"))
 	// And an Discoverer implementation
-	endpoints := ksmDiscoverer{
+	d := discoverer{
 		lookupSRV: fakeLookupSRV,
 		apiClient: c,
 		logger:    logger,
 	}
 
 	// When retrieving the KSM client
-	ksmClient, err := endpoints.Discover(timeout)
+	ksmClient, err := d.Discover(timeout)
 	// The call returns the error
 	assert.EqualError(t, err, "failed to discover nodeIP with kube-state-metrics, got error: failure")
 

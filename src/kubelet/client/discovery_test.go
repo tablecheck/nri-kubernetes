@@ -1,4 +1,4 @@
-package endpoints
+package client
 
 import (
 	"errors"
@@ -93,8 +93,6 @@ func mockStatusCodeHandler(statusCode int) http.HandlerFunc {
 	}
 }
 
-// Tests
-
 func TestDiscoverHTTP_DefaultInsecurePort(t *testing.T) {
 	// Given a client
 	c := mockedClient()
@@ -103,14 +101,14 @@ func TestDiscoverHTTP_DefaultInsecurePort(t *testing.T) {
 	onFindNode(c, "the-node-name", "1.2.3.4", defaultInsecureKubeletPort)
 
 	// and an Discoverer implementation
-	discoverer := kubeletDiscoverer{
+	d := discoverer{
 		apiClient:   c,
 		connChecker: allOkConnectionChecker,
 		logger:      logger,
 	}
 
 	// When retrieving the Kubelet URL
-	kclient, err := discoverer.Discover(timeout)
+	kclient, err := d.Discover(timeout)
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the Kubelet is returned
@@ -132,14 +130,14 @@ func TestDiscoverHTTP_NotFoundByName(t *testing.T) {
 		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: "the-node-name"}}}}, nil)
 	onFindNode(c, "the-node-name", "11.22.33.44", 5432)
 
-	discoverer := kubeletDiscoverer{
+	d := discoverer{
 		apiClient:   c,
 		connChecker: allOkConnectionChecker,
 		logger:      logger,
 	}
 
 	// When retrieving the Kubelet URL
-	kclient, err := discoverer.Discover(timeout)
+	kclient, err := d.Discover(timeout)
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the Kubelet is returned
@@ -155,14 +153,14 @@ func TestDiscoverHTTPS_DefaultSecurePort(t *testing.T) {
 	onFindNode(c, "the-node-name", "1.2.3.4", defaultSecureKubeletPort)
 
 	// and an Discoverer implementation
-	discoverer := kubeletDiscoverer{
+	d := discoverer{
 		apiClient:   c,
 		connChecker: allOkConnectionChecker,
 		logger:      logger,
 	}
 
 	// When retrieving the Kubelet URL
-	kclient, err := discoverer.Discover(timeout)
+	kclient, err := d.Discover(timeout)
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the Kubelet is returned
@@ -179,14 +177,14 @@ func TestDiscoverHTTP_CheckingConnection(t *testing.T) {
 	onFindNode(c, "the-node-name", "1.2.3.4", 55332)
 
 	// and an Discoverer implementation
-	discoverer := kubeletDiscoverer{
+	d := discoverer{
 		apiClient:   c,
 		connChecker: allOkConnectionChecker,
 		logger:      logger,
 	}
 
 	// When retrieving the Kubelet URL
-	kclient, err := discoverer.Discover(timeout)
+	kclient, err := d.Discover(timeout)
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the Kubelet is returned
@@ -203,14 +201,14 @@ func TestDiscoverHTTPS_CheckingConnection(t *testing.T) {
 	onFindNode(c, "the-node-name", "1.2.3.4", 55332)
 
 	// and an Discoverer implementation whose connection check connection fails because it is a secure connection
-	discoverer := kubeletDiscoverer{
+	d := discoverer{
 		apiClient:   c,
 		connChecker: failOnInsecureConnection,
 		logger:      logger,
 	}
 
 	// When retrieving the Kubelet URL
-	kclient, err := discoverer.Discover(timeout)
+	kclient, err := d.Discover(timeout)
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the Kubelet is returned
@@ -227,14 +225,14 @@ func TestDiscoverHTTPS_ApiConnection(t *testing.T) {
 	onFindNode(c, "the-node-name", "1.2.3.4", 55332)
 
 	// and an Discoverer implementation whose connection check connection fails because it is a secure connection
-	discoverer := kubeletDiscoverer{
+	d := discoverer{
 		apiClient:   c,
 		connChecker: onlyAPIConnectionChecker,
 		logger:      logger,
 	}
 
 	// When retrieving the Kubelet URL
-	kclient, err := discoverer.Discover(timeout)
+	kclient, err := d.Discover(timeout)
 	// The call works correctly
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the Kubelet is returned
@@ -252,13 +250,13 @@ func TestDiscover_NodeNotFoundError(t *testing.T) {
 	c.On("FindPodsByHostname", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
 	c.On("FindNode", "the-node-name").Return(nil, fmt.Errorf("Node not found"))
 
-	discoverer := kubeletDiscoverer{
+	d := discoverer{
 		apiClient: c,
 		logger:    logger,
 	}
 
 	// When retrieving the Kubelet URL
-	_, err := discoverer.Discover(timeout)
+	_, err := d.Discover(timeout)
 	// The system returns an error
 	assert.NotNil(t, err, "should return error")
 }
@@ -272,14 +270,14 @@ func TestDiscover_NilNodeError(t *testing.T) {
 	c.On("FindPodsByHostname", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
 	c.On("FindNode", "the-node-name").Return(nil, nil)
 
-	discoverer := kubeletDiscoverer{
+	d := discoverer{
 		apiClient:   c,
 		connChecker: allOkConnectionChecker,
 		logger:      logger,
 	}
 
 	// When retrieving the Kubelet URL
-	_, err := discoverer.Discover(timeout)
+	_, err := d.Discover(timeout)
 	// The system returns an error
 	assert.NotNil(t, err, "should return error")
 }

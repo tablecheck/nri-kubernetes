@@ -1,4 +1,4 @@
-package endpoints
+package client
 
 import (
 	"fmt"
@@ -27,8 +27,8 @@ const (
 	acceptHeader     = `application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;encoding=delimited;q=0.7,text/plain;version=0.0.4;q=0.3`
 )
 
-// ksmDiscoverer implements Discoverer interface by using official Kubernetes' Go client
-type ksmDiscoverer struct {
+// discoverer implements Discoverer interface by using official Kubernetes' Go client
+type discoverer struct {
 	lookupSRV func(service, proto, name string) (cname string, addrs []*net.SRV, err error)
 	apiClient client.Kubernetes
 	logger    *logrus.Logger
@@ -42,7 +42,7 @@ type ksm struct {
 	logger     *logrus.Logger
 }
 
-func (sd *ksmDiscoverer) Discover(timeout time.Duration) (client.HTTPClient, error) {
+func (sd *discoverer) Discover(timeout time.Duration) (client.HTTPClient, error) {
 
 	var endpoint url.URL
 	endpoint, err := sd.dnsDiscover()
@@ -91,7 +91,7 @@ func (c *ksm) Do(method, path string) (*http.Response, error) {
 }
 
 // dnsDiscover uses DNS to discover KSM
-func (sd *ksmDiscoverer) dnsDiscover() (url.URL, error) {
+func (sd *discoverer) dnsDiscover() (url.URL, error) {
 	var endpoint url.URL
 	_, addrs, err := sd.lookupSRV(ksmDNSService, ksmDNSProto, ksmQualifiedName)
 	if err == nil {
@@ -104,7 +104,7 @@ func (sd *ksmDiscoverer) dnsDiscover() (url.URL, error) {
 }
 
 // apiDiscover uses Kubernetes API to discover KSM
-func (sd *ksmDiscoverer) apiDiscover() (url.URL, error) {
+func (sd *discoverer) apiDiscover() (url.URL, error) {
 	var endpoint url.URL
 
 	services, err := sd.apiClient.FindServiceByLabel(ksmAppLabelName, ksmAppLabelValue)
@@ -138,7 +138,7 @@ func (sd *ksmDiscoverer) apiDiscover() (url.URL, error) {
 	return endpoint, fmt.Errorf("could not guess the Kube State Metrics host/port")
 }
 
-func (sd *ksmDiscoverer) nodeIP() (string, error) {
+func (sd *discoverer) nodeIP() (string, error) {
 	pods, err := sd.apiClient.FindPodsByLabel(ksmAppLabelName, ksmAppLabelValue)
 	if err != nil {
 		return "", err
@@ -160,9 +160,9 @@ func (sd *ksmDiscoverer) nodeIP() (string, error) {
 	return nodeIP, nil
 }
 
-// NewKSMDiscoverer instantiates a new Discoverer
-func NewKSMDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
-	var discoverer ksmDiscoverer
+// NewDiscoverer instantiates a new Discoverer
+func NewDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
+	var discoverer discoverer
 	var err error
 
 	discoverer.apiClient, err = client.NewKubernetes()
