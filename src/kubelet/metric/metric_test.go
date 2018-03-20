@@ -303,3 +303,196 @@ func TestFetchNodeStats_MissingImageFs(t *testing.T) {
 	assert.Equal(t, "fooNode", ID)
 	assert.Equal(t, expectedRawData, rawData)
 }
+
+// ------------ FromRawGroupsEntityIDGenerator ------------
+func TestFromRawGroupsEntityIDGenerator_CorrectValue(t *testing.T) {
+	raw := definition.RawGroups{
+		"container": {
+			"kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics": definition.RawMetrics{
+				"containerName": "kube-state-metrics",
+				"podName":       "newrelic-infra-monitoring-pjp0v",
+				"namespace":     "kube-system",
+			},
+		},
+	}
+	expectedValue := "newrelic-infra-monitoring-pjp0v"
+
+	generatedValue, err := FromRawGroupsEntityIDGenerator("podName")("container", "kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics", raw)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedValue, generatedValue)
+}
+
+func TestFromRawGroupsEntityIDGenerator_NotFound(t *testing.T) {
+	raw := definition.RawGroups{
+		"container": {
+			"kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics": definition.RawMetrics{
+				"containerName": "kube-state-metrics",
+				"namespace":     "kube-system",
+			},
+		},
+	}
+
+	generatedValue, err := FromRawGroupsEntityIDGenerator("podName")("container", "kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics", raw)
+	assert.EqualError(t, err, "\"podName\" not found for \"container\"")
+	assert.Equal(t, "", generatedValue)
+}
+
+func TestFromRawGroupsEntityIDGenerator_IncorrectType(t *testing.T) {
+	raw := definition.RawGroups{
+		"container": {
+			"kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics": definition.RawMetrics{
+				"containerName": "kube-state-metrics",
+				"podName":       1,
+				"namespace":     "kube-system",
+			},
+		},
+	}
+
+	generatedValue, err := FromRawGroupsEntityIDGenerator("podName")("container", "kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics", raw)
+	assert.EqualError(t, err, "incorrect type of \"podName\" for \"container\"")
+	assert.Equal(t, "", generatedValue)
+}
+
+// ------------ FromRawEntityIDGroupEntityIDGenerator ------------
+func TestFromRawEntityIDGroupEntityIDGenerator_CorrectValue(t *testing.T) {
+	raw := definition.RawGroups{
+		"pod": {
+			"kube-system_newrelic-infra-monitoring-pjp0v": definition.RawMetrics{
+				"podName":   "newrelic-infra-monitoring-pjp0v",
+				"namespace": "kube-system",
+			},
+		},
+	}
+	expectedValue := "newrelic-infra-monitoring-pjp0v"
+
+	generatedValue, err := FromRawEntityIDGroupEntityIDGenerator("namespace")("pod", "kube-system_newrelic-infra-monitoring-pjp0v", raw)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedValue, generatedValue)
+}
+
+func TestFromRawEntityIDGroupEntityIDGenerator_NotFound(t *testing.T) {
+	raw := definition.RawGroups{
+		"pod": {
+			"kube-system_newrelic-infra-monitoring-pjp0v": definition.RawMetrics{
+				"podName": "newrelic-infra-monitoring-pjp0v",
+			},
+		},
+	}
+	expectedValue := ""
+
+	generatedValue, err := FromRawEntityIDGroupEntityIDGenerator("namespace")("pod", "kube-system_newrelic-infra-monitoring-pjp0v", raw)
+	assert.EqualError(t, err, "\"namespace\" not found for \"pod\"")
+	assert.Equal(t, expectedValue, generatedValue)
+}
+
+// ------------ FromRawGroupsEntityTypeGenerator -----------------
+func TestFromRawGroupsEntityTypeGenerator_CorrectValueNode(t *testing.T) {
+	raw := definition.RawGroups{
+		"node": {
+			"fooNode": definition.RawMetrics{
+				"nodeName": "fooNode",
+			},
+		},
+	}
+	expectedValue := "k8s:clusterName:node"
+
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("namespace", "default")("node", "fooNode", raw, "clusterName")
+	assert.NoError(t, err)
+	assert.Equal(t, expectedValue, generatedValue)
+}
+
+func TestFromRawGroupsEntityTypeGenerator_CorrectValueContainer(t *testing.T) {
+	raw := definition.RawGroups{
+		"container": {
+			"kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics": definition.RawMetrics{
+				"containerName": "kube-state-metrics",
+				"podName":       "newrelic-infra-monitoring-pjp0v",
+				"namespace":     "kube-system",
+			},
+		},
+	}
+	expectedValue := "k8s:clusterName:kube-system:pod"
+
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("namespace", "default")("container", "kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics", raw, "clusterName")
+	assert.NoError(t, err)
+	assert.Equal(t, expectedValue, generatedValue)
+}
+
+func TestFromRawGroupsEntityTypeGenerator_CorrectValuePod(t *testing.T) {
+	raw := definition.RawGroups{
+		"pod": {
+			"kube-system_newrelic-infra-monitoring-pjp0v": definition.RawMetrics{
+				"podName":   "newrelic-infra-monitoring-pjp0v",
+				"namespace": "kube-system",
+			},
+		},
+	}
+	expectedValue := "k8s:clusterName:kube-system:pod"
+
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("namespace", "default")("pod", "kube-system_newrelic-infra-monitoring-pjp0v", raw, "clusterName")
+	assert.NoError(t, err)
+	assert.Equal(t, expectedValue, generatedValue)
+}
+
+func TestFromRawGroupsEntityTypeGenerator_GroupLabelNotFound(t *testing.T) {
+	raw := definition.RawGroups{
+		"pod": {
+			"kube-system_newrelic-infra-monitoring-pjp0v": definition.RawMetrics{
+				"podName":   "newrelic-infra-monitoring-pjp0v",
+				"namespace": "kube-system",
+			},
+		},
+	}
+	expectedValue := "k8s:clusterName:default:foo"
+
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("namespace", "default")("foo", "kube-system_newrelic-infra-monitoring-pjp0v", raw, "clusterName")
+	assert.EqualError(t, err, "\"foo\" not found")
+	assert.Equal(t, expectedValue, generatedValue)
+}
+
+func TestFromRawGroupsEntityTypeGenerator_RawEntityIDNotFound(t *testing.T) {
+	raw := definition.RawGroups{
+		"pod": {
+			"kube-system_newrelic-infra-monitoring-pjp0v": definition.RawMetrics{
+				"podName":   "newrelic-infra-monitoring-pjp0v",
+				"namespace": "kube-system",
+			},
+		},
+	}
+	expectedValue := "k8s:clusterName:default:pod"
+
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("namespace", "default")("pod", "foo", raw, "clusterName")
+	assert.EqualError(t, err, "no entityID \"foo\" found for \"pod\"")
+	assert.Equal(t, expectedValue, generatedValue)
+}
+
+func TestFromRawGroupsEntityTypeGenerator_KeyNotFound(t *testing.T) {
+	raw := definition.RawGroups{
+		"pod": {
+			"kube-system_newrelic-infra-monitoring-pjp0v": definition.RawMetrics{
+				"podName": "newrelic-infra-monitoring-pjp0v",
+			},
+		},
+	}
+	expectedValue := "k8s:clusterName:default:pod"
+
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("namespace", "default")("pod", "kube-system_newrelic-infra-monitoring-pjp0v", raw, "clusterName")
+	assert.EqualError(t, err, "\"namespace\" not found for \"pod\"")
+	assert.Equal(t, expectedValue, generatedValue)
+}
+
+func TestFromRawGroupsEntityTypeGenerator_IncorrectType(t *testing.T) {
+	raw := definition.RawGroups{
+		"pod": {
+			"kube-system_newrelic-infra-monitoring-pjp0v": definition.RawMetrics{
+				"podName":   "newrelic-infra-monitoring-pjp0v",
+				"namespace": 1,
+			},
+		},
+	}
+	expectedValue := "k8s:clusterName:default:pod"
+
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("namespace", "default")("pod", "kube-system_newrelic-infra-monitoring-pjp0v", raw, "clusterName")
+	assert.EqualError(t, err, "incorrect type of \"namespace\" for \"pod\"")
+	assert.Equal(t, expectedValue, generatedValue)
+}

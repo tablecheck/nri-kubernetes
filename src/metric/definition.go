@@ -119,7 +119,7 @@ var KSMQueries = []prometheus.Query{
 var KubeletSpecs = definition.SpecGroups{
 	"pod": {
 		IDGenerator:   kubeletMetric.FromRawEntityIDGroupEntityIDGenerator("namespace"),
-		TypeGenerator: kubeletMetric.FromRawEntityIDGroupEntityTypeGenerator("namespace", config.UnknownNamespace),
+		TypeGenerator: kubeletMetric.FromRawGroupsEntityTypeGenerator("namespace", config.UnknownNamespace),
 		Specs: []definition.Spec{
 			// /stats/summary endpoint
 			{"net.rxBytesPerSecond", definition.FromRaw("rxBytes"), sdkMetric.RATE},
@@ -145,7 +145,7 @@ var KubeletSpecs = definition.SpecGroups{
 	},
 	"container": {
 		IDGenerator:   kubeletMetric.FromRawGroupsEntityIDGenerator("podName"),
-		TypeGenerator: kubeletMetric.FromRawEntityIDGroupEntityTypeGenerator("namespace", config.UnknownNamespace),
+		TypeGenerator: kubeletMetric.FromRawGroupsEntityTypeGenerator("namespace", config.UnknownNamespace),
 		Specs: []definition.Spec{
 			// /stats/summary endpoint
 			{"containerName", definition.FromRaw("containerName"), sdkMetric.ATTRIBUTE},
@@ -176,7 +176,7 @@ var KubeletSpecs = definition.SpecGroups{
 		},
 	},
 	"node": {
-		TypeGenerator: kubeletMetric.FromRawEntityIDGroupEntityTypeGenerator("namespace", config.UnknownNamespace),
+		TypeGenerator: kubeletMetric.FromRawGroupsEntityTypeGenerator("namespace", config.UnknownNamespace),
 		Specs: []definition.Spec{
 			{"nodeName", definition.FromRaw("nodeName"), sdkMetric.ATTRIBUTE},
 			{"cpuUsedCores", definition.Transform(definition.FromRaw("usageNanoCores"), fromNano), sdkMetric.GAUGE},
