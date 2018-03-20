@@ -471,6 +471,49 @@ func TestGetDeploymentNameForContainer_NotCreatedByReplicaSet(t *testing.T) {
 	assert.Empty(t, fetchedValue)
 }
 
+// --------------- FromPrometheusLabelValueEntityTypeGenerator -------------
+func TestFromPrometheusLabelValueEntityTypeGenerator_CorrectValueNamespace(t *testing.T) {
+	raw := definition.RawGroups{
+		"namespace": {
+			"kube-system": definition.RawMetrics{},
+		},
+	}
+
+	expectedValue := "k8s:clusterName:namespace"
+
+	generatedValue, err := FromPrometheusLabelValueEntityTypeGenerator("kube_namespace_labels", "namespace", "default")("namespace", "kube-system", raw, "clusterName")
+	assert.NoError(t, err)
+	assert.Equal(t, expectedValue, generatedValue)
+}
+
+func TestFromPrometheusLabelValueEntityTypeGenerator_CorrectValueReplicaset(t *testing.T) {
+	expectedValue := "k8s:clusterName:kube-system:replicaset"
+
+	generatedValue, err := FromPrometheusLabelValueEntityTypeGenerator("kube_replicaset_created", "namespace", "default")("replicaset", "kube-state-metrics-4044341274", rawGroupWithReplicaSet, "clusterName")
+	assert.NoError(t, err)
+	assert.Equal(t, expectedValue, generatedValue)
+}
+
+func TestFromPrometheusLabelValueEntityTypeGenerator_NotFound(t *testing.T) {
+	var rawGroupWithReplicaSet = definition.RawGroups{
+		"replicaset": {
+			"kube-state-metrics-4044341274": definition.RawMetrics{
+				"kube_replicaset_created": prometheus.Metric{
+					Value: prometheus.GaugeValue(1507117436),
+					Labels: map[string]string{
+						"replicaset": "kube-state-metrics-4044341274",
+					},
+				},
+			},
+		},
+	}
+	expectedValue := "k8s:clusterName:default:replicaset"
+
+	generatedValue, err := FromPrometheusLabelValueEntityTypeGenerator("kube_replicaset_created", "namespace", "default")("replicaset", "kube-state-metrics-4044341274", rawGroupWithReplicaSet, "clusterName")
+	assert.EqualError(t, err, "error fetching namespace for \"replicaset\": label 'namespace' not found in prometheus metric")
+	assert.Equal(t, expectedValue, generatedValue)
+}
+
 // --------------- FromPrometheusLabelValueEntityIDGenerator ---------------
 func TestFromPrometheusLabelValueEntityIDGenerator(t *testing.T) {
 	expectedFetchedValue := "fluentd-elasticsearch-jnqb7"

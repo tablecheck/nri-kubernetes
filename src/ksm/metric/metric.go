@@ -9,17 +9,17 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
 )
 
-// FromPrometheusLabelValueEntityTypeGenerator generates the entity type depending on a given a group label.
-// If group label is different than "namespace" or "node", then entity type is composed of group label
-// and specified label value, which is fetched from kube-state-metrics (in case of error fetching the label,
+// FromPrometheusLabelValueEntityTypeGenerator generates the entity type using the value of the specified label
+// for the given metric key. If group label is different than "namespace" or "node", then entity type
+// is composed of group label and specified label value (in case of error fetching the label,
 // default value is used). Otherwise entity type is the same as group label.
 func FromPrometheusLabelValueEntityTypeGenerator(key, label, defaultValue string) definition.EntityTypeGeneratorFunc {
 	// TODO: working here with rawEntityID not entityID, could it be a problem?
-	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
+	return func(groupLabel string, rawEntityID string, g definition.RawGroups, clusterName string) (string, error) {
 		var actualGroupLabel string
 		switch groupLabel {
 		case "namespace", "node":
-			return fmt.Sprintf("%s", groupLabel), nil
+			return fmt.Sprintf("k8s:%s:%s", clusterName, groupLabel), nil
 		case "container":
 			actualGroupLabel = "pod"
 		default:
@@ -27,24 +27,30 @@ func FromPrometheusLabelValueEntityTypeGenerator(key, label, defaultValue string
 		}
 
 		v, err := FromPrometheusLabelValue(key, label)(groupLabel, rawEntityID, g)
+		// TODO:
+		// what should be the result in case of error and default value? Currently it is reported as "k8s:cluster_name::group_label"
 		if err != nil {
-			return fmt.Sprintf("%s:%s", defaultValue, actualGroupLabel), fmt.Errorf("error fetching %s for groupLabel %q and entityID %q: %v", label, groupLabel, rawEntityID, err.Error())
+			return fmt.Sprintf("k8s:%s:%s:%s", clusterName, defaultValue, actualGroupLabel), fmt.Errorf("error fetching %s for %q: %v", label, groupLabel, err.Error())
 		}
 		if v == nil {
-			return fmt.Sprintf("%s:%s", defaultValue, actualGroupLabel), fmt.Errorf("%s not found for groupLabel %q and entityID %q", label, groupLabel, rawEntityID)
+			return fmt.Sprintf("k8s:%s:%s:%s", clusterName, defaultValue, actualGroupLabel), fmt.Errorf("%s not found for %q", label, groupLabel)
+
 		}
 
 		val, ok := v.(string)
 		if !ok {
-			return fmt.Sprintf("%s:%s", defaultValue, actualGroupLabel), fmt.Errorf("incorrect type of %s for groupLabel %q and entityID %q", label, groupLabel, rawEntityID)
+			return fmt.Sprintf("k8s:%s:%s:%s", clusterName, defaultValue, actualGroupLabel), fmt.Errorf("incorrect type of %s for %q", label, groupLabel)
 		}
 
-		return fmt.Sprintf("%s:%s", val, actualGroupLabel), nil
+		return fmt.Sprintf("k8s:%s:%s:%s", clusterName, val, actualGroupLabel), nil
 	}
 }
 
-// FromPrometheusLabelValueEntityIDGenerator generates an entityID from the pod name. It's only used for k8s containers.
+// FromPrometheusLabelValueEntityIDGenerator generates an entityID using the value of the specified label
+// for the given metric key.
 func FromPrometheusLabelValueEntityIDGenerator(key, label string) definition.EntityIDGeneratorFunc {
+	// TODO:
+	// what should be the result in case of error? Currently is "", but shouldn't be return rawEntityID?
 	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
 		v, err := FromPrometheusLabelValue(key, label)(groupLabel, rawEntityID, g)
 		if err != nil {
@@ -52,7 +58,7 @@ func FromPrometheusLabelValueEntityIDGenerator(key, label string) definition.Ent
 		}
 
 		if v == nil {
-			return "", fmt.Errorf("error generating entity id from prometheus label %q for key: %q", key, label)
+			return "", fmt.Errorf("error generating entity id from prometheus label %q for key: %q", label, key)
 		}
 
 		val, ok := v.(string)
