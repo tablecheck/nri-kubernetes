@@ -9,10 +9,10 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm"
-	ksmEndpoints "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/endpoints"
+	ksmClient "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet"
 
-	kubeletEndpoints "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/endpoints"
+	kubeletClient "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/client"
 	metric2 "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
@@ -120,12 +120,12 @@ func main() {
 
 		timeout := time.Millisecond * time.Duration(args.Timeout)
 
-		innerKubeletDiscoverer, err := kubeletEndpoints.NewKubeletDiscoverer(logger)
+		innerKubeletDiscoverer, err := kubeletClient.NewDiscoverer(logger)
 		if err != nil {
 			logger.Panic(err)
 		}
 		cacheStorage := storage.NewJSONDiskStorage(args.DiscoveryCacheDir)
-		kubeletDiscoverer := kubeletEndpoints.NewKubeletDiscoveryCacher(innerKubeletDiscoverer, cacheStorage, ttl, logger)
+		kubeletDiscoverer := kubeletClient.NewDiscoveryCacher(innerKubeletDiscoverer, cacheStorage, ttl, logger)
 
 		kubeletClient, err := kubeletDiscoverer.Discover(timeout)
 		if err != nil {
@@ -134,11 +134,11 @@ func main() {
 		kubeletNodeIP := kubeletClient.NodeIP()
 		logger.Debugf("Kubelet Node = %s", kubeletNodeIP)
 
-		innerKSMDiscoverer, err := ksmEndpoints.NewKSMDiscoverer(logger)
+		innerKSMDiscoverer, err := ksmClient.NewDiscoverer(logger)
 		if err != nil {
 			logger.Panic(err)
 		}
-		ksmDiscoverer := ksmEndpoints.NewKSMDiscoveryCacher(innerKSMDiscoverer, cacheStorage, ttl, logger)
+		ksmDiscoverer := ksmClient.NewDiscoveryCacher(innerKSMDiscoverer, cacheStorage, ttl, logger)
 		ksmClient, err := ksmDiscoverer.Discover(timeout)
 		if err != nil {
 			logger.Panic(err)
