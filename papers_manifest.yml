@@ -19,10 +19,10 @@ golang:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm
-  github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/endpoints:
+  github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/client:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
-    project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/endpoints
+    project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/client
   github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
@@ -35,10 +35,10 @@ golang:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet
-  github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/endpoints:
+  github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/client:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
-    project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/endpoints
+    project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/client
   github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
