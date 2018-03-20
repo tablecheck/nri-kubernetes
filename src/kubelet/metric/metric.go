@@ -2,6 +2,7 @@ package metric
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -193,8 +194,6 @@ PodListLoop:
 
 // FromRawGroupsEntityIDGenerator generates an entityID from the pod name from kubelet. It's only used for k8s containers.
 func FromRawGroupsEntityIDGenerator(key string) definition.EntityIDGeneratorFunc {
-	// TODO:
-	// what should be the result in case of error? Currently is "", but shouldn't be return rawEntityID?
 	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
 		v, ok := g[groupLabel][rawEntityID][key]
 		if !ok {
@@ -212,8 +211,6 @@ func FromRawGroupsEntityIDGenerator(key string) definition.EntityIDGeneratorFunc
 // FromRawEntityIDGroupEntityIDGenerator generates an entityID from the raw entity ID
 // which is composed of namespace and pod name. It's used only for k8s pods.
 func FromRawEntityIDGroupEntityIDGenerator(key string) definition.EntityIDGeneratorFunc {
-	// TODO:
-	// what should be the result in case of error? Currently is "", but shouldn't be return rawEntityID?
 	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
 		toRemove, ok := g[groupLabel][rawEntityID][key]
 		if !ok {
@@ -222,7 +219,7 @@ func FromRawEntityIDGroupEntityIDGenerator(key string) definition.EntityIDGenera
 		v := strings.TrimPrefix(rawEntityID, fmt.Sprintf("%s_", toRemove))
 
 		if v == "" {
-			return "", fmt.Errorf("generated entity ID is empty, skipping it")
+			return "", errors.New("generated entity ID is empty")
 		}
 
 		return v, nil
@@ -245,8 +242,6 @@ func FromRawGroupsEntityTypeGenerator(key, defaultValue string) definition.Entit
 			actualGroupLabel = groupLabel
 		}
 
-		// TODO:
-		// what should be the result in case of error and default value? Currently it is reported as "k8s:cluster_name::group_label"
 		gl, ok := groups[groupLabel]
 		if !ok {
 			return fmt.Sprintf("k8s:%s:%s:%s", clusterName, defaultValue, actualGroupLabel), fmt.Errorf("%q not found", groupLabel)

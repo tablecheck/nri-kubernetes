@@ -34,8 +34,6 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName s
 				if generator := specs[groupLabel].IDGenerator; generator != nil {
 					generatedEntityID, err := generator(groupLabel, entityID, groups)
 					if err != nil {
-						// TODO:
-						// Currently in case of error the entity ID is returned as empty string. Is it correct behavior?
 						errs = append(errs, fmt.Errorf("error generating entity ID for: %s: %s", entityID, err))
 					}
 					msEntityID = generatedEntityID
@@ -45,8 +43,6 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName s
 					generatedEntityType, err := generatorType(groupLabel, entityID, groups, clusterName)
 					if err != nil {
 						errs = append(errs, fmt.Errorf("error generating entity type for: %s: %s", entityID, err))
-						// TODO:
-						// Currently in case of error the entity is returned. Is it correct behavior?
 					}
 					msEntityType = generatedEntityType
 				}

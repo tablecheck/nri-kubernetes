@@ -14,7 +14,6 @@ import (
 // is composed of group label and specified label value (in case of error fetching the label,
 // default value is used). Otherwise entity type is the same as group label.
 func FromPrometheusLabelValueEntityTypeGenerator(key, label, defaultValue string) definition.EntityTypeGeneratorFunc {
-	// TODO: working here with rawEntityID not entityID, could it be a problem?
 	return func(groupLabel string, rawEntityID string, g definition.RawGroups, clusterName string) (string, error) {
 		var actualGroupLabel string
 		switch groupLabel {
@@ -27,8 +26,6 @@ func FromPrometheusLabelValueEntityTypeGenerator(key, label, defaultValue string
 		}
 
 		v, err := FromPrometheusLabelValue(key, label)(groupLabel, rawEntityID, g)
-		// TODO:
-		// what should be the result in case of error and default value? Currently it is reported as "k8s:cluster_name::group_label"
 		if err != nil {
 			return fmt.Sprintf("k8s:%s:%s:%s", clusterName, defaultValue, actualGroupLabel), fmt.Errorf("error fetching %s for %q: %v", label, groupLabel, err.Error())
 		}
@@ -49,21 +46,20 @@ func FromPrometheusLabelValueEntityTypeGenerator(key, label, defaultValue string
 // FromPrometheusLabelValueEntityIDGenerator generates an entityID using the value of the specified label
 // for the given metric key.
 func FromPrometheusLabelValueEntityIDGenerator(key, label string) definition.EntityIDGeneratorFunc {
-	// TODO:
-	// what should be the result in case of error? Currently is "", but shouldn't be return rawEntityID?
 	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
 		v, err := FromPrometheusLabelValue(key, label)(groupLabel, rawEntityID, g)
 		if err != nil {
-			return "", fmt.Errorf("error generating entity id from prometheus label %q for key: %q. Error: %v", label, key, err)
+
+			return "", fmt.Errorf("error fetching %q: %v", label, err)
 		}
 
 		if v == nil {
-			return "", fmt.Errorf("error generating entity id from prometheus label %q for key: %q", label, key)
+			return "", fmt.Errorf("incorrect value of fetched data for %q", key)
 		}
 
 		val, ok := v.(string)
 		if !ok {
-			return "", fmt.Errorf("error generating entity id from prometheus label %q for key: %q. Incorrect type", label, key)
+			return "", fmt.Errorf("incorrect type of fetched data for %q", key)
 		}
 
 		return val, err
