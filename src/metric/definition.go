@@ -5,7 +5,7 @@ import (
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/config"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
+	ksmMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
 	kubeletMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
 	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
@@ -14,45 +14,45 @@ import (
 // KSMSpecs are the metric specifications we want to collect from KSM.
 var KSMSpecs = definition.SpecGroups{
 	"replicaset": {
-		IDGenerator:   metric.FromPrometheusLabelValueEntityIDGenerator("kube_replicaset_created", "replicaset"),
-		TypeGenerator: metric.FromPrometheusLabelValueEntityTypeGenerator("kube_replicaset_created", "namespace", config.UnknownNamespace),
+		IDGenerator:   prometheus.FromPrometheusLabelValueEntityIDGenerator("kube_replicaset_created", "replicaset"),
+		TypeGenerator: prometheus.FromPrometheusLabelValueEntityTypeGenerator("kube_replicaset_created", "namespace", config.UnknownNamespace),
 		Specs: []definition.Spec{
-			{"createdAt", metric.FromPrometheusValue("kube_replicaset_created"), sdkMetric.GAUGE},
-			{"podsDesired", metric.FromPrometheusValue("kube_replicaset_spec_replicas"), sdkMetric.GAUGE},
-			{"podsReady", metric.FromPrometheusValue("kube_replicaset_status_ready_replicas"), sdkMetric.GAUGE},
-			{"podsTotal", metric.FromPrometheusValue("kube_replicaset_status_replicas"), sdkMetric.GAUGE},
-			{"podsFullyLabeled", metric.FromPrometheusValue("kube_replicaset_status_fully_labeled_replicas"), sdkMetric.GAUGE},
-			{"observedGeneration", metric.FromPrometheusValue("kube_replicaset_status_observed_generation"), sdkMetric.GAUGE},
-			{"replicasetName", metric.FromPrometheusLabelValue("kube_replicaset_created", "replicaset"), sdkMetric.ATTRIBUTE},
-			{"namespace", metric.FromPrometheusLabelValue("kube_replicaset_created", "namespace"), sdkMetric.ATTRIBUTE},
-			{"deploymentName", metric.GetDeploymentNameForReplicaSet(), sdkMetric.ATTRIBUTE},
+			{"createdAt", prometheus.FromPrometheusValue("kube_replicaset_created"), sdkMetric.GAUGE},
+			{"podsDesired", prometheus.FromPrometheusValue("kube_replicaset_spec_replicas"), sdkMetric.GAUGE},
+			{"podsReady", prometheus.FromPrometheusValue("kube_replicaset_status_ready_replicas"), sdkMetric.GAUGE},
+			{"podsTotal", prometheus.FromPrometheusValue("kube_replicaset_status_replicas"), sdkMetric.GAUGE},
+			{"podsFullyLabeled", prometheus.FromPrometheusValue("kube_replicaset_status_fully_labeled_replicas"), sdkMetric.GAUGE},
+			{"observedGeneration", prometheus.FromPrometheusValue("kube_replicaset_status_observed_generation"), sdkMetric.GAUGE},
+			{"replicasetName", prometheus.FromPrometheusLabelValue("kube_replicaset_created", "replicaset"), sdkMetric.ATTRIBUTE},
+			{"namespace", prometheus.FromPrometheusLabelValue("kube_replicaset_created", "namespace"), sdkMetric.ATTRIBUTE},
+			{"deploymentName", ksmMetric.GetDeploymentNameForReplicaSet(), sdkMetric.ATTRIBUTE},
 		},
 	},
 	"namespace": {
-		TypeGenerator: metric.FromPrometheusLabelValueEntityTypeGenerator("kube_namespace_created", "namespace", config.UnknownNamespace),
+		TypeGenerator: prometheus.FromPrometheusLabelValueEntityTypeGenerator("kube_namespace_created", "namespace", config.UnknownNamespace),
 		Specs: []definition.Spec{
-			{"createdAt", metric.FromPrometheusValue("kube_namespace_created"), sdkMetric.GAUGE},
-			{"namespace", metric.FromPrometheusLabelValue("kube_namespace_created", "namespace"), sdkMetric.ATTRIBUTE},
-			{"status", metric.FromPrometheusLabelValue("kube_namespace_status_phase", "phase"), sdkMetric.ATTRIBUTE},
-			{"label.*", metric.InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels"), sdkMetric.ATTRIBUTE},
+			{"createdAt", prometheus.FromPrometheusValue("kube_namespace_created"), sdkMetric.GAUGE},
+			{"namespace", prometheus.FromPrometheusLabelValue("kube_namespace_created", "namespace"), sdkMetric.ATTRIBUTE},
+			{"status", prometheus.FromPrometheusLabelValue("kube_namespace_status_phase", "phase"), sdkMetric.ATTRIBUTE},
+			{"label.*", prometheus.InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels"), sdkMetric.ATTRIBUTE},
 		},
 	},
 	"deployment": {
-		IDGenerator:   metric.FromPrometheusLabelValueEntityIDGenerator("kube_deployment_created", "deployment"),
-		TypeGenerator: metric.FromPrometheusLabelValueEntityTypeGenerator("kube_deployment_created", "namespace", config.UnknownNamespace),
+		IDGenerator:   prometheus.FromPrometheusLabelValueEntityIDGenerator("kube_deployment_created", "deployment"),
+		TypeGenerator: prometheus.FromPrometheusLabelValueEntityTypeGenerator("kube_deployment_created", "namespace", config.UnknownNamespace),
 		Specs: []definition.Spec{
-			{"podsDesired", metric.FromPrometheusValue("kube_deployment_spec_replicas"), sdkMetric.GAUGE},
-			{"createdAt", metric.FromPrometheusValue("kube_deployment_created"), sdkMetric.GAUGE},
-			{"podsTotal", metric.FromPrometheusValue("kube_deployment_status_replicas"), sdkMetric.GAUGE},
-			{"podsAvailable", metric.FromPrometheusValue("kube_deployment_status_replicas_available"), sdkMetric.GAUGE},
-			{"podsUnavailable", metric.FromPrometheusValue("kube_deployment_status_replicas_unavailable"), sdkMetric.GAUGE},
-			{"podsUpdated", metric.FromPrometheusValue("kube_deployment_status_replicas_updated"), sdkMetric.GAUGE},
-			{"podsMaxUnavailable", metric.FromPrometheusValue("kube_deployment_spec_strategy_rollingupdate_max_unavailable"), sdkMetric.GAUGE},
-			{"namespace", metric.FromPrometheusLabelValue("kube_deployment_labels", "namespace"), sdkMetric.ATTRIBUTE},
-			{"deploymentName", metric.FromPrometheusLabelValue("kube_deployment_labels", "deployment"), sdkMetric.ATTRIBUTE},
+			{"podsDesired", prometheus.FromPrometheusValue("kube_deployment_spec_replicas"), sdkMetric.GAUGE},
+			{"createdAt", prometheus.FromPrometheusValue("kube_deployment_created"), sdkMetric.GAUGE},
+			{"podsTotal", prometheus.FromPrometheusValue("kube_deployment_status_replicas"), sdkMetric.GAUGE},
+			{"podsAvailable", prometheus.FromPrometheusValue("kube_deployment_status_replicas_available"), sdkMetric.GAUGE},
+			{"podsUnavailable", prometheus.FromPrometheusValue("kube_deployment_status_replicas_unavailable"), sdkMetric.GAUGE},
+			{"podsUpdated", prometheus.FromPrometheusValue("kube_deployment_status_replicas_updated"), sdkMetric.GAUGE},
+			{"podsMaxUnavailable", prometheus.FromPrometheusValue("kube_deployment_spec_strategy_rollingupdate_max_unavailable"), sdkMetric.GAUGE},
+			{"namespace", prometheus.FromPrometheusLabelValue("kube_deployment_labels", "namespace"), sdkMetric.ATTRIBUTE},
+			{"deploymentName", prometheus.FromPrometheusLabelValue("kube_deployment_labels", "deployment"), sdkMetric.ATTRIBUTE},
 			// Important: The order of these lines is important: we could have the same label in different entities, and we would like to keep the value closer to deployment
-			{"label.*", metric.InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels"), sdkMetric.ATTRIBUTE},
-			{"label.*", metric.InheritAllPrometheusLabelsFrom("deployment", "kube_deployment_labels"), sdkMetric.ATTRIBUTE},
+			{"label.*", prometheus.InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels"), sdkMetric.ATTRIBUTE},
+			{"label.*", prometheus.InheritAllPrometheusLabelsFrom("deployment", "kube_deployment_labels"), sdkMetric.ATTRIBUTE},
 		},
 	},
 }

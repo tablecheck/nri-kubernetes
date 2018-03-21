@@ -6,7 +6,6 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
 	"github.com/sirupsen/logrus"
 )
@@ -26,7 +25,7 @@ func (r *ksmGrouper) Group(specGroups definition.SpecGroups) (definition.RawGrou
 		}
 	}
 
-	groups, errs := metric.GroupPrometheusMetricsBySpec(specGroups, mFamily)
+	groups, errs := prometheus.GroupPrometheusMetricsBySpec(specGroups, mFamily)
 	if len(errs) == 0 {
 		return groups, nil
 	}
