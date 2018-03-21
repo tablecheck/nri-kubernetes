@@ -27,10 +27,6 @@ golang:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric
-  github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus:
-    license: Unknown
-    license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
-    project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus
   github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
@@ -47,6 +43,10 @@ golang:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/metric
+  github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus:
+    license: Unknown
+    license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus
   github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE

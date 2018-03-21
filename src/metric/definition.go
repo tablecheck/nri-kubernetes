@@ -6,8 +6,8 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/config"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
 	kubeletMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
 	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
 )
 

@@ -13,6 +13,7 @@ import (
 	"fmt"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -348,7 +349,7 @@ func TestDo(t *testing.T) {
 	// The request was created with updated path for URL
 	assert.Equal(t, "http://example.com/foo", resp.Request.URL.String())
 	// Accept Header was added to the request
-	assert.Equal(t, acceptHeader, resp.Request.Header.Get("Accept"))
+	assert.Equal(t, prometheus.ProtobufferAcceptHeader, resp.Request.Header.Get("Accept"))
 	// Correct http method was used
 	assert.Equal(t, "GET", resp.Request.Method)
 	// endpoint field of ksm struct was not modified

@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -24,7 +25,6 @@ const (
 	ksmQualifiedName = "kube-state-metrics.kube-system.svc.cluster.local"
 	ksmDNSService    = "http-metrics"
 	ksmDNSProto      = "tcp"
-	acceptHeader     = `application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;encoding=delimited;q=0.7,text/plain;version=0.0.4;q=0.3`
 )
 
 // discoverer implements Discoverer interface by using official Kubernetes' Go client
@@ -79,11 +79,10 @@ func (c *ksm) Do(method, path string) (*http.Response, error) {
 	e := c.endpoint
 	e.Path = filepath.Join(c.endpoint.Path, path)
 
-	r, err := http.NewRequest(method, e.String(), nil)
+	r, err := prometheus.NewRequest(method, e.String())
 	if err != nil {
 		return nil, fmt.Errorf("Error creating %s request to: %s. Got error: %s ", method, e.String(), err)
 	}
-	r.Header.Set("Accept", acceptHeader)
 
 	c.logger.Debugf("Calling kube-state-metrics endpoint: %s", r.URL.String())
 

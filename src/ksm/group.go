@@ -7,7 +7,7 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
 	"github.com/sirupsen/logrus"
 )
 

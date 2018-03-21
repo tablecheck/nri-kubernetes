@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/prometheus"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
 )
 
 // FromPrometheusLabelValueEntityTypeGenerator generates the entity type using the value of the specified label
