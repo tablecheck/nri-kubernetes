@@ -15,7 +15,7 @@ func GetStatusForContainer() definition.FetchFunc {
 		queryValue := prometheus.GaugeValue(1)
 		s := []string{"running", "waiting", "terminated"}
 		for _, k := range s {
-			v, _ := prometheus.FromPrometheusValue(fmt.Sprintf("kube_pod_container_status_%s", k))(groupLabel, entityID, groups)
+			v, _ := prometheus.FromValue(fmt.Sprintf("kube_pod_container_status_%s", k))(groupLabel, entityID, groups)
 			if v == queryValue {
 				return strings.Title(k), nil
 			}
@@ -29,7 +29,7 @@ func GetStatusForContainer() definition.FetchFunc {
 // a ReplicaSet.
 func GetDeploymentNameForReplicaSet() definition.FetchFunc {
 	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
-		replicasetName, err := prometheus.FromPrometheusLabelValue("kube_replicaset_created", "replicaset")(groupLabel, entityID, groups)
+		replicasetName, err := prometheus.FromLabelValue("kube_replicaset_created", "replicaset")(groupLabel, entityID, groups)
 		if err != nil {
 			return nil, err
 		}
@@ -41,11 +41,11 @@ func GetDeploymentNameForReplicaSet() definition.FetchFunc {
 // Pod.  It returns an empty string if Pod hasn't been created by a deployment.
 func GetDeploymentNameForPod() definition.FetchFunc {
 	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
-		creatorKind, err := prometheus.FromPrometheusLabelValue("kube_pod_info", "created_by_kind")(groupLabel, entityID, groups)
+		creatorKind, err := prometheus.FromLabelValue("kube_pod_info", "created_by_kind")(groupLabel, entityID, groups)
 		if err != nil {
 			return nil, err
 		}
-		creatorName, err := prometheus.FromPrometheusLabelValue("kube_pod_info", "created_by_name")(groupLabel, entityID, groups)
+		creatorName, err := prometheus.FromLabelValue("kube_pod_info", "created_by_name")(groupLabel, entityID, groups)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +62,7 @@ func GetDeploymentNameForContainer() definition.FetchFunc {
 			"created_by_kind": "created_by_kind",
 			"created_by_name": "created_by_name",
 		}
-		podValues, err := prometheus.InheritSpecificPrometheusLabelValuesFrom("pod", "kube_pod_info", mm)(groupLabel, entityID, groups)
+		podValues, err := prometheus.InheritSpecificLabelValuesFrom("pod", "kube_pod_info", mm)(groupLabel, entityID, groups)
 		if err != nil {
 			return nil, err
 		}

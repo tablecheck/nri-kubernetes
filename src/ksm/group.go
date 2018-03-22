@@ -25,7 +25,7 @@ func (r *ksmGrouper) Group(specGroups definition.SpecGroups) (definition.RawGrou
 		}
 	}
 
-	groups, errs := prometheus.GroupPrometheusMetricsBySpec(specGroups, mFamily)
+	groups, errs := prometheus.GroupMetricsBySpec(specGroups, mFamily)
 	if len(errs) == 0 {
 		return groups, nil
 	}

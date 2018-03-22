@@ -5,7 +5,7 @@ import (
 
 	"strconv"
 
-	prometheus "github.com/prometheus/client_model/go"
+	model "github.com/prometheus/client_model/go"
 )
 
 // Value is the value of a metric.
@@ -26,7 +26,7 @@ const EmptyValue noValueType = "no_value"
 type Labels map[string]string
 
 // AreIn says if the labels are included in to the provided Prometheus label pair.
-func (l Labels) AreIn(p []*prometheus.LabelPair) bool {
+func (l Labels) AreIn(p []*model.LabelPair) bool {
 	var votes int
 	for name, value := range l {
 		for _, pl := range p {

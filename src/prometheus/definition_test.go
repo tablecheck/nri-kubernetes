@@ -83,18 +83,18 @@ var mFamily = []MetricFamily{
 }
 
 var spec = []definition.Spec{
-	{"podStartTime", FromPrometheusValue("kube_pod_start_time"), metric.GAUGE},
-	{"podInfo.namespace", FromPrometheusLabelValue("kube_pod_info", "namespace"), metric.ATTRIBUTE},
-	{"podInfo.pod", FromPrometheusLabelValue("kube_pod_info", "pod"), metric.ATTRIBUTE},
+	{"podStartTime", FromValue("kube_pod_start_time"), metric.GAUGE},
+	{"podInfo.namespace", FromLabelValue("kube_pod_info", "namespace"), metric.ATTRIBUTE},
+	{"podInfo.pod", FromLabelValue("kube_pod_info", "pod"), metric.ATTRIBUTE},
 }
 
 var containersSpec = definition.SpecGroups{
 	"container": definition.SpecGroup{
 		Specs: []definition.Spec{
-			{"container", FromPrometheusLabelValue("kube_pod_container_info", "container"), metric.ATTRIBUTE},
-			{"image", FromPrometheusLabelValue("kube_pod_container_info", "image"), metric.ATTRIBUTE},
-			{"namespace", FromPrometheusLabelValue("kube_pod_container_info", "namespace"), metric.ATTRIBUTE},
-			{"pod", FromPrometheusLabelValue("kube_pod_container_info", "pod"), metric.ATTRIBUTE},
+			{"container", FromLabelValue("kube_pod_container_info", "container"), metric.ATTRIBUTE},
+			{"image", FromLabelValue("kube_pod_container_info", "image"), metric.ATTRIBUTE},
+			{"namespace", FromLabelValue("kube_pod_container_info", "namespace"), metric.ATTRIBUTE},
+			{"pod", FromLabelValue("kube_pod_container_info", "pod"), metric.ATTRIBUTE},
 		},
 	},
 }
@@ -182,8 +182,8 @@ var rawGroupsIncompatibleType = definition.RawGroups{
 	},
 }
 
-// --------------- GroupPrometheusMetricsBySpec ---------------
-func TestGroupPrometheusMetricsBySpec_CorrectValue(t *testing.T) {
+// --------------- GroupMetricsBySpec ---------------
+func TestGroupMetricsBySpec_CorrectValue(t *testing.T) {
 	expectedMetricGroup := definition.RawGroups{
 		"pod": {
 			"kube-system_fluentd-elasticsearch-jnqb7": definition.RawMetrics{
@@ -247,12 +247,12 @@ func TestGroupPrometheusMetricsBySpec_CorrectValue(t *testing.T) {
 		},
 	}
 
-	metricGroup, errs := GroupPrometheusMetricsBySpec(specs, mFamily)
+	metricGroup, errs := GroupMetricsBySpec(specs, mFamily)
 	assert.Empty(t, errs)
 	assert.Equal(t, expectedMetricGroup, metricGroup)
 }
 
-func TestGroupPrometheusMetricsBySpec_CorrectValue_ContainersWithTheSameName(t *testing.T) {
+func TestGroupMetricsBySpec_CorrectValue_ContainersWithTheSameName(t *testing.T) {
 	expectedMetricGroup := definition.RawGroups{
 		"container": {
 			"kube-system_fluentd-elasticsearch-jnqb7_kube-state-metrics": definition.RawMetrics{
@@ -280,76 +280,76 @@ func TestGroupPrometheusMetricsBySpec_CorrectValue_ContainersWithTheSameName(t *
 		},
 	}
 
-	metricGroup, errs := GroupPrometheusMetricsBySpec(containersSpec, metricFamilyContainersWithTheSameName)
+	metricGroup, errs := GroupMetricsBySpec(containersSpec, metricFamilyContainersWithTheSameName)
 	assert.Empty(t, errs)
 	assert.Equal(t, expectedMetricGroup, metricGroup)
 }
 
-func TestGroupPrometheusMetricsBySpec_EmptyMetricFamily(t *testing.T) {
+func TestGroupMetricsBySpec_EmptyMetricFamily(t *testing.T) {
 	var emptyMetricFamily []MetricFamily
 
-	metricGroup, errs := GroupPrometheusMetricsBySpec(specs, emptyMetricFamily)
+	metricGroup, errs := GroupMetricsBySpec(specs, emptyMetricFamily)
 	assert.Len(t, errs, 1)
 	assert.Equal(t, errors.New("no data found for pod object"), errs[0])
 	assert.Empty(t, metricGroup)
 }
 
-// --------------- FromPrometheusValue ---------------
-func TestFromRawPrometheusValue_CorrectValue(t *testing.T) {
+// --------------- FromValue ---------------
+func TestFromRawValue_CorrectValue(t *testing.T) {
 	expectedFetchedValue := GaugeValue(1507117436)
 
-	fetchedValue, err := FromPrometheusValue("kube_pod_start_time")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
+	fetchedValue, err := FromValue("kube_pod_start_time")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Equal(t, expectedFetchedValue, fetchedValue)
 	assert.NoError(t, err)
 }
 
-func TestFromRawPrometheusValue_RawMetricNotFound(t *testing.T) {
+func TestFromRawValue_RawMetricNotFound(t *testing.T) {
 
-	fetchedValue, err := FromPrometheusValue("foo")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
+	fetchedValue, err := FromValue("foo")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Nil(t, fetchedValue)
 	assert.EqualError(t, err, "FromRaw: metric not found. SpecGroup: pod, EntityID: fluentd-elasticsearch-jnqb7, Metric: foo")
 }
 
-func TestFromRawPrometheusValue_IncompatibleType(t *testing.T) {
+func TestFromRawValue_IncompatibleType(t *testing.T) {
 
-	fetchedValue, err := FromPrometheusValue("kube_pod_start_time")("pod", "fluentd-elasticsearch-jnqb7", rawGroupsIncompatibleType)
+	fetchedValue, err := FromValue("kube_pod_start_time")("pod", "fluentd-elasticsearch-jnqb7", rawGroupsIncompatibleType)
 	assert.Nil(t, fetchedValue)
 	assert.EqualError(t, err, "incompatible metric type. Expected: Metric. Got: string")
 }
 
-// --------------- FromPrometheusLabelValue ---------------
-func TestFromRawPrometheusLabelValue_CorrectValue(t *testing.T) {
+// --------------- FromLabelValue ---------------
+func TestFromRawLabelValue_CorrectValue(t *testing.T) {
 	expectedFetchedValue := "kube-system"
 
-	fetchedValue, err := FromPrometheusLabelValue("kube_pod_start_time", "namespace")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
+	fetchedValue, err := FromLabelValue("kube_pod_start_time", "namespace")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Equal(t, expectedFetchedValue, fetchedValue)
 	assert.NoError(t, err)
 }
 
-func TestFromRawPrometheusLabelValue_RawMetricNotFound(t *testing.T) {
+func TestFromRawLabelValue_RawMetricNotFound(t *testing.T) {
 
-	fetchedValue, err := FromPrometheusLabelValue("foo", "namespace")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
+	fetchedValue, err := FromLabelValue("foo", "namespace")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Nil(t, fetchedValue)
 	assert.EqualError(t, err, "FromRaw: metric not found. SpecGroup: pod, EntityID: fluentd-elasticsearch-jnqb7, Metric: foo")
 }
 
-func TestFromRawPrometheusLabelValue_IncompatibleType(t *testing.T) {
+func TestFromRawLabelValue_IncompatibleType(t *testing.T) {
 
-	fetchedValue, err := FromPrometheusLabelValue("kube_pod_start_time", "namespace")("pod", "fluentd-elasticsearch-jnqb7", rawGroupsIncompatibleType)
+	fetchedValue, err := FromLabelValue("kube_pod_start_time", "namespace")("pod", "fluentd-elasticsearch-jnqb7", rawGroupsIncompatibleType)
 	assert.Nil(t, fetchedValue)
 	assert.EqualError(t, err, "incompatible metric type. Expected: Metric. Got: string")
 }
 
-func TestFromRawPrometheusLabelValue_LabelNotFoundInRawMetric(t *testing.T) {
+func TestFromRawLabelValue_LabelNotFoundInRawMetric(t *testing.T) {
 
-	fetchedValue, err := FromPrometheusLabelValue("kube_pod_start_time", "foo")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
+	fetchedValue, err := FromLabelValue("kube_pod_start_time", "foo")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Nil(t, fetchedValue)
 	assert.EqualError(t, err, "label 'foo' not found in prometheus metric")
 }
 
-// --------------- InheritSpecificPrometheusLabelValuesFrom ---------------
+// --------------- InheritSpecificLabelValuesFrom ---------------
 
-func TestInheritSpecificPrometheusLabelValuesFrom(t *testing.T) {
+func TestInheritSpecificLabelValuesFrom(t *testing.T) {
 	containerRawEntityID := "kube-system_kube-addon-manager-minikube_kube-addon-manager"
 	raw := definition.RawGroups{
 		"pod": {
@@ -378,14 +378,14 @@ func TestInheritSpecificPrometheusLabelValuesFrom(t *testing.T) {
 		},
 	}
 
-	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("pod", "kube_pod_info", map[string]string{"inherited-pod_ip": "pod_ip"})("container", containerRawEntityID, raw)
+	fetchedValue, err := InheritSpecificLabelValuesFrom("pod", "kube_pod_info", map[string]string{"inherited-pod_ip": "pod_ip"})("container", containerRawEntityID, raw)
 	assert.NoError(t, err)
 
 	expectedValue := definition.FetchedValues{"inherited-pod_ip": "172.31.248.38"}
 	assert.Equal(t, expectedValue, fetchedValue)
 }
 
-func TestInheritSpecificPrometheusLabelsFrom_Namespace(t *testing.T) {
+func TestInheritSpecificLabelsFrom_Namespace(t *testing.T) {
 	podRawEntityID := "kube-addon-manager-minikube"
 	raw := definition.RawGroups{
 		"namespace": {
@@ -412,13 +412,13 @@ func TestInheritSpecificPrometheusLabelsFrom_Namespace(t *testing.T) {
 		},
 	}
 
-	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("namespace", "kube_namespace_labels", map[string]string{"inherited-namespace": "namespace"})("pod", podRawEntityID, raw)
+	fetchedValue, err := InheritSpecificLabelValuesFrom("namespace", "kube_namespace_labels", map[string]string{"inherited-namespace": "namespace"})("pod", podRawEntityID, raw)
 	assert.NoError(t, err)
 
 	expectedValue := definition.FetchedValues{"inherited-namespace": "kube-system"}
 	assert.Equal(t, expectedValue, fetchedValue)
 }
-func TestInheritSpecificPrometheusLabelValuesFrom_RelatedMetricNotFound(t *testing.T) {
+func TestInheritSpecificLabelValuesFrom_RelatedMetricNotFound(t *testing.T) {
 	containerRawEntityID := "kube-system_kube-addon-manager-minikube_kube-addon-manager"
 	raw := definition.RawGroups{
 		"pod": {},
@@ -436,12 +436,12 @@ func TestInheritSpecificPrometheusLabelValuesFrom_RelatedMetricNotFound(t *testi
 	}
 
 	expectedPodRawEntityID := "kube-system_kube-addon-manager-minikube"
-	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("pod", "non_existent_metric_key", map[string]string{"inherited-pod_ip": "pod_ip"})("container", containerRawEntityID, raw)
+	fetchedValue, err := InheritSpecificLabelValuesFrom("pod", "non_existent_metric_key", map[string]string{"inherited-pod_ip": "pod_ip"})("container", containerRawEntityID, raw)
 	assert.EqualError(t, err, fmt.Sprintf("related metric not found. Metric: non_existent_metric_key pod:%v", expectedPodRawEntityID))
 	assert.Empty(t, fetchedValue)
 }
 
-func TestInheritSpecificPrometheusLabelValuesFrom_NamespaceNotFound(t *testing.T) {
+func TestInheritSpecificLabelValuesFrom_NamespaceNotFound(t *testing.T) {
 	containerRawEntityID := "kube-system_kube-addon-manager-minikube_kube-addon-manager"
 	raw := definition.RawGroups{
 		"pod": {
@@ -468,12 +468,12 @@ func TestInheritSpecificPrometheusLabelValuesFrom_NamespaceNotFound(t *testing.T
 		},
 	}
 
-	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("pod", "kube_pod_info", map[string]string{"inherited-pod_ip": "pod_ip"})("container", containerRawEntityID, raw)
+	fetchedValue, err := InheritSpecificLabelValuesFrom("pod", "kube_pod_info", map[string]string{"inherited-pod_ip": "pod_ip"})("container", containerRawEntityID, raw)
 	assert.EqualError(t, err, "cannot retrieve the entity ID of metrics to inherit value from, got error: label not found. Label: 'namespace', Metric: kube_pod_container_info")
 	assert.Empty(t, fetchedValue)
 }
 
-func TestInheritSpecificPrometheusLabelValuesFrom_GroupNotFound(t *testing.T) {
+func TestInheritSpecificLabelValuesFrom_GroupNotFound(t *testing.T) {
 	incorrectContainerRawEntityID := "non-existing-ID"
 	raw := definition.RawGroups{
 		"pod": {
@@ -502,13 +502,13 @@ func TestInheritSpecificPrometheusLabelValuesFrom_GroupNotFound(t *testing.T) {
 		},
 	}
 
-	fetchedValue, err := InheritSpecificPrometheusLabelValuesFrom("pod", "kube_pod_info", map[string]string{"inherited-pod_ip": "pod_ip"})("container", incorrectContainerRawEntityID, raw)
+	fetchedValue, err := InheritSpecificLabelValuesFrom("pod", "kube_pod_info", map[string]string{"inherited-pod_ip": "pod_ip"})("container", incorrectContainerRawEntityID, raw)
 	assert.EqualError(t, err, "cannot retrieve the entity ID of metrics to inherit value from, got error: metrics not found for container with entity ID: non-existing-ID")
 	assert.Empty(t, fetchedValue)
 }
 
-// --------------- InheritAllPrometheusLabelsFrom ---------------
-func TestInheritAllPrometheusLabelsFrom(t *testing.T) {
+// --------------- InheritAllLabelsFrom ---------------
+func TestInheritAllLabelsFrom(t *testing.T) {
 	containerRawEntityID := "kube-system_kube-addon-manager-minikube_kube-addon-manager"
 	raw := definition.RawGroups{
 		"pod": {
@@ -537,14 +537,14 @@ func TestInheritAllPrometheusLabelsFrom(t *testing.T) {
 		},
 	}
 
-	fetchedValue, err := InheritAllPrometheusLabelsFrom("pod", "kube_pod_info")("container", containerRawEntityID, raw)
+	fetchedValue, err := InheritAllLabelsFrom("pod", "kube_pod_info")("container", containerRawEntityID, raw)
 	assert.NoError(t, err)
 
 	expectedValue := definition.FetchedValues{"label.pod_ip": "172.31.248.38", "label.pod": "kube-addon-manager-minikube", "label.namespace": "kube-system"}
 	assert.Equal(t, expectedValue, fetchedValue)
 }
 
-func TestInheritAllPrometheusLabelsFrom_Namespace(t *testing.T) {
+func TestInheritAllLabelsFrom_Namespace(t *testing.T) {
 	podRawEntityID := "kube-addon-manager-minikube"
 	raw := definition.RawGroups{
 		"namespace": {
@@ -571,14 +571,14 @@ func TestInheritAllPrometheusLabelsFrom_Namespace(t *testing.T) {
 		},
 	}
 
-	fetchedValue, err := InheritAllPrometheusLabelsFrom("namespace", "kube_namespace_labels")("pod", podRawEntityID, raw)
+	fetchedValue, err := InheritAllLabelsFrom("namespace", "kube_namespace_labels")("pod", podRawEntityID, raw)
 	assert.NoError(t, err)
 
 	expectedValue := definition.FetchedValues{"label.namespace": "kube-system"}
 	assert.Equal(t, expectedValue, fetchedValue)
 }
 
-func TestInheritAllPrometheusLabelsFrom_FromTheSameLabelGroup(t *testing.T) {
+func TestInheritAllLabelsFrom_FromTheSameLabelGroup(t *testing.T) {
 	deploymentRawEntityID := "kube-public_newrelic-infra-monitoring"
 	raw := definition.RawGroups{
 		"deployment": {
@@ -602,13 +602,13 @@ func TestInheritAllPrometheusLabelsFrom_FromTheSameLabelGroup(t *testing.T) {
 		},
 	}
 
-	fetchedValue, err := InheritAllPrometheusLabelsFrom("deployment", "kube_deployment_labels")("deployment", deploymentRawEntityID, raw)
+	fetchedValue, err := InheritAllLabelsFrom("deployment", "kube_deployment_labels")("deployment", deploymentRawEntityID, raw)
 	assert.NoError(t, err)
 
 	expectedValue := definition.FetchedValues{"label.deployment": "newrelic-infra-monitoring", "label.namespace": "kube-public", "label.app": "newrelic-infra-monitoring"}
 	assert.Equal(t, expectedValue, fetchedValue)
 }
-func TestInheritAllPrometheusLabelsFrom_LabelNotFound(t *testing.T) {
+func TestInheritAllLabelsFrom_LabelNotFound(t *testing.T) {
 	podRawEntityID := "kube-system_kube-addon-manager-minikube"
 	raw := definition.RawGroups{
 		"deployment": {
@@ -637,12 +637,12 @@ func TestInheritAllPrometheusLabelsFrom_LabelNotFound(t *testing.T) {
 		},
 	}
 
-	fetchedValue, err := InheritAllPrometheusLabelsFrom("deployment", "kube_deployment_labels")("pod", podRawEntityID, raw)
+	fetchedValue, err := InheritAllLabelsFrom("deployment", "kube_deployment_labels")("pod", podRawEntityID, raw)
 	assert.Nil(t, fetchedValue)
 	assert.EqualError(t, err, fmt.Sprintf("cannot retrieve the entity ID of metrics to inherit labels from, got error: label not found. Label: deployment, Metric: kube_pod_info"))
 }
 
-func TestInheritAllPrometheusLabelsFrom_RelatedMetricNotFound(t *testing.T) {
+func TestInheritAllLabelsFrom_RelatedMetricNotFound(t *testing.T) {
 	containerRawEntityID := "kube-system_kube-addon-manager-minikube_kube-addon-manager"
 	raw := definition.RawGroups{
 		"pod": {},
@@ -660,7 +660,7 @@ func TestInheritAllPrometheusLabelsFrom_RelatedMetricNotFound(t *testing.T) {
 	}
 
 	expectedPodRawEntityID := "kube-system_kube-addon-manager-minikube"
-	fetchedValue, err := InheritAllPrometheusLabelsFrom("pod", "non_existent_metric_key")("container", containerRawEntityID, raw)
+	fetchedValue, err := InheritAllLabelsFrom("pod", "non_existent_metric_key")("container", containerRawEntityID, raw)
 	assert.EqualError(t, err, fmt.Sprintf("related metric not found. Metric: non_existent_metric_key pod:%v", expectedPodRawEntityID))
 	assert.Empty(t, fetchedValue)
 }

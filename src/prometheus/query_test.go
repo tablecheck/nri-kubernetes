@@ -13,7 +13,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	prometheus "github.com/prometheus/client_model/go"
+	model "github.com/prometheus/client_model/go"
 )
 
 type ksm struct {
@@ -84,7 +84,7 @@ func TestLabelsAreIn(t *testing.T) {
 		"pod":       "nr-123456789",
 	}
 
-	l := []*prometheus.LabelPair{
+	l := []*model.LabelPair{
 		{
 			Name:  proto.String("condition"),
 			Value: proto.String("false"),
@@ -112,16 +112,16 @@ func TestQueryMatch(t *testing.T) {
 		Value: GaugeValue(1),
 	}
 
-	metrictType := prometheus.MetricType_GAUGE
-	r := prometheus.MetricFamily{
+	metrictType := model.MetricType_GAUGE
+	r := model.MetricFamily{
 		Name: proto.String(q.MetricName),
 		Type: &metrictType,
-		Metric: []*prometheus.Metric{
+		Metric: []*model.Metric{
 			{
-				Gauge: &prometheus.Gauge{
+				Gauge: &model.Gauge{
 					Value: proto.Float64(1),
 				},
-				Label: []*prometheus.LabelPair{
+				Label: []*model.LabelPair{
 					{
 						Name:  proto.String("namespace"),
 						Value: proto.String("default"),
@@ -133,10 +133,10 @@ func TestQueryMatch(t *testing.T) {
 				},
 			},
 			{
-				Gauge: &prometheus.Gauge{
+				Gauge: &model.Gauge{
 					Value: proto.Float64(0),
 				},
-				Label: []*prometheus.LabelPair{
+				Label: []*model.LabelPair{
 					{
 						Name:  proto.String("namespace"),
 						Value: proto.String("default"),
@@ -175,16 +175,16 @@ func TestQueryMatch_CustomName(t *testing.T) {
 		Value: GaugeValue(1),
 	}
 
-	metrictType := prometheus.MetricType_GAUGE
-	r := prometheus.MetricFamily{
+	metrictType := model.MetricType_GAUGE
+	r := model.MetricFamily{
 		Name: proto.String(q.MetricName),
 		Type: &metrictType,
-		Metric: []*prometheus.Metric{
+		Metric: []*model.Metric{
 			{
-				Gauge: &prometheus.Gauge{
+				Gauge: &model.Gauge{
 					Value: proto.Float64(1),
 				},
-				Label: []*prometheus.LabelPair{
+				Label: []*model.LabelPair{
 					{
 						Name:  proto.String("namespace"),
 						Value: proto.String("default"),
@@ -196,10 +196,10 @@ func TestQueryMatch_CustomName(t *testing.T) {
 				},
 			},
 			{
-				Gauge: &prometheus.Gauge{
+				Gauge: &model.Gauge{
 					Value: proto.Float64(0),
 				},
-				Label: []*prometheus.LabelPair{
+				Label: []*model.LabelPair{
 					{
 						Name:  proto.String("namespace"),
 						Value: proto.String("default"),

@@ -7,7 +7,7 @@ import (
 
 	"github.com/matttproud/golang_protobuf_extensions/pbutil"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
-	prometheus "github.com/prometheus/client_model/go"
+	model "github.com/prometheus/client_model/go"
 )
 
 const (
@@ -25,7 +25,7 @@ type Query struct {
 }
 
 // Execute runs the query.
-func (q Query) Execute(promMetricFamily *prometheus.MetricFamily) (metricFamily MetricFamily) {
+func (q Query) Execute(promMetricFamily *model.MetricFamily) (metricFamily MetricFamily) {
 	if promMetricFamily.GetName() != q.MetricName {
 		return
 	}
@@ -76,19 +76,19 @@ func (q Query) Execute(promMetricFamily *prometheus.MetricFamily) (metricFamily 
 	return
 }
 
-func valueFromPrometheus(metricType prometheus.MetricType, metric *prometheus.Metric) Value {
+func valueFromPrometheus(metricType model.MetricType, metric *model.Metric) Value {
 	switch metricType {
-	case prometheus.MetricType_COUNTER:
+	case model.MetricType_COUNTER:
 		return CounterValue(metric.Counter.GetValue())
-	case prometheus.MetricType_GAUGE:
+	case model.MetricType_GAUGE:
 		return GaugeValue(metric.Gauge.GetValue())
-	case prometheus.MetricType_HISTOGRAM:
+	case model.MetricType_HISTOGRAM:
 		// Not supported yet
 		fallthrough
-	case prometheus.MetricType_SUMMARY:
+	case model.MetricType_SUMMARY:
 		// Not supported yet
 		fallthrough
-	case prometheus.MetricType_UNTYPED:
+	case model.MetricType_UNTYPED:
 		// Not supported yet
 		fallthrough
 	default:
@@ -110,7 +110,7 @@ func Do(c client.HTTPClient, queries []Query) ([]MetricFamily, error) {
 
 	metrics := make([]MetricFamily, 0)
 	for {
-		promMetricFamily := prometheus.MetricFamily{}
+		promMetricFamily := model.MetricFamily{}
 		_, err = pbutil.ReadDelimited(resp.Body, &promMetricFamily)
 
 		if err != nil {
@@ -133,7 +133,7 @@ func Do(c client.HTTPClient, queries []Query) ([]MetricFamily, error) {
 	return metrics, nil
 }
 
-func labelsFromPrometheus(pairs []*prometheus.LabelPair) Labels {
+func labelsFromPrometheus(pairs []*model.LabelPair) Labels {
 	labels := make(Labels)
 	for _, p := range pairs {
 		labels[p.GetName()] = p.GetValue()
