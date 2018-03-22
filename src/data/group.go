@@ -43,8 +43,3 @@ func (g ErrorGroup) String() string {
 	}
 	return fmt.Sprintf("%s error group: %s", recoverable, strings.Join(strs, ", "))
 }
-
-// Error implements error interface.
-func (g ErrorGroup) Error() string {
-	return g.String()
-}
