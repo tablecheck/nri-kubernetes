@@ -21,7 +21,7 @@ type testClient struct {
 
 func (c *testClient) Do(method, path string) (*http.Response, error) {
 	s := httptest.NewServer(c.handler)
-	defer s.Close()
+
 	req, _ := http.NewRequest(method, fmt.Sprintf("%s%s", s.URL, path), nil)
 
 	return s.Client().Do(req)
@@ -40,12 +40,16 @@ func rawGroupsHandlerFunc(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 
+		defer f.Close() // nolint: errcheck
+
 		io.Copy(w, f)
 	case metric.StatsSummaryPath:
 		f, err := os.Open("metric/testdata/kubelet_stats_summary_payload.json") // TODO move fetch and testdata to just kubelet package.
 		if err != nil {
 			panic(err)
 		}
+
+		defer f.Close() // nolint: errcheck
 
 		io.Copy(w, f)
 	}

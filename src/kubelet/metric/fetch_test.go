@@ -36,6 +36,8 @@ func servePayload(w http.ResponseWriter, _ *http.Request) {
 		panic(err)
 	}
 
+	defer f.Close() // nolint: errcheck
+
 	io.Copy(w, f)
 }
 

@@ -8,7 +8,6 @@ import (
 
 	"encoding/json"
 
-	"io"
 	"io/ioutil"
 
 	"time"
@@ -31,8 +30,7 @@ func PodsFetchFunc(c client.HTTPClient) data.FetchFunc {
 		}
 
 		defer func() {
-			io.Copy(ioutil.Discard, r.Body) // nolint: errcheck
-			r.Body.Close()                  // nolint: errcheck
+			r.Body.Close() // nolint: errcheck
 		}()
 
 		if r.StatusCode != http.StatusOK {
