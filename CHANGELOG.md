@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 ### Changed
 - Rename `endpoints` package to `client` package.
+- Moved a bunch of functions related to `Prometheus` from `ksm` package to `prometheus` one.
+- Renamed the recently moved `Prometheus` functions. Removed **Prometheus** word as it is considered redundant.
 
 ### Fixed
 - Replace `log.Fatal()` by `log.Panic()` in order to call all defer statements. 
