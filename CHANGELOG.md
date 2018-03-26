@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Containers objects reported as their own entities (not as part of pod entities).
 - NewRelic infra Daemonset updateStrategy set to RollingUpdate in newrelic-infra.yaml.
 - Prometheus CounterValue type changed from uint to float64.
+- Change our daemonset file to deploy the integration in "default" namespace.
 
 ### Fixed
 - Replace `log.Fatal()` by `log.Panic()` in order to call all defer statements. 
