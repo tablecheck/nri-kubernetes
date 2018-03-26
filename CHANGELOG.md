@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Removed
 - Follower does not call KSM endpoints anymore.
 - Config package with default unknown namespace value
+- Removed legacy Kubernetes spec files.
 
 ## 1.0.0-beta4
 
