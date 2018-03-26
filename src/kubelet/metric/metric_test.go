@@ -396,7 +396,7 @@ func TestFromRawGroupsEntityTypeGenerator_CorrectValueNode(t *testing.T) {
 	}
 	expectedValue := "k8s:clusterName:node"
 
-	generatedValue, err := FromRawGroupsEntityTypeGenerator("namespace", "default")("node", "fooNode", raw, "clusterName")
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("node", "fooNode", raw, "clusterName")
 	assert.NoError(t, err)
 	assert.Equal(t, expectedValue, generatedValue)
 }
@@ -411,9 +411,9 @@ func TestFromRawGroupsEntityTypeGenerator_CorrectValueContainer(t *testing.T) {
 			},
 		},
 	}
-	expectedValue := "k8s:clusterName:kube-system:pod"
+	expectedValue := "k8s:clusterName:kube-system:newrelic-infra-monitoring-pjp0v:container"
 
-	generatedValue, err := FromRawGroupsEntityTypeGenerator("namespace", "default")("container", "kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics", raw, "clusterName")
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("container", "kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics", raw, "clusterName")
 	assert.NoError(t, err)
 	assert.Equal(t, expectedValue, generatedValue)
 }
@@ -429,7 +429,7 @@ func TestFromRawGroupsEntityTypeGenerator_CorrectValuePod(t *testing.T) {
 	}
 	expectedValue := "k8s:clusterName:kube-system:pod"
 
-	generatedValue, err := FromRawGroupsEntityTypeGenerator("namespace", "default")("pod", "kube-system_newrelic-infra-monitoring-pjp0v", raw, "clusterName")
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("pod", "kube-system_newrelic-infra-monitoring-pjp0v", raw, "clusterName")
 	assert.NoError(t, err)
 	assert.Equal(t, expectedValue, generatedValue)
 }
@@ -443,11 +443,10 @@ func TestFromRawGroupsEntityTypeGenerator_GroupLabelNotFound(t *testing.T) {
 			},
 		},
 	}
-	expectedValue := "k8s:clusterName:default:foo"
 
-	generatedValue, err := FromRawGroupsEntityTypeGenerator("namespace", "default")("foo", "kube-system_newrelic-infra-monitoring-pjp0v", raw, "clusterName")
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("foo", "kube-system_newrelic-infra-monitoring-pjp0v", raw, "clusterName")
 	assert.EqualError(t, err, "\"foo\" not found")
-	assert.Equal(t, expectedValue, generatedValue)
+	assert.Equal(t, "", generatedValue)
 }
 
 func TestFromRawGroupsEntityTypeGenerator_RawEntityIDNotFound(t *testing.T) {
@@ -459,11 +458,10 @@ func TestFromRawGroupsEntityTypeGenerator_RawEntityIDNotFound(t *testing.T) {
 			},
 		},
 	}
-	expectedValue := "k8s:clusterName:default:pod"
 
-	generatedValue, err := FromRawGroupsEntityTypeGenerator("namespace", "default")("pod", "foo", raw, "clusterName")
-	assert.EqualError(t, err, "no entityID \"foo\" found for \"pod\"")
-	assert.Equal(t, expectedValue, generatedValue)
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("pod", "foo", raw, "clusterName")
+	assert.EqualError(t, err, "entity data \"foo\" not found for \"pod\"")
+	assert.Equal(t, "", generatedValue)
 }
 
 func TestFromRawGroupsEntityTypeGenerator_KeyNotFound(t *testing.T) {
@@ -474,11 +472,10 @@ func TestFromRawGroupsEntityTypeGenerator_KeyNotFound(t *testing.T) {
 			},
 		},
 	}
-	expectedValue := "k8s:clusterName:default:pod"
 
-	generatedValue, err := FromRawGroupsEntityTypeGenerator("namespace", "default")("pod", "kube-system_newrelic-infra-monitoring-pjp0v", raw, "clusterName")
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("pod", "kube-system_newrelic-infra-monitoring-pjp0v", raw, "clusterName")
 	assert.EqualError(t, err, "\"namespace\" not found for \"pod\"")
-	assert.Equal(t, expectedValue, generatedValue)
+	assert.Equal(t, "", generatedValue)
 }
 
 func TestFromRawGroupsEntityTypeGenerator_IncorrectType(t *testing.T) {
@@ -490,9 +487,39 @@ func TestFromRawGroupsEntityTypeGenerator_IncorrectType(t *testing.T) {
 			},
 		},
 	}
-	expectedValue := "k8s:clusterName:default:pod"
 
-	generatedValue, err := FromRawGroupsEntityTypeGenerator("namespace", "default")("pod", "kube-system_newrelic-infra-monitoring-pjp0v", raw, "clusterName")
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("pod", "kube-system_newrelic-infra-monitoring-pjp0v", raw, "clusterName")
 	assert.EqualError(t, err, "incorrect type of \"namespace\" for \"pod\"")
-	assert.Equal(t, expectedValue, generatedValue)
+	assert.Equal(t, "", generatedValue)
+}
+
+func TestFromRawGroupsEntityTypeGenerator_EmptyNamespace(t *testing.T) {
+	raw := definition.RawGroups{
+		"pod": {
+			"kube-system_newrelic-infra-monitoring-pjp0v": definition.RawMetrics{
+				"podName":   "newrelic-infra-monitoring-pjp0v",
+				"namespace": "",
+			},
+		},
+	}
+
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("pod", "kube-system_newrelic-infra-monitoring-pjp0v", raw, "clusterName")
+	assert.EqualError(t, err, "empty namespace for generated entity type for \"pod\"")
+	assert.Equal(t, "", generatedValue)
+}
+
+func TestFromRawGroupsEntityTypeGenerator_EmptyPodName(t *testing.T) {
+	raw := definition.RawGroups{
+		"container": {
+			"kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics": definition.RawMetrics{
+				"containerName": "kube-state-metrics",
+				"podName":       "",
+				"namespace":     "kube-system",
+			},
+		},
+	}
+
+	generatedValue, err := FromRawGroupsEntityTypeGenerator("container", "kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics", raw, "clusterName")
+	assert.EqualError(t, err, "empty values for generated entity type for \"container\"")
+	assert.Equal(t, "", generatedValue)
 }

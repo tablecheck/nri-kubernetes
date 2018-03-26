@@ -3,10 +3,6 @@ golang:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client
-  github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/config:
-    license: Unknown
-    license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
-    project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/config
   github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE

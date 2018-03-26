@@ -35,6 +35,7 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName s
 					generatedEntityID, err := generator(groupLabel, entityID, groups)
 					if err != nil {
 						errs = append(errs, fmt.Errorf("error generating entity ID for: %s: %s", entityID, err))
+						continue
 					}
 					msEntityID = generatedEntityID
 				}
@@ -43,6 +44,7 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName s
 					generatedEntityType, err := generatorType(groupLabel, entityID, groups, clusterName)
 					if err != nil {
 						errs = append(errs, fmt.Errorf("error generating entity type for: %s: %s", entityID, err))
+						continue
 					}
 					msEntityType = generatedEntityType
 				}

@@ -3,7 +3,6 @@ package metric
 import (
 	"time"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/config"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	ksmMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
 	kubeletMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
@@ -15,7 +14,7 @@ import (
 var KSMSpecs = definition.SpecGroups{
 	"replicaset": {
 		IDGenerator:   prometheus.FromLabelValueEntityIDGenerator("kube_replicaset_created", "replicaset"),
-		TypeGenerator: prometheus.FromLabelValueEntityTypeGenerator("kube_replicaset_created", "namespace", config.UnknownNamespace),
+		TypeGenerator: prometheus.FromLabelValueEntityTypeGenerator("kube_replicaset_created"),
 		Specs: []definition.Spec{
 			{"createdAt", prometheus.FromValue("kube_replicaset_created"), sdkMetric.GAUGE},
 			{"podsDesired", prometheus.FromValue("kube_replicaset_spec_replicas"), sdkMetric.GAUGE},
@@ -29,7 +28,7 @@ var KSMSpecs = definition.SpecGroups{
 		},
 	},
 	"namespace": {
-		TypeGenerator: prometheus.FromLabelValueEntityTypeGenerator("kube_namespace_created", "namespace", config.UnknownNamespace),
+		TypeGenerator: prometheus.FromLabelValueEntityTypeGenerator("kube_namespace_created"),
 		Specs: []definition.Spec{
 			{"createdAt", prometheus.FromValue("kube_namespace_created"), sdkMetric.GAUGE},
 			{"namespace", prometheus.FromLabelValue("kube_namespace_created", "namespace"), sdkMetric.ATTRIBUTE},
@@ -39,7 +38,7 @@ var KSMSpecs = definition.SpecGroups{
 	},
 	"deployment": {
 		IDGenerator:   prometheus.FromLabelValueEntityIDGenerator("kube_deployment_created", "deployment"),
-		TypeGenerator: prometheus.FromLabelValueEntityTypeGenerator("kube_deployment_created", "namespace", config.UnknownNamespace),
+		TypeGenerator: prometheus.FromLabelValueEntityTypeGenerator("kube_deployment_created"),
 		Specs: []definition.Spec{
 			{"podsDesired", prometheus.FromValue("kube_deployment_spec_replicas"), sdkMetric.GAUGE},
 			{"createdAt", prometheus.FromValue("kube_deployment_created"), sdkMetric.GAUGE},
@@ -119,7 +118,7 @@ var KSMQueries = []prometheus.Query{
 var KubeletSpecs = definition.SpecGroups{
 	"pod": {
 		IDGenerator:   kubeletMetric.FromRawEntityIDGroupEntityIDGenerator("namespace"),
-		TypeGenerator: kubeletMetric.FromRawGroupsEntityTypeGenerator("namespace", config.UnknownNamespace),
+		TypeGenerator: kubeletMetric.FromRawGroupsEntityTypeGenerator,
 		Specs: []definition.Spec{
 			// /stats/summary endpoint
 			{"net.rxBytesPerSecond", definition.FromRaw("rxBytes"), sdkMetric.RATE},
@@ -144,8 +143,8 @@ var KubeletSpecs = definition.SpecGroups{
 		},
 	},
 	"container": {
-		IDGenerator:   kubeletMetric.FromRawGroupsEntityIDGenerator("podName"),
-		TypeGenerator: kubeletMetric.FromRawGroupsEntityTypeGenerator("namespace", config.UnknownNamespace),
+		IDGenerator:   kubeletMetric.FromRawGroupsEntityIDGenerator("containerName"),
+		TypeGenerator: kubeletMetric.FromRawGroupsEntityTypeGenerator,
 		Specs: []definition.Spec{
 			// /stats/summary endpoint
 			{"containerName", definition.FromRaw("containerName"), sdkMetric.ATTRIBUTE},
@@ -176,7 +175,7 @@ var KubeletSpecs = definition.SpecGroups{
 		},
 	},
 	"node": {
-		TypeGenerator: kubeletMetric.FromRawGroupsEntityTypeGenerator("namespace", config.UnknownNamespace),
+		TypeGenerator: kubeletMetric.FromRawGroupsEntityTypeGenerator,
 		Specs: []definition.Spec{
 			{"nodeName", definition.FromRaw("nodeName"), sdkMetric.ATTRIBUTE},
 			{"cpuUsedCores", definition.Transform(definition.FromRaw("usageNanoCores"), fromNano), sdkMetric.GAUGE},

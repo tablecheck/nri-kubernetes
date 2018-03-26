@@ -10,10 +10,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Rename `endpoints` package to `client` package.
 - Moved a bunch of functions related to `Prometheus` from `ksm` package to `prometheus` one.
 - Renamed the recently moved `Prometheus` functions. Removed **Prometheus** word as it is considered redundant.
+- Containers objects reported as their own entities (not as part of pod entities).
 
 ### Fixed
 - Replace `log.Fatal()` by `log.Panic()` in order to call all defer statements. 
 - Skip missing data from /stats/summary endpoint, instead of reporting them as zero values.
+- Entities not reported in case of problem with setting their name or type.
 
 ### Added
 - TypeGenerator for entities.
@@ -25,7 +27,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Both Follower and Leader call kubelet /pods endpoint in order to get metrics that were previously fetched from KSM.
   
 ### Removed
-- Follower does not call KSM endpoints anymore. 
+- Follower does not call KSM endpoints anymore.
+- Config package with default unknown namespace value
 
 ## 1.0.0-beta4
 

@@ -7,38 +7,68 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 )
 
-// FromLabelValueEntityTypeGenerator generates the entity type using the value of the specified label
-// for the given metric key. If group label is different than "namespace" or "node", then entity type
-// is composed of group label and specified label value (in case of error fetching the label,
-// default value is used). Otherwise entity type is the same as group label.
-func FromLabelValueEntityTypeGenerator(key, label, defaultValue string) definition.EntityTypeGeneratorFunc {
+// FromLabelValueEntityTypeGenerator generates the entity type using the cluster name and group label.
+// If group label is different than "namespace" or "node", then entity type is also composed of namespace.
+// If group label is "container" then pod name is also included.
+func FromLabelValueEntityTypeGenerator(key string) definition.EntityTypeGeneratorFunc {
 	return func(groupLabel string, rawEntityID string, g definition.RawGroups, clusterName string) (string, error) {
-		var actualGroupLabel string
+
 		switch groupLabel {
 		case "namespace", "node":
 			return fmt.Sprintf("k8s:%s:%s", clusterName, groupLabel), nil
-		case "container":
-			actualGroupLabel = "pod"
-		default:
-			actualGroupLabel = groupLabel
-		}
 
-		v, err := FromLabelValue(key, label)(groupLabel, rawEntityID, g)
+		case "container":
+			labels, err := getLabels(groupLabel, rawEntityID, key, g, "namespace", "pod")
+			if err != nil {
+				return "", err
+			}
+			if len(labels) != 2 {
+				return "", fmt.Errorf("cannot retrieve values for composing entity type for %q", groupLabel)
+			}
+			namespace := labels[0]
+			podName := labels[1]
+			if namespace == "" || podName == "" {
+				return "", fmt.Errorf("empty values for generated entity type for %q", groupLabel)
+			}
+			return fmt.Sprintf("k8s:%s:%s:%s:%s", clusterName, namespace, podName, groupLabel), nil
+
+		default:
+			labels, err := getLabels(groupLabel, rawEntityID, key, g, "namespace")
+			if err != nil {
+				return "", err
+			}
+			if len(labels) == 0 {
+				return "", fmt.Errorf("cannot retrieve values for composing entity type for %q", groupLabel)
+			}
+			namespace := labels[0]
+
+			if namespace == "" {
+				return "", fmt.Errorf("empty namespace for generated entity type for %q", groupLabel)
+			}
+			return fmt.Sprintf("k8s:%s:%s:%s", clusterName, namespace, groupLabel), nil
+		}
+	}
+}
+
+func getLabels(groupLabel, rawEntityID, key string, groups definition.RawGroups, labels ...string) ([]string, error) {
+	var s []string
+	for _, label := range labels {
+		v, err := FromLabelValue(key, label)(groupLabel, rawEntityID, groups)
 		if err != nil {
-			return fmt.Sprintf("k8s:%s:%s:%s", clusterName, defaultValue, actualGroupLabel), fmt.Errorf("error fetching %s for %q: %v", label, groupLabel, err.Error())
+			return s, fmt.Errorf("error fetching %s for %q: %v", label, groupLabel, err.Error())
 		}
 		if v == nil {
-			return fmt.Sprintf("k8s:%s:%s:%s", clusterName, defaultValue, actualGroupLabel), fmt.Errorf("%s not found for %q", label, groupLabel)
+			return s, fmt.Errorf("%s not found for %q", label, groupLabel)
 
 		}
 
 		val, ok := v.(string)
 		if !ok {
-			return fmt.Sprintf("k8s:%s:%s:%s", clusterName, defaultValue, actualGroupLabel), fmt.Errorf("incorrect type of %s for %q", label, groupLabel)
+			return s, fmt.Errorf("incorrect type of %s for %q", label, groupLabel)
 		}
-
-		return fmt.Sprintf("k8s:%s:%s:%s", clusterName, val, actualGroupLabel), nil
+		s = append(s, val)
 	}
+	return s, nil
 }
 
 // FromLabelValueEntityIDGenerator generates an entityID using the value of the specified label

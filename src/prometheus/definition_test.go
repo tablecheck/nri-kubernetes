@@ -347,6 +347,140 @@ func TestFromRawLabelValue_LabelNotFoundInRawMetric(t *testing.T) {
 	assert.EqualError(t, err, "label 'foo' not found in prometheus metric")
 }
 
+// --------------- FromLabelValueEntityTypeGenerator -------------
+func TestFromLabelValueEntityTypeGenerator_CorrectValueNamespace(t *testing.T) {
+	raw := definition.RawGroups{
+		"namespace": {
+			"kube-system": definition.RawMetrics{},
+		},
+	}
+
+	expectedValue := "k8s:clusterName:namespace"
+
+	generatedValue, err := FromLabelValueEntityTypeGenerator("kube_namespace_labels")("namespace", "kube-system", raw, "clusterName")
+	assert.NoError(t, err)
+	assert.Equal(t, expectedValue, generatedValue)
+}
+
+func TestFromLabelValueEntityTypeGenerator_CorrectValueReplicaset(t *testing.T) {
+	var raw = definition.RawGroups{
+		"replicaset": {
+			"kube-state-metrics-4044341274": definition.RawMetrics{
+				"kube_replicaset_created": Metric{
+					Value: GaugeValue(1507117436),
+					Labels: map[string]string{
+						"replicaset": "kube-state-metrics-4044341274",
+						"namespace":  "kube-system",
+					},
+				},
+			},
+		},
+	}
+	expectedValue := "k8s:clusterName:kube-system:replicaset"
+
+	generatedValue, err := FromLabelValueEntityTypeGenerator("kube_replicaset_created")("replicaset", "kube-state-metrics-4044341274", raw, "clusterName")
+	assert.NoError(t, err)
+	assert.Equal(t, expectedValue, generatedValue)
+}
+
+func TestFromLabelValueEntityTypeGenerator_CorrectValueContainer(t *testing.T) {
+	var raw = definition.RawGroups{
+		"container": {
+			"kube-system_fluentd-elasticsearch-jnqb7_kube-state-metrics": definition.RawMetrics{
+				"kube_pod_container_info": Metric{
+					Value: GaugeValue(1),
+					Labels: map[string]string{
+						"container": "kube-state-metrics",
+						"image":     "gcr.io/google_containers/kube-state-metrics:v1.1.0",
+						"namespace": "kube-system",
+						"pod":       "fluentd-elasticsearch-jnqb7",
+					},
+				},
+			},
+		},
+	}
+	expectedValue := "k8s:clusterName:kube-system:fluentd-elasticsearch-jnqb7:container"
+
+	generatedValue, err := FromLabelValueEntityTypeGenerator("kube_pod_container_info")("container", "kube-system_fluentd-elasticsearch-jnqb7_kube-state-metrics", raw, "clusterName")
+	assert.NoError(t, err)
+	assert.Equal(t, expectedValue, generatedValue)
+}
+
+func TestFromLabelValueEntityTypeGenerator_NotFound(t *testing.T) {
+	var raw = definition.RawGroups{
+		"replicaset": {
+			"kube-state-metrics-4044341274": definition.RawMetrics{
+				"kube_replicaset_created": Metric{
+					Value: GaugeValue(1507117436),
+					Labels: map[string]string{
+						"replicaset": "kube-state-metrics-4044341274",
+					},
+				},
+			},
+		},
+	}
+
+	generatedValue, err := FromLabelValueEntityTypeGenerator("kube_replicaset_created")("replicaset", "kube-state-metrics-4044341274", raw, "clusterName")
+	assert.EqualError(t, err, "error fetching namespace for \"replicaset\": label 'namespace' not found in prometheus metric")
+	assert.Equal(t, "", generatedValue)
+}
+
+func TestFromLabelValueEntityTypeGenerator_EmptyPodNameForContainer(t *testing.T) {
+	var raw = definition.RawGroups{
+		"container": {
+			"kube-system_fluentd-elasticsearch-jnqb7_kube-state-metrics": definition.RawMetrics{
+				"kube_pod_container_info": Metric{
+					Value: GaugeValue(1),
+					Labels: map[string]string{
+						"container": "kube-state-metrics",
+						"image":     "gcr.io/google_containers/kube-state-metrics:v1.1.0",
+						"namespace": "kube-system",
+						"pod":       "",
+					},
+				},
+			},
+		},
+	}
+
+	generatedValue, err := FromLabelValueEntityTypeGenerator("kube_pod_container_info")("container", "kube-system_fluentd-elasticsearch-jnqb7_kube-state-metrics", raw, "clusterName")
+	assert.EqualError(t, err, "empty values for generated entity type for \"container\"")
+	assert.Equal(t, "", generatedValue)
+}
+
+func TestFromLabelValueEntityTypeGenerator_EmptyNamespace(t *testing.T) {
+	var raw = definition.RawGroups{
+		"pod": {
+			"kube-system_fluentd-elasticsearch-jnqb7": definition.RawMetrics{
+				"kube_pod_start_time": Metric{
+					Value: GaugeValue(1507117436),
+					Labels: map[string]string{
+						"namespace": "",
+						"pod":       "fluentd-elasticsearch-jnqb7",
+					},
+				},
+			},
+		},
+	}
+	generatedValue, err := FromLabelValueEntityTypeGenerator("kube_pod_start_time")("pod", "kube-system_fluentd-elasticsearch-jnqb7", raw, "clusterName")
+	assert.EqualError(t, err, "empty namespace for generated entity type for \"pod\"")
+	assert.Equal(t, "", generatedValue)
+}
+
+// --------------- FromLabelValueEntityIDGenerator ---------------
+func TestFromLabelValueEntityIDGenerator(t *testing.T) {
+	expectedFetchedValue := "fluentd-elasticsearch-jnqb7"
+
+	fetchedValue, err := FromLabelValueEntityIDGenerator("kube_pod_info", "pod")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedFetchedValue, fetchedValue)
+}
+
+func TestFromLabelValueEntityIDGenerator_NotFound(t *testing.T) {
+	fetchedValue, err := FromLabelValueEntityIDGenerator("non-existent-metric-key", "pod")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
+	assert.Empty(t, fetchedValue)
+	assert.Contains(t, err.Error(), "error fetching \"pod\":")
+}
+
 // --------------- InheritSpecificLabelValuesFrom ---------------
 
 func TestInheritSpecificLabelValuesFrom(t *testing.T) {

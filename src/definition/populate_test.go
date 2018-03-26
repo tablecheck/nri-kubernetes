@@ -327,7 +327,7 @@ func TestIntegrationProtocol2PopulateFunc_EntityIDGenerator(t *testing.T) {
 
 func TestIntegrationProtocol2PopulateFunc_EntityIDGeneratorFuncWithError(t *testing.T) {
 	generator := func(groupLabel, rawEntityID string, g RawGroups) (string, error) {
-		return fmt.Sprintf("%v-with-error", rawEntityID), errors.New("error generating entity ID")
+		return "", errors.New("error generating entity ID")
 	}
 
 	specsWithGeneratorFuncError := SpecGroups{
@@ -345,42 +345,13 @@ func TestIntegrationProtocol2PopulateFunc_EntityIDGeneratorFuncWithError(t *test
 		t.Fatal()
 	}
 
-	expectedEntityData1, err := sdk.NewEntityData("entity_id_1-with-error", "playground:test")
-	if err != nil {
-		t.Fatal()
-	}
-
-	expectedMetricSet1 := metric.MetricSet{
-		"event_type":  "TestSample",
-		"metric_1":    1,
-		"metric_2":    "metric_value_2",
-		"entityName":  "playground:test:entity_id_1-with-error",
-		"displayName": "entity_id_1-with-error",
-		"clusterName": "playground",
-	}
-	expectedEntityData1.Metrics = []metric.MetricSet{expectedMetricSet1}
-
-	expectedEntityData2, err := sdk.NewEntityData("entity_id_2-with-error", "playground:test")
-	if err != nil {
-		t.Fatal()
-	}
-	expectedMetricSet2 := metric.MetricSet{
-		"event_type":  "TestSample",
-		"metric_1":    2,
-		"metric_2":    "metric_value_4",
-		"entityName":  "playground:test:entity_id_2-with-error",
-		"displayName": "entity_id_2-with-error",
-		"clusterName": "playground",
-	}
-	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
-
 	populated, errs := IntegrationProtocol2PopulateFunc(integration, defaultNS, fromGroupMetricSetTypeGuessFunc, metricsNamingManipulator, clusterMetricsManipulator)(rawGroupsSample, specsWithGeneratorFuncError)
-	assert.True(t, populated)
+	assert.False(t, populated)
 	assert.Len(t, errs, 2)
 	assert.Contains(t, errs, errors.New("error generating entity ID for: entity_id_1: error generating entity ID"))
 	assert.Contains(t, errs, errors.New("error generating entity ID for: entity_id_2: error generating entity ID"))
-	assert.Contains(t, integration.Data, &expectedEntityData1)
-	assert.Contains(t, integration.Data, &expectedEntityData2)
+	assert.Equal(t, integration.Data, []*sdk.EntityData{})
+
 }
 func TestIntegrationProtocol2PopulateFunc_PopulateOnlySpecifiedGroups(t *testing.T) {
 	generator := func(groupLabel, rawEntityID string, g RawGroups) (string, error) {
@@ -464,8 +435,8 @@ func TestIntegrationProtocol2PopulateFunc_PopulateOnlySpecifiedGroups(t *testing
 }
 
 func TestIntegrationProtocol2PopulateFunc_EntityTypeGeneratorFuncWithError(t *testing.T) {
-	generatorWithError := func(_ string, _ string, _ RawGroups, prefix string) (string, error) {
-		return fmt.Sprintf("%s:unknown", prefix), errors.New("error generating entity type")
+	generatorWithError := func(_ string, _ string, _ RawGroups, _ string) (string, error) {
+		return "", errors.New("error generating entity type")
 	}
 
 	specsWithGeneratorFuncError := SpecGroups{
@@ -483,42 +454,12 @@ func TestIntegrationProtocol2PopulateFunc_EntityTypeGeneratorFuncWithError(t *te
 		t.Fatal()
 	}
 
-	expectedEntityData1, err := sdk.NewEntityData("entity_id_1", "playground:unknown")
-	if err != nil {
-		t.Fatal()
-	}
-
-	expectedMetricSet1 := metric.MetricSet{
-		"event_type":  "TestSample",
-		"metric_1":    1,
-		"metric_2":    "metric_value_2",
-		"entityName":  "playground:unknown:entity_id_1",
-		"displayName": "entity_id_1",
-		"clusterName": "playground",
-	}
-	expectedEntityData1.Metrics = []metric.MetricSet{expectedMetricSet1}
-
-	expectedEntityData2, err := sdk.NewEntityData("entity_id_2", "playground:unknown")
-	if err != nil {
-		t.Fatal()
-	}
-	expectedMetricSet2 := metric.MetricSet{
-		"event_type":  "TestSample",
-		"metric_1":    2,
-		"metric_2":    "metric_value_4",
-		"entityName":  "playground:unknown:entity_id_2",
-		"displayName": "entity_id_2",
-		"clusterName": "playground",
-	}
-	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
-
 	populated, errs := IntegrationProtocol2PopulateFunc(integration, defaultNS, fromGroupMetricSetTypeGuessFunc, metricsNamingManipulator, clusterMetricsManipulator)(rawGroupsSample, specsWithGeneratorFuncError)
-	assert.True(t, populated)
+	assert.False(t, populated)
 	assert.Len(t, errs, 2)
 	assert.Contains(t, errs, errors.New("error generating entity type for: entity_id_1: error generating entity type"))
 	assert.Contains(t, errs, errors.New("error generating entity type for: entity_id_2: error generating entity type"))
-	assert.Contains(t, integration.Data, &expectedEntityData1)
-	assert.Contains(t, integration.Data, &expectedEntityData2)
+	assert.Equal(t, integration.Data, []*sdk.EntityData{})
 }
 
 func TestIntegrationProtocol2PopulateFunc_ManipulatorFuncWithError(t *testing.T) {

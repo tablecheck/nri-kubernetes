@@ -51,8 +51,18 @@ var expectedMetrics = []*sdk.EntityData{
 				"displayName":                    "newrelic-infra-rz225", // From manipulator
 				"clusterName":                    "test-cluster",         // From manipulator
 			},
+		},
+		Inventory: sdk.Inventory{},
+		Events:    []sdk.Event{},
+	},
+	{
+		Entity: sdk.Entity{
+			Name: "newrelic-infra",
+			Type: "k8s:test-cluster:kube-system:newrelic-infra-rz225:container",
+		},
+		Metrics: []sdkMetric.MetricSet{
 			{
-				"entityName":           "k8s:test-cluster:kube-system:pod:newrelic-infra-rz225",
+				"entityName":           "k8s:test-cluster:kube-system:newrelic-infra-rz225:container:newrelic-infra",
 				"event_type":           "K8sContainerSample",
 				"memoryUsedBytes":      uint64(18083840),
 				"cpuUsedCores":         0.01742824,
@@ -73,8 +83,8 @@ var expectedMetrics = []*sdk.EntityData{
 				"status":               "Running",
 				"isReady":              "true",
 				//"reason":               "",      // TODO ?
-				"displayName": "newrelic-infra-rz225", // From manipulator
-				"clusterName": "test-cluster",         // From manipulator
+				"displayName": "newrelic-infra", // From manipulator
+				"clusterName": "test-cluster",   // From manipulator
 			},
 		},
 		Inventory: sdk.Inventory{},
