@@ -43,6 +43,8 @@ spec:
   selector:
     matchLabels:
       name: newrelic-infra
+  updateStrategy:
+      type: RollingUpdate # Only supported in Kubernetes version 1.6 or later.
   template:
     metadata:
       labels:
