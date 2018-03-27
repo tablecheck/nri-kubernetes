@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   - Leader represents the node where Kube State Metrics is installed (so only 1 by cluster).
   - Follower represents any other node.
 - Both Follower and Leader call kubelet /pods endpoint in order to get metrics that were previously fetched from KSM.
+- Prometheus TextToProtoHandleFunc as http.HandlerFunc. 
+  Useful for serving a Prometheus payload in protobuf format from a plain text reader.
   
 ### Removed
 - Follower does not call KSM endpoints anymore.

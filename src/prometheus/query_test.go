@@ -21,7 +21,7 @@ type ksm struct {
 }
 
 func (c *ksm) Do(method, path string) (*http.Response, error) {
-	f, err := os.Open("protobuf/metrics")
+	f, err := os.Open("testdata/metrics_plain.txt")
 	if err != nil {
 		return nil, err
 	}
@@ -29,10 +29,12 @@ func (c *ksm) Do(method, path string) (*http.Response, error) {
 
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
 	w := httptest.NewRecorder()
-	mockResponseHandler(f)(w, req)
-	return w.Result(), nil
 
+	TextToProtoHandleFunc(f)(w, req)
+
+	return w.Result(), nil
 }
+
 func (c *ksm) NodeIP() string {
 	return c.nodeIP
 }

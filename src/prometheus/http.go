@@ -1,7 +1,11 @@
 package prometheus
 
 import (
+	"fmt"
+	"io"
 	"net/http"
+
+	"github.com/prometheus/common/expfmt"
 )
 
 // ProtobufferAcceptHeader is the required accept header for asking for a protobuffer resource instead of a plain txt.
@@ -17,4 +21,26 @@ func NewRequest(method, url string) (*http.Request, error) {
 	r.Header.Set("Accept", ProtobufferAcceptHeader)
 
 	return r, nil
+}
+
+// TextToProtoHandleFunc is a http.HandlerFunc that serves protobuf metrics from plain txt.
+// Useful for testing purposes
+func TextToProtoHandleFunc(r io.Reader) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		p := expfmt.TextParser{}
+		mf, err := p.TextToMetricFamilies(r)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("error parsing metric families: %s", err), http.StatusInternalServerError)
+			return
+		}
+
+		enc := expfmt.NewEncoder(w, expfmt.FmtProtoDelim)
+		for _, s := range mf {
+			err := enc.Encode(s)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("error encoding metric families: %s", err), http.StatusInternalServerError)
+				return
+			}
+		}
+	}
 }
