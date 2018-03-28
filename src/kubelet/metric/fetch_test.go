@@ -20,9 +20,12 @@ type testClient struct {
 }
 
 func (c *testClient) Do(method, path string) (*http.Response, error) {
-	s := httptest.NewServer(c.handler)
-	defer s.Close()
-	return s.Client().Get(s.URL)
+	req := httptest.NewRequest(method, path, nil)
+	w := httptest.NewRecorder()
+
+	c.handler(w, req)
+
+	return w.Result(), nil
 }
 
 func (c *testClient) NodeIP() string {

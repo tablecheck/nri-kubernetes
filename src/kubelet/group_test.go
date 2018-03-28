@@ -7,8 +7,6 @@ import (
 	"os"
 	"testing"
 
-	"fmt"
-
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric/testdata"
 	"github.com/sirupsen/logrus"
@@ -20,11 +18,12 @@ type testClient struct {
 }
 
 func (c *testClient) Do(method, path string) (*http.Response, error) {
-	s := httptest.NewServer(c.handler)
+	req := httptest.NewRequest(method, path, nil)
+	w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest(method, fmt.Sprintf("%s%s", s.URL, path), nil)
+	c.handler(w, req)
 
-	return s.Client().Do(req)
+	return w.Result(), nil
 }
 
 func (c *testClient) NodeIP() string {
