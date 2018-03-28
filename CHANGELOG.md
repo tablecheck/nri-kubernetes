@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - NewRelic infra Daemonset updateStrategy set to RollingUpdate in newrelic-infra.yaml.
 - Prometheus CounterValue type changed from uint to float64.
 - Change our daemonset file to deploy the integration in "default" namespace.
+- Prometheus queries now require to use an operator.
 
 ### Fixed
 - Replace `log.Fatal()` by `log.Panic()` in order to call all defer statements. 

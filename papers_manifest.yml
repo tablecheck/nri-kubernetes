@@ -211,6 +211,14 @@ golang:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/prometheus/common/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/prometheus/common/expfmt
+  github.com/newrelic/infra-integrations-beta/vendor/github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/prometheus/common/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
+  github.com/newrelic/infra-integrations-beta/vendor/github.com/prometheus/common/model:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/prometheus/common/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/prometheus/common/model
   github.com/newrelic/infra-integrations-beta/vendor/github.com/sirupsen/logrus:
     license: MIT
     license_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/sirupsen/logrus/LICENSE
@@ -707,11 +715,3 @@ golang:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/kubernetes/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1
-  github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg:
-    license: Apache-2.0
-    license_url: github.com/prometheus/common/LICENSE
-    project_url: github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
-  github.com/prometheus/common/model:
-    license: Apache-2.0
-    license_url: github.com/prometheus/common/LICENSE
-    project_url: github.com/prometheus/common/model

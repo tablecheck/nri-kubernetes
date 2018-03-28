@@ -102,21 +102,27 @@ var KSMQueries = []prometheus.Query{
 	},
 	{
 		MetricName: "kube_namespace_labels",
-		Value:      prometheus.GaugeValue(1),
+		Value: prometheus.QueryValue{
+			Value: prometheus.GaugeValue(1),
+		},
 	},
 	{
 		MetricName: "kube_namespace_created",
 	},
 	{
 		MetricName: "kube_namespace_status_phase",
-		Value:      prometheus.GaugeValue(1),
+		Value: prometheus.QueryValue{
+			Value: prometheus.GaugeValue(1),
+		},
 	},
 	{
 		MetricName: "kube_namespace_created",
 	},
 	{
 		MetricName: "kube_deployment_labels",
-		Value:      prometheus.GaugeValue(1),
+		Value: prometheus.QueryValue{
+			Value: prometheus.GaugeValue(1),
+		},
 	},
 	{
 		MetricName: "kube_deployment_created",
@@ -138,8 +144,12 @@ var KSMQueries = []prometheus.Query{
 	},
 	{
 		MetricName: "kube_pod_status_phase",
-		Labels:     prometheus.Labels{"phase": "Pending"},
-		Value:      prometheus.GaugeValue(1),
+		Labels: prometheus.QueryLabels{
+			Labels: prometheus.Labels{"phase": "Pending"},
+		},
+		Value: prometheus.QueryValue{
+			Value: prometheus.GaugeValue(1),
+		},
 	},
 	{
 		MetricName: "kube_pod_info",
@@ -152,7 +162,9 @@ var KSMQueries = []prometheus.Query{
 	},
 	{
 		MetricName: "kube_pod_status_scheduled",
-		Value:      prometheus.GaugeValue(1),
+		Value: prometheus.QueryValue{
+			Value: prometheus.GaugeValue(1),
+		},
 	},
 }
 
