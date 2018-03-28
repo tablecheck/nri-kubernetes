@@ -74,10 +74,51 @@ func PodsFetchFunc(c client.HTTPClient) data.FetchFunc {
 
 // TODO handle errors and missing data
 func fetchContainersData(p *v1.Pod) map[string]definition.RawMetrics {
+	// ContainerStatuses is sometimes missing.
+	status := make(map[string]definition.RawMetrics)
+	for _, c := range p.Status.ContainerStatuses {
+		id := fmt.Sprintf("%v_%v_%v", p.GetObjectMeta().GetNamespace(), p.GetObjectMeta().GetName(), c.Name)
+
+		status[id] = make(definition.RawMetrics)
+
+		switch {
+		case c.State.Running != nil:
+			status[id]["status"] = "Running"
+			status[id]["startedAt"] = c.State.Running.StartedAt.Time.In(time.UTC)
+			status[id]["containerID"] = c.ContainerID
+			status[id]["containerImageID"] = c.ImageID
+			status[id]["restartCount"] = c.RestartCount
+			status[id]["isReady"] = c.Ready
+		case c.State.Waiting != nil:
+			status[id]["status"] = "Waiting"
+			status[id]["reason"] = c.State.Waiting.Reason
+		case c.State.Terminated != nil:
+			status[id]["containerID"] = c.State.Terminated.ContainerID
+			status[id]["status"] = "Terminated"
+			status[id]["startedAt"] = c.State.Terminated.StartedAt.Time.In(time.UTC)
+		default:
+			status[id]["status"] = "Unknown"
+		}
+
+	}
+
 	specs := make(map[string]definition.RawMetrics)
 	for _, c := range p.Spec.Containers {
 		id := fmt.Sprintf("%v_%v_%v", p.GetObjectMeta().GetNamespace(), p.GetObjectMeta().GetName(), c.Name)
-		specs[id] = make(definition.RawMetrics)
+
+		specs[id] = definition.RawMetrics{
+			"containerName":  c.Name,
+			"containerImage": c.Image,
+			"namespace":      p.GetObjectMeta().GetNamespace(),
+			"podName":        p.GetObjectMeta().GetName(),
+			"nodeName":       p.Spec.NodeName,
+			"podIP":          p.Status.PodIP, // TODO REMOVE!
+		}
+
+		// TODO if not found, get it from other pod. Due to Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+		if v := p.Status.HostIP; v != "" {
+			specs[id]["nodeIP"] = v
+		}
 
 		if v, ok := c.Resources.Requests[v1.ResourceCPU]; ok {
 			specs[id]["cpuRequestedCores"] = v.MilliValue()
@@ -94,63 +135,19 @@ func fetchContainersData(p *v1.Pod) map[string]definition.RawMetrics {
 		if v, ok := c.Resources.Limits[v1.ResourceMemory]; ok {
 			specs[id]["memoryLimitBytes"] = v.Value()
 		}
-	}
 
-	// ContainerStatuses slice contains all the containers
-	r := make(map[string]definition.RawMetrics)
-	for _, c := range p.Status.ContainerStatuses {
-		id := fmt.Sprintf("%v_%v_%v", p.GetObjectMeta().GetNamespace(), p.GetObjectMeta().GetName(), c.Name)
-
-		r[id] = definition.RawMetrics{
-			"containerName":    c.Name,
-			"containerID":      c.ContainerID,
-			"containerImage":   c.Image,
-			"containerImageID": c.ImageID,
-			"namespace":        p.GetObjectMeta().GetNamespace(),
-			"podName":          p.GetObjectMeta().GetName(),
-			"podIP":            p.Status.PodIP,
-			"nodeName":         p.Spec.NodeName,
-			"nodeIP":           p.Status.HostIP,
-			"restartCount":     c.RestartCount,
-			"isReady":          c.Ready,
-		}
-
+		// TODO get from already fetched pod data
 		if ref := p.GetOwnerReferences(); len(ref) > 0 {
-			r[id]["deploymentName"] = deploymentNameBasedOnCreator(ref[0].Kind, ref[0].Name)
+			specs[id]["deploymentName"] = deploymentNameBasedOnCreator(ref[0].Kind, ref[0].Name)
 		}
 
-		if v, ok := specs[id]["cpuRequestedCores"]; ok {
-			r[id]["cpuRequestedCores"] = v
-		}
-
-		if v, ok := specs[id]["cpuLimitCores"]; ok {
-			r[id]["cpuLimitCores"] = v
-		}
-
-		if v, ok := specs[id]["memoryRequestedBytes"]; ok {
-			r[id]["memoryRequestedBytes"] = v
-		}
-
-		if v, ok := specs[id]["memoryLimitBytes"]; ok {
-			r[id]["memoryLimitBytes"] = v
-		}
-
-		switch {
-		case c.State.Running != nil:
-			r[id]["status"] = "Running"
-			r[id]["startedAt"] = c.State.Running.StartedAt.Time.In(time.UTC)
-		case c.State.Waiting != nil:
-			r[id]["status"] = "Waiting"
-			r[id]["reason"] = c.State.Waiting.Reason
-		case c.State.Terminated != nil:
-			r[id]["status"] = "Terminated"
-			r[id]["startedAt"] = c.State.Terminated.StartedAt.Time.In(time.UTC)
-		default:
-			r[id]["status"] = "Unknown"
+		// merging status data
+		for k, v := range status[id] {
+			specs[id][k] = v
 		}
 	}
 
-	return r
+	return specs
 }
 
 // TODO handle errors and missing data
@@ -166,14 +163,24 @@ func fetchPodData(p *v1.Pod) (definition.RawMetrics, string) {
 	}
 
 	r := definition.RawMetrics{
-		"nodeIP":      p.Status.HostIP,
 		"namespace":   p.GetObjectMeta().GetNamespace(),
 		"podName":     p.GetObjectMeta().GetName(),
 		"nodeName":    p.Spec.NodeName,
 		"podIP":       p.Status.PodIP,
-		"status":      string(p.Status.Phase),
 		"isReady":     isReady,
 		"isScheduled": isScheduled,
+	}
+
+	// TODO if not found, get it from other pod. Due to Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+	if v := p.Status.HostIP; v != "" {
+		r["nodeIP"] = v
+	}
+
+	switch p.Status.Phase {
+	case v1.PodPending, v1.PodRunning:
+		r["status"] = string(v1.PodRunning)
+	default:
+		r["status"] = string(p.Status.Phase)
 	}
 
 	if t := p.GetObjectMeta().GetCreationTimestamp(); !t.IsZero() {

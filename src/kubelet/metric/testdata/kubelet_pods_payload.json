@@ -355,78 +355,16 @@
         },
         "schedulerName":"default-scheduler"
       },
-      "status":{
-        "phase":"Running",
-        "conditions":[
+      "status": {
+        "phase": "Pending",
+        "conditions": [
           {
-            "type":"Initialized",
-            "status":"True",
-            "lastProbeTime":null,
-            "lastTransitionTime":"2018-02-14T16:27:38Z"
-          },
-          {
-            "type":"Ready",
-            "status":"True",
-            "lastProbeTime":null,
-            "lastTransitionTime":"2018-02-27T15:21:44Z"
-          },
-          {
-            "type":"PodScheduled",
-            "status":"True",
-            "lastProbeTime":null,
-            "lastTransitionTime":"2018-02-14T16:27:38Z"
+            "type": "PodScheduled",
+            "status": "True",
+            "lastProbeTime": null,
+            "lastTransitionTime": "2018-02-14T16:26:31Z"
           }
-        ],
-        "hostIP":"192.168.99.100",
-        "podIP":"172.17.0.4",
-        "startTime":"2018-02-14T16:27:38Z",
-        "containerStatuses":[
-          {
-            "name":"addon-resizer",
-            "state":{
-              "running":{
-                "startedAt":"2018-02-27T15:21:38Z"
-              }
-            },
-            "lastState":{
-              "terminated":{
-                "exitCode":2,
-                "reason":"Error",
-                "startedAt":"2018-02-27T15:21:02Z",
-                "finishedAt":"2018-02-27T15:21:13Z",
-                "containerID":"docker://1140f82927310ddd9cedb8750e8e56db941ede00380589777d935b5060c2e3c0"
-              }
-            },
-            "ready":true,
-            "restartCount":7,
-            "image":"gcr.io/google_containers/addon-resizer:1.0",
-            "imageID":"docker-pullable://gcr.io/google_containers/addon-resizer@sha256:e77acf80697a70386c04ae3ab494a7b13917cb30de2326dcf1a10a5118eddabe",
-            "containerID":"docker://b4bd4cc0a48292f1b5dcf5a7c8d64a39faf9b23d37850ab7137f5f7ab3acd575"
-          },
-          {
-            "name":"kube-state-metrics",
-            "state":{
-              "running":{
-                "startedAt":"2018-02-27T15:21:37Z"
-              }
-            },
-            "lastState":{
-              "terminated":{
-                "exitCode":2,
-                "reason":"Error",
-                "startedAt":"2018-02-27T15:21:02Z",
-                "finishedAt":"2018-02-27T15:21:13Z",
-                "containerID":"docker://717de620e07814171be4487335b61520b26556f260ce0727da274c88c9e15740"
-              }
-            },
-            "ready":true,
-            "restartCount":7,
-            "image":"quay.io/coreos/kube-state-metrics:v1.1.0",
-            "imageID":"docker-pullable://quay.io/coreos/kube-state-metrics@sha256:52a2c47355c873709bb4e37e990d417e9188c2a778a0c38ed4c09776ddc54efb",
-            "containerID":"docker://07bf8d8ee83ba711724bed7f49e45f5a316ffa963fb4cb10010a2dd87fd8b7c6"
-          }
-        ],
-        "qosClass":"Guaranteed"
+        ]
       }
     }
   ]

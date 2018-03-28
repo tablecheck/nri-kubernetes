@@ -31,16 +31,16 @@ var ExpectedGroupData = definition.RawGroups{
 			"txBytes": uint64(35714359),
 		},
 		"kube-system_kube-state-metrics-57f4659995-6n2qq": {
-			"createdKind":    "ReplicaSet",
-			"createdBy":      "kube-state-metrics-57f4659995",
-			"nodeIP":         "192.168.99.100",
-			"namespace":      "kube-system",
-			"podName":        "kube-state-metrics-57f4659995-6n2qq",
-			"nodeName":       "minikube",
-			"podIP":          "172.17.0.4",
-			"startTime":      parseTime("2018-02-14T16:27:38Z"),
-			"status":         "Running",
-			"isReady":        true,
+			"createdKind": "ReplicaSet",
+			"createdBy":   "kube-state-metrics-57f4659995",
+			//"nodeIP":         "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			"namespace": "kube-system",
+			"podName":   "kube-state-metrics-57f4659995-6n2qq",
+			"nodeName":  "minikube",
+			"podIP":     "", // TODO Remove
+			//"startTime":      parseTime("2018-02-14T16:27:38Z"), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			"status":         "Running", // Note that even the status in the payload is Pending, we set it as Running. This is due to a bug in Kubelet. See https://github.com/kubernetes/kubernetes/pull/57106
+			"isReady":        false,     // TODO investigate. See https://newrelic.atlassian.net/browse/IHOST-658
 			"isScheduled":    true,
 			"createdAt":      parseTime("2018-02-14T16:27:38Z"),
 			"deploymentName": "kube-state-metrics",
@@ -77,21 +77,20 @@ var ExpectedGroupData = definition.RawGroups{
 			"usageNanoCores":       uint64(17428240),
 		},
 		"kube-system_kube-state-metrics-57f4659995-6n2qq_kube-state-metrics": {
-			"containerName":    "kube-state-metrics",
-			"containerID":      "docker://07bf8d8ee83ba711724bed7f49e45f5a316ffa963fb4cb10010a2dd87fd8b7c6",
-			"containerImage":   "quay.io/coreos/kube-state-metrics:v1.1.0",
-			"containerImageID": "docker-pullable://quay.io/coreos/kube-state-metrics@sha256:52a2c47355c873709bb4e37e990d417e9188c2a778a0c38ed4c09776ddc54efb",
-			"namespace":        "kube-system",
-			"podName":          "kube-state-metrics-57f4659995-6n2qq",
-			"podIP":            "172.17.0.4",
-			"nodeName":         "minikube",
-			"nodeIP":           "192.168.99.100",
-			"restartCount":     int32(7),
-			"isReady":          true,
-			"status":           "Running",
-			"deploymentName":   "kube-state-metrics",
-			//"reason": "", // TODO
-			"startedAt":            parseTime("2018-02-27T15:21:37Z"),
+			"containerName": "kube-state-metrics",
+			//"containerID":      "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			"containerImage": "quay.io/coreos/kube-state-metrics:v1.1.0",
+			//"containerImageID": "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			"namespace": "kube-system",
+			"podName":   "kube-state-metrics-57f4659995-6n2qq",
+			"podIP":     "", // TODO REMOVE!
+			"nodeName":  "minikube",
+			//"nodeIP":       "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			//"restartCount": int32(7), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			//"isReady":              false, // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106 // TODO investigate. See https://newrelic.atlassian.net/browse/IHOST-658
+			//"status":         "Running", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			"deploymentName": "kube-state-metrics",
+			//"startedAt":            parseTime("2018-02-27T15:21:37Z"), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 			"cpuRequestedCores":    int64(101),
 			"cpuLimitCores":        int64(101),
 			"memoryRequestedBytes": int64(106954752),
@@ -100,21 +99,21 @@ var ExpectedGroupData = definition.RawGroups{
 			"usageNanoCores":       uint64(941138),
 		},
 		"kube-system_kube-state-metrics-57f4659995-6n2qq_addon-resizer": {
-			"containerName":    "addon-resizer",
-			"containerID":      "docker://b4bd4cc0a48292f1b5dcf5a7c8d64a39faf9b23d37850ab7137f5f7ab3acd575",
-			"containerImage":   "gcr.io/google_containers/addon-resizer:1.0",
-			"containerImageID": "docker-pullable://gcr.io/google_containers/addon-resizer@sha256:e77acf80697a70386c04ae3ab494a7b13917cb30de2326dcf1a10a5118eddabe",
-			"namespace":        "kube-system",
-			"podName":          "kube-state-metrics-57f4659995-6n2qq",
-			"podIP":            "172.17.0.4",
-			"nodeName":         "minikube",
-			"nodeIP":           "192.168.99.100",
-			"restartCount":     int32(7),
-			"isReady":          true,
-			"status":           "Running",
-			"deploymentName":   "kube-state-metrics",
+			"containerName": "addon-resizer",
+			//"containerID":      "", //"containerID":      "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			"containerImage": "gcr.io/google_containers/addon-resizer:1.0",
+			//"containerImageID": "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			"namespace": "kube-system",
+			"podName":   "kube-state-metrics-57f4659995-6n2qq",
+			"podIP":     "", // TODO remove
+			"nodeName":  "minikube",
+			//"nodeIP":       "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			//"restartCount": int32(7), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			//"isReady":        false, // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106 // TODO investigate. See https://newrelic.atlassian.net/browse/IHOST-658
+			//"status":         "Running", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			"deploymentName": "kube-state-metrics",
 			//"reason": "", // TODO
-			"startedAt":            parseTime("2018-02-27T15:21:38Z"),
+			//"startedAt":            parseTime("2018-02-27T15:21:38Z"), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 			"cpuRequestedCores":    int64(100),
 			"cpuLimitCores":        int64(100),
 			"memoryRequestedBytes": int64(31457280),
