@@ -54,6 +54,30 @@ var KSMSpecs = definition.SpecGroups{
 			{"label.*", prometheus.InheritAllLabelsFrom("deployment", "kube_deployment_labels"), sdkMetric.ATTRIBUTE},
 		},
 	},
+	// We get Pod metrics from kube-state-metrics for those pods that aren't
+	// running (ex: Pending pods). We can't get the data from kubelet because
+	// they aren't running in any node and the information about them is only
+	// present in the API.
+	"pod": {
+		IDGenerator:   prometheus.FromLabelValueEntityIDGenerator("kube_pod_status_phase", "pod"),
+		TypeGenerator: prometheus.FromLabelValueEntityTypeGenerator("kube_pod_status_phase"),
+		Specs: []definition.Spec{
+			{"createdAt", prometheus.FromValue("kube_pod_created"), sdkMetric.GAUGE},
+			{"startTime", prometheus.FromValue("kube_pod_start_time"), sdkMetric.GAUGE},
+			{"createdKind", prometheus.FromLabelValue("kube_pod_info", "created_by_kind"), sdkMetric.ATTRIBUTE},
+			{"createdBy", prometheus.FromLabelValue("kube_pod_info", "created_by_name"), sdkMetric.ATTRIBUTE},
+			{"nodeIP", prometheus.FromLabelValue("kube_pod_info", "host_ip"), sdkMetric.ATTRIBUTE},
+			{"podIP", prometheus.FromLabelValue("kube_pod_info", "pod_ip"), sdkMetric.ATTRIBUTE},
+			{"namespace", prometheus.FromLabelValue("kube_pod_info", "namespace"), sdkMetric.ATTRIBUTE},
+			{"nodeName", prometheus.FromLabelValue("kube_pod_info", "node"), sdkMetric.ATTRIBUTE},
+			{"podName", prometheus.FromLabelValue("kube_pod_info", "pod"), sdkMetric.ATTRIBUTE},
+			{"isReady", prometheus.FromLabelValue("kube_pod_status_ready", "condition"), sdkMetric.ATTRIBUTE},
+			{"status", prometheus.FromLabelValue("kube_pod_status_phase", "phase"), sdkMetric.ATTRIBUTE},
+			{"isScheduled", prometheus.FromLabelValue("kube_pod_status_scheduled", "condition"), sdkMetric.ATTRIBUTE},
+			{"deploymentName", ksmMetric.GetDeploymentNameForPod(), sdkMetric.ATTRIBUTE},
+			{"label.*", prometheus.InheritAllLabelsFrom("pod", "kube_pod_labels"), sdkMetric.ATTRIBUTE},
+		},
+	},
 }
 
 // KSMQueries are the queries we will do to KSM in order to fetch all the raw metrics.
@@ -111,6 +135,24 @@ var KSMQueries = []prometheus.Query{
 	},
 	{
 		MetricName: "kube_deployment_status_replicas_updated",
+	},
+	{
+		MetricName: "kube_pod_status_phase",
+		Labels:     prometheus.Labels{"phase": "Pending"},
+		Value:      prometheus.GaugeValue(1),
+	},
+	{
+		MetricName: "kube_pod_info",
+	},
+	{
+		MetricName: "kube_pod_created",
+	},
+	{
+		MetricName: "kube_pod_labels",
+	},
+	{
+		MetricName: "kube_pod_status_scheduled",
+		Value:      prometheus.GaugeValue(1),
 	},
 }
 
