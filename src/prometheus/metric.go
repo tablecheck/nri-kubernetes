@@ -67,11 +67,11 @@ func (f *MetricFamily) Valid() bool {
 }
 
 // CounterValue represents the value of a counter type metric.
-type CounterValue uint64
+type CounterValue float64
 
 // String implements the Stringer interface method.
 func (v CounterValue) String() string {
-	return strconv.FormatUint(uint64(v), 10)
+	return strconv.FormatFloat(float64(v), 'f', -1, 64)
 }
 
 // GaugeValue represents the value of a gauge type metric.

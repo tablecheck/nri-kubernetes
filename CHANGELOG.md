@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Renamed the recently moved `Prometheus` functions. Removed **Prometheus** word as it is considered redundant.
 - Containers objects reported as their own entities (not as part of pod entities).
 - NewRelic infra Daemonset updateStrategy set to RollingUpdate in newrelic-infra.yaml.
+- Prometheus CounterValue type changed from uint to float64.
 
 ### Fixed
 - Replace `log.Fatal()` by `log.Panic()` in order to call all defer statements. 
