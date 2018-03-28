@@ -16,12 +16,35 @@ const (
 
 //TODO: See https://github.com/prometheus/prom2json/blob/master/prom2json.go#L171 for how to connect, how to parse plain text, etc
 
+// QueryOperator indicates the operator used for the query.
+type QueryOperator int
+
+const (
+	// QueryOpAnd Is the default operator. Means all values should match.
+	QueryOpAnd QueryOperator = iota
+
+	// QueryOpNor means all values should not match.
+	QueryOpNor
+)
+
 // Query represents the query object. It will run against Prometheus metrics.
 type Query struct {
 	CustomName string
 	MetricName string
-	Labels     Labels
-	Value      Value // TODO Only supported Counter and Gauge
+	Labels     QueryLabels
+	Value      QueryValue // TODO Only supported Counter and Gauge
+}
+
+// QueryValue represents the query for a value.
+type QueryValue struct {
+	Operator QueryOperator
+	Value    Value
+}
+
+// QueryLabels represents the query for labels.
+type QueryLabels struct {
+	Operator QueryOperator
+	Labels   Labels
 }
 
 // Execute runs the query.
@@ -36,19 +59,32 @@ func (q Query) Execute(promMetricFamily *model.MetricFamily) (metricFamily Metri
 	}
 	var matches []Metric
 	for _, promMetric := range promMetricFamily.Metric {
-		if len(q.Labels) > 0 {
+		if len(q.Labels.Labels) > 0 {
 			// Match by labels
-			if !q.Labels.AreIn(promMetric.Label) {
-				continue
+			switch q.Labels.Operator {
+			case QueryOpAnd:
+				if !q.Labels.Labels.AreIn(promMetric.Label) {
+					continue
+				}
+			case QueryOpNor:
+				if q.Labels.Labels.AreIn(promMetric.Label) {
+					continue
+				}
 			}
 		}
 
 		value := valueFromPrometheus(promMetricFamily.GetType(), promMetric)
 
-		if q.Value != nil {
-			// Match by value
-			if q.Value.String() != value.String() {
-				continue
+		if q.Value.Value != nil {
+			switch q.Value.Operator {
+			case QueryOpAnd:
+				if q.Value.Value.String() != value.String() {
+					continue
+				}
+			case QueryOpNor:
+				if q.Value.Value.String() == value.String() {
+					continue
+				}
 			}
 		}
 

@@ -3,7 +3,6 @@ package prometheus
 import (
 	"testing"
 
-	"io"
 	"net/http"
 	"net/http/httptest"
 
@@ -54,8 +53,12 @@ func TestDo(t *testing.T) {
 	queries := []Query{
 		{
 			MetricName: queryMetricName,
-			Labels:     queryLabels,
-			Value:      GaugeValue(1),
+			Labels: QueryLabels{
+				Labels: queryLabels,
+			},
+			Value: QueryValue{
+				Value: GaugeValue(1),
+			},
 		},
 	}
 
@@ -105,18 +108,31 @@ func TestLabelsAreIn(t *testing.T) {
 }
 
 func TestQueryMatch(t *testing.T) {
-	q := Query{
+	queryAnd := Query{
 		MetricName: "kube_pod_status_phase",
-		Labels: Labels{
-			"namespace": "default",
-			"pod":       "nr-123456789",
+		Labels: QueryLabels{
+			Labels: Labels{
+				"namespace": "default",
+				"pod":       "nr-123456789",
+			},
 		},
-		Value: GaugeValue(1),
+		Value: QueryValue{
+			Value: GaugeValue(1),
+		},
+	}
+
+	queryNor := Query{
+		MetricName: queryAnd.MetricName,
+		Labels:     queryAnd.Labels,
+		Value: QueryValue{
+			Operator: QueryOpNor,
+			Value:    GaugeValue(1),
+		},
 	}
 
 	metrictType := model.MetricType_GAUGE
 	r := model.MetricFamily{
-		Name: proto.String(q.MetricName),
+		Name: proto.String(queryAnd.MetricName),
 		Type: &metrictType,
 		Metric: []*model.Metric{
 			{
@@ -152,29 +168,45 @@ func TestQueryMatch(t *testing.T) {
 		},
 	}
 
-	expectedMetrics := MetricFamily{
-		Name: q.MetricName,
+	expectedAndOperatorMetrics := MetricFamily{
+		Name: queryAnd.MetricName,
 		Type: "GAUGE",
 		Metrics: []Metric{
 			{
-				Labels: q.Labels,
+				Labels: queryAnd.Labels.Labels,
 				Value:  GaugeValue(1),
 			},
 		},
 	}
 
-	assert.Equal(t, expectedMetrics, q.Execute(&r))
+	expectedNorOperatorMetrics := MetricFamily{
+		Name: queryNor.MetricName,
+		Type: "GAUGE",
+		Metrics: []Metric{
+			{
+				Labels: queryNor.Labels.Labels,
+				Value:  GaugeValue(0),
+			},
+		},
+	}
+
+	assert.Equal(t, expectedAndOperatorMetrics, queryAnd.Execute(&r))
+	assert.Equal(t, expectedNorOperatorMetrics, queryNor.Execute(&r))
 }
 
 func TestQueryMatch_CustomName(t *testing.T) {
 	q := Query{
 		CustomName: "custom_name",
 		MetricName: "kube_pod_status_phase",
-		Labels: Labels{
-			"namespace": "default",
-			"pod":       "nr-123456789",
+		Labels: QueryLabels{
+			Labels: Labels{
+				"namespace": "default",
+				"pod":       "nr-123456789",
+			},
 		},
-		Value: GaugeValue(1),
+		Value: QueryValue{
+			Value: GaugeValue(1),
+		},
 	}
 
 	metrictType := model.MetricType_GAUGE
@@ -220,17 +252,11 @@ func TestQueryMatch_CustomName(t *testing.T) {
 		Type: "GAUGE",
 		Metrics: []Metric{
 			{
-				Labels: q.Labels,
+				Labels: q.Labels.Labels,
 				Value:  GaugeValue(1),
 			},
 		},
 	}
 
 	assert.Equal(t, expectedMetrics, q.Execute(&r))
-}
-
-func mockResponseHandler(mockResponse io.Reader) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		io.Copy(w, mockResponse) // nolint: errcheck
-	}
 }
