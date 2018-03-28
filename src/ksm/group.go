@@ -6,6 +6,7 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
 	"github.com/sirupsen/logrus"
 )
@@ -17,7 +18,7 @@ type ksmGrouper struct {
 }
 
 func (r *ksmGrouper) Group(specGroups definition.SpecGroups) (definition.RawGroups, *data.ErrorGroup) {
-	mFamily, err := prometheus.Do(r.client, r.queries)
+	mFamily, err := prometheus.Do(r.client, metric.PrometheusMetricsPath, r.queries)
 	if err != nil {
 		return nil, &data.ErrorGroup{
 			Recoverable: false,

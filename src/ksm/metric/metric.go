@@ -9,6 +9,9 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
 )
 
+// PrometheusMetricsPath is the KSM prometheus metrics endpoint.
+const PrometheusMetricsPath = "/metrics"
+
 // GetStatusForContainer returns the status of a container
 func GetStatusForContainer() definition.FetchFunc {
 	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {

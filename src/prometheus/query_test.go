@@ -74,7 +74,7 @@ func TestDo(t *testing.T) {
 		},
 	}
 
-	m, err := Do(&c, queries)
+	m, err := Do(&c, "", queries)
 	assert.NoError(t, err)
 
 	assert.Equal(t, expectedMetrics, m)
