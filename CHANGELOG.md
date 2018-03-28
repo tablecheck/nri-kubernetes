@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Containers objects reported as their own entities (not as part of pod entities).
 - NewRelic infra Daemonset updateStrategy set to RollingUpdate in newrelic-infra.yaml.
 - Prometheus CounterValue type changed from uint to float64.
+- Change our daemonset file to deploy the integration in "default" namespace.
 
 ### Fixed
 - Replace `log.Fatal()` by `log.Panic()` in order to call all defer statements. 
@@ -27,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   - Leader represents the node where Kube State Metrics is installed (so only 1 by cluster).
   - Follower represents any other node.
 - Both Follower and Leader call kubelet /pods endpoint in order to get metrics that were previously fetched from KSM.
+- Fetch metrics from KSM about pods with status "Pending".
 - Prometheus TextToProtoHandleFunc as http.HandlerFunc. 
   Useful for serving a Prometheus payload in protobuf format from a plain text reader.
   
