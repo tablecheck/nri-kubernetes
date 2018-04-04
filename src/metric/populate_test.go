@@ -127,5 +127,5 @@ func TestPopulateK8s(t *testing.T) {
 
 	assert.EqualError(t, err, expectedErr.Error())
 	assert.True(t, ok)
-	assert.Equal(t, expectedMetrics, i.Data)
+	assert.ElementsMatch(t, expectedMetrics, i.Data)
 }
