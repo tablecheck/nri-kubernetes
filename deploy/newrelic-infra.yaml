@@ -13,6 +13,7 @@ rules:
 - apiGroups: [""]
   resources:
     - "nodes"
+    - "nodes/stats"
     - "nodes/proxy"
     - "pods"
     - "services"
