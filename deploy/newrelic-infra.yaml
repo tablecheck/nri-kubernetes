@@ -55,7 +55,7 @@ spec:
       serviceAccountName: newrelic
       containers:
         - name: newrelic-infra
-          image: newrelic/ohaik:1.0.0-beta4-2
+          image: newrelic/ohaik:1.0.0-beta5
           resources:
             limits:
               memory: 100Mi

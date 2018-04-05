@@ -5,7 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.0.0-beta5
+
 ### Changed
 - Rename `endpoints` package to `client` package.
 - Moved a bunch of functions related to `Prometheus` from `ksm` package to `prometheus` one.
