@@ -155,7 +155,7 @@ func main() {
 		}
 		logger.Debugf("Auto-discovered role = %s", role)
 
-		kubeletGrouper := kubelet.NewGrouper(kubeletClient, logger, metric2.PodsFetchFunc(kubeletClient))
+		kubeletGrouper := kubelet.NewGrouper(kubeletClient, logger, metric2.PodsFetchFunc(kubeletClient), metric2.CadvisorFetchFunc(kubeletClient, metric.CadvisorQueries))
 
 		switch role {
 		case "leader":

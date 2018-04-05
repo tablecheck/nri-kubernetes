@@ -1,0 +1,97 @@
+package metric
+
+import (
+	"errors"
+	"fmt"
+	"strings"
+
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
+)
+
+// CadvisorMetricsPath is the path where kubelet serves information about cadvisor.
+const CadvisorMetricsPath = "/metrics/cadvisor"
+
+// CadvisorFetchFunc creates a FetchFunc that fetches data from the kubelet cadvisor metrics path.
+func CadvisorFetchFunc(c client.HTTPClient, queries []prometheus.Query) data.FetchFunc {
+	return func() (definition.RawGroups, error) {
+		families, err := prometheus.Do(c, CadvisorMetricsPath, queries)
+		if err != nil {
+			return nil, fmt.Errorf("error requesting cadvisor metrics endpoint. %s", err)
+		}
+
+		var errs []error
+
+		g := definition.RawGroups{
+			"container": make(map[string]definition.RawMetrics),
+		}
+
+		for _, f := range families {
+			if f.Name == "container_memory_usage_bytes" {
+				for _, m := range f.Metrics {
+
+					// containerName is used for generating the rawEntityID
+					containerName := m.Labels["container_name"]
+					if containerName == "POD" {
+						// skipping metrics from pod containers
+						continue
+					}
+
+					if containerName == "" {
+						errs = append(errs, errors.New("container name not found in cadvisor metrics"))
+						continue
+					}
+
+					// namespace is used for generating the rawEntityID
+					namespace := m.Labels["namespace"]
+					if namespace == "" {
+						errs = append(errs, errors.New("namespace not found in cadvisor metrics"))
+						continue
+					}
+
+					// namespace is used for generating the rawEntityID
+					podName := m.Labels["pod_name"]
+					if podName == "" {
+						errs = append(errs, errors.New("pod name not found in cadvisor metrics"))
+						continue
+					}
+
+					rawEntityID := fmt.Sprintf("%s_%s_%s", namespace, podName, containerName)
+
+					container := make(definition.RawMetrics, 2)
+
+					if v := extractContainerID(m.Labels["id"]); v == "" {
+						errs = append(errs, errors.New("container id not found in cadvisor metrics"))
+						continue
+					} else {
+						container["containerID"] = v
+					}
+
+					if m.Labels["image"] == "" {
+						errs = append(errs, errors.New("container image not found in cadvisor metrics"))
+						continue
+					}
+
+					container["containerImageID"] = m.Labels["image"]
+
+					g["container"][rawEntityID] = container
+				}
+			}
+		}
+
+		if len(errs) > 0 {
+			return g, data.ErrorGroup{
+				Errors: errs,
+			}
+		}
+
+		return g, nil
+	}
+}
+
+// /kubepods/besteffort/podba8b34d7-11a3-11e8-a084-080027352a02/a949bd136c1397b9f52905538ee11450427be33648abe38db06be2e5cfbeca49
+func extractContainerID(v string) string {
+	return v[strings.LastIndex(v, "/")+1:]
+}

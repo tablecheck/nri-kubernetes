@@ -294,6 +294,45 @@ func TestGroupMetricsBySpec_EmptyMetricFamily(t *testing.T) {
 	assert.Empty(t, metricGroup)
 }
 
+func TestGroupMetricsBySpec_MultipleMetricsPerFamily(t *testing.T) {
+	families := []MetricFamily{
+		{
+			Name: "container_cpu_usage_seconds_total",
+			Metrics: []Metric{
+				{
+					Value: GaugeValue(0.001262964),
+					Labels: map[string]string{
+						"namespace":      "kube-system",
+						"pod_name":       "newrelic-infra-monitoring-cglrn",
+						"container_name": "POD",
+						"cpu":            "cpu00",
+					},
+				},
+				{
+					Value: GaugeValue(0.005540791),
+					Labels: map[string]string{
+						"namespace":      "kube-system",
+						"pod_name":       "newrelic-infra-monitoring-cglrn",
+						"container_name": "POD",
+						"cpu":            "cpu01",
+					},
+				},
+			},
+		},
+	}
+
+	specs := definition.SpecGroups{
+		"pod": definition.SpecGroup{
+			Specs: spec,
+		},
+	}
+
+	metricGroup, errs := GroupMetricsBySpec(specs, families)
+	assert.Len(t, errs, 1)
+	assert.Equal(t, errors.New("no data found for pod object"), errs[0])
+	assert.Empty(t, metricGroup)
+}
+
 // --------------- FromValue ---------------
 func TestFromRawValue_CorrectValue(t *testing.T) {
 	expectedFetchedValue := GaugeValue(1507117436)

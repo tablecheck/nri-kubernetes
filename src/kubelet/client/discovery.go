@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
@@ -63,7 +65,14 @@ func (c *kubelet) Do(method, path string) (*http.Response, error) {
 	e := c.endpoint
 	e.Path = filepath.Join(c.endpoint.Path, path)
 
-	r, err := http.NewRequest(method, e.String(), nil)
+	var r *http.Request
+	var err error
+	if path == metric.CadvisorMetricsPath {
+		r, err = prometheus.NewRequest(method, e.String())
+	} else {
+		r, err = http.NewRequest(method, e.String(), nil)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("error creating %s request to: %s. Got error: %s ", method, e.String(), err)
 	}

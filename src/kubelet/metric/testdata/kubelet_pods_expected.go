@@ -16,7 +16,6 @@ var ExpectedRawData = definition.RawGroups{
 			"namespace":      "kube-system",
 			"podName":        "newrelic-infra-rz225",
 			"nodeName":       "minikube",
-			"podIP":          "172.17.0.3",
 			"startTime":      parseTime("2018-02-14T16:26:33Z"),
 			"status":         "Running",
 			"isReady":        true,
@@ -32,11 +31,10 @@ var ExpectedRawData = definition.RawGroups{
 		"kube-system_kube-state-metrics-57f4659995-6n2qq": {
 			"createdKind": "ReplicaSet",
 			"createdBy":   "kube-state-metrics-57f4659995",
-			//"nodeIP":         "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
-			"namespace": "kube-system",
-			"podName":   "kube-state-metrics-57f4659995-6n2qq",
-			"nodeName":  "minikube",
-			"podIP":     "", // TODO Remove
+			"nodeIP":      "192.168.99.100",
+			"namespace":   "kube-system",
+			"podName":     "kube-state-metrics-57f4659995-6n2qq",
+			"nodeName":    "minikube",
 			//"startTime":      parseTime("2018-02-14T16:27:38Z"), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 			"status":         "Running", // Note that even the status in the payload is Pending, we set it as Running. This is due to a bug in Kubelet. See https://github.com/kubernetes/kubernetes/pull/57106
 			"isReady":        false,     // TODO investigate. See https://newrelic.atlassian.net/browse/IHOST-658
@@ -57,7 +55,6 @@ var ExpectedRawData = definition.RawGroups{
 			"containerImageID": "docker-pullable://newrelic/ohaik@sha256:115eb17a8242c02bf698259f6c883c9ad5e9e020517156881a4017fd88295444",
 			"namespace":        "kube-system",
 			"podName":          "newrelic-infra-rz225",
-			"podIP":            "172.17.0.3",
 			"nodeName":         "minikube",
 			"nodeIP":           "192.168.99.100",
 			"restartCount":     int32(6),
@@ -77,12 +74,11 @@ var ExpectedRawData = definition.RawGroups{
 			//"containerImageID": "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 			"namespace": "kube-system",
 			"podName":   "kube-state-metrics-57f4659995-6n2qq",
-			"podIP":     "", // TODO REMOVE!
 			"nodeName":  "minikube",
-			//"nodeIP":       "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			"nodeIP":    "192.168.99.100",
 			//"restartCount": int32(7), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 			//"isReady":              false, // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106 // TODO investigate. See https://newrelic.atlassian.net/browse/IHOST-658
-			//"status":         "Running", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			"status":         "Running", // The value does not exist but we force it to "Running" because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 			"deploymentName": "kube-state-metrics",
 			//"startedAt":            parseTime("2018-02-27T15:21:37Z"), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 			"cpuRequestedCores":    int64(101),
@@ -97,12 +93,11 @@ var ExpectedRawData = definition.RawGroups{
 			//"containerImageID": "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 			"namespace": "kube-system",
 			"podName":   "kube-state-metrics-57f4659995-6n2qq",
-			"podIP":     "", // TODO remove
 			"nodeName":  "minikube",
-			//"nodeIP":       "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			"nodeIP":    "192.168.99.100",
 			//"restartCount": int32(7), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 			//"isReady":        false, // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106 // TODO investigate. See https://newrelic.atlassian.net/browse/IHOST-658
-			//"status":         "Running", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			"status":         "Running", // The value does not exist but we force it to "Running" because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 			"deploymentName": "kube-state-metrics",
 			//"reason": "", // TODO
 			//"startedAt":            parseTime("2018-02-27T15:21:38Z"), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106

@@ -67,7 +67,6 @@ var KSMSpecs = definition.SpecGroups{
 			{"createdKind", prometheus.FromLabelValue("kube_pod_info", "created_by_kind"), sdkMetric.ATTRIBUTE},
 			{"createdBy", prometheus.FromLabelValue("kube_pod_info", "created_by_name"), sdkMetric.ATTRIBUTE},
 			{"nodeIP", prometheus.FromLabelValue("kube_pod_info", "host_ip"), sdkMetric.ATTRIBUTE},
-			{"podIP", prometheus.FromLabelValue("kube_pod_info", "pod_ip"), sdkMetric.ATTRIBUTE},
 			{"namespace", prometheus.FromLabelValue("kube_pod_info", "namespace"), sdkMetric.ATTRIBUTE},
 			{"nodeName", prometheus.FromLabelValue("kube_pod_info", "node"), sdkMetric.ATTRIBUTE},
 			{"podName", prometheus.FromLabelValue("kube_pod_info", "pod"), sdkMetric.ATTRIBUTE},
@@ -168,6 +167,19 @@ var KSMQueries = []prometheus.Query{
 	},
 }
 
+// CadvisorQueries are the queries we will do to the kubelet metrics cadvisor endpoint in order to fetch all the raw metrics.
+var CadvisorQueries = []prometheus.Query{
+	{
+		MetricName: "container_memory_usage_bytes",
+		Labels: prometheus.QueryLabels{
+			Operator: prometheus.QueryOpNor,
+			Labels: prometheus.Labels{
+				"container_name": "",
+			},
+		},
+	},
+}
+
 // KubeletSpecs are the metric specifications we want to collect from Kubelet.
 var KubeletSpecs = definition.SpecGroups{
 	"pod": {
@@ -185,7 +197,6 @@ var KubeletSpecs = definition.SpecGroups{
 			{"createdKind", definition.FromRaw("createdKind"), sdkMetric.ATTRIBUTE},
 			{"createdBy", definition.FromRaw("createdBy"), sdkMetric.ATTRIBUTE},
 			{"nodeIP", definition.FromRaw("nodeIP"), sdkMetric.ATTRIBUTE},
-			{"podIP", definition.FromRaw("podIP"), sdkMetric.ATTRIBUTE},
 			{"namespace", definition.FromRaw("namespace"), sdkMetric.ATTRIBUTE},
 			{"nodeName", definition.FromRaw("nodeName"), sdkMetric.ATTRIBUTE},
 			{"podName", definition.FromRaw("podName"), sdkMetric.ATTRIBUTE},
@@ -201,21 +212,19 @@ var KubeletSpecs = definition.SpecGroups{
 		TypeGenerator: kubeletMetric.FromRawGroupsEntityTypeGenerator,
 		Specs: []definition.Spec{
 			// /stats/summary endpoint
-			{"containerName", definition.FromRaw("containerName"), sdkMetric.ATTRIBUTE},
 			{"memoryUsedBytes", definition.FromRaw("usageBytes"), sdkMetric.GAUGE},
 			{"cpuUsedCores", definition.Transform(definition.FromRaw("usageNanoCores"), fromNano), sdkMetric.GAUGE},
-			{"podName", definition.FromRaw("podName"), sdkMetric.ATTRIBUTE},
-			{"namespace", definition.FromRaw("namespace"), sdkMetric.ATTRIBUTE},
+
+			// /metrics/cadvisor endpoint
+			{"containerID", definition.FromRaw("containerID"), sdkMetric.ATTRIBUTE},
+			{"containerImageID", definition.FromRaw("containerImageID"), sdkMetric.ATTRIBUTE},
 
 			// /pods endpoint
 			{"containerName", definition.FromRaw("containerName"), sdkMetric.ATTRIBUTE},
-			{"containerID", definition.FromRaw("containerID"), sdkMetric.ATTRIBUTE},
 			{"containerImage", definition.FromRaw("containerImage"), sdkMetric.ATTRIBUTE},
-			{"containerImageID", definition.FromRaw("containerImageID"), sdkMetric.ATTRIBUTE},
 			{"deploymentName", definition.FromRaw("deploymentName"), sdkMetric.ATTRIBUTE},
 			{"namespace", definition.FromRaw("namespace"), sdkMetric.ATTRIBUTE},
 			{"podName", definition.FromRaw("podName"), sdkMetric.ATTRIBUTE},
-			{"podIP", definition.FromRaw("podIP"), sdkMetric.ATTRIBUTE},
 			{"nodeName", definition.FromRaw("nodeName"), sdkMetric.ATTRIBUTE},
 			{"nodeIP", definition.FromRaw("nodeIP"), sdkMetric.ATTRIBUTE},
 			{"restartCount", definition.FromRaw("restartCount"), sdkMetric.GAUGE},

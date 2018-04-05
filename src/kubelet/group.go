@@ -23,7 +23,7 @@ func (r *kubelet) Group(definition.SpecGroups) (definition.RawGroups, *data.Erro
 		if err != nil {
 			return nil, &data.ErrorGroup{
 				Recoverable: false,
-				Errors:      []error{fmt.Errorf("error querying Kubelet pods endpoint. %s", err)},
+				Errors:      []error{fmt.Errorf("error querying Kubelet. %s", err)},
 			}
 		}
 		fillGroupsAndMergeNonExistent(rawGroups, g)

@@ -58,14 +58,48 @@ func PodsFetchFunc(c client.HTTPClient) data.FetchFunc {
 			"container": make(map[string]definition.RawMetrics),
 		}
 
+		// If missing, we get the nodeIP from any other container in the node.
+		// Due to Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+		var missingNodeIPContainerIDs []string
+		var missingNodeIPPodIDs []string
+		var nodeIP string
+
 		for _, p := range pods.Items {
 			podData, id := fetchPodData(&p)
 			raw["pod"][id] = podData
 
+			if _, ok := podData["nodeIP"]; ok && nodeIP == "" {
+				nodeIP = podData["nodeIP"].(string)
+			}
+
+			if nodeIP == "" {
+				missingNodeIPPodIDs = append(missingNodeIPPodIDs, id)
+			} else {
+				raw["pod"][id]["nodeIP"] = nodeIP
+			}
+
 			containers := fetchContainersData(&p)
 			for id, c := range containers {
 				raw["container"][id] = c
+
+				if _, ok := c["nodeIP"]; ok && nodeIP == "" {
+					nodeIP = c["nodeIP"].(string)
+				}
+
+				if nodeIP == "" {
+					missingNodeIPContainerIDs = append(missingNodeIPContainerIDs, id)
+				} else {
+					raw["container"][id]["nodeIP"] = nodeIP
+				}
 			}
+		}
+
+		for _, id := range missingNodeIPPodIDs {
+			raw["pod"][id]["nodeIP"] = nodeIP
+		}
+
+		for _, id := range missingNodeIPContainerIDs {
+			raw["container"][id]["nodeIP"] = nodeIP
 		}
 
 		return raw, nil
@@ -99,7 +133,6 @@ func fetchContainersData(p *v1.Pod) map[string]definition.RawMetrics {
 		default:
 			status[id]["status"] = "Unknown"
 		}
-
 	}
 
 	specs := make(map[string]definition.RawMetrics)
@@ -112,10 +145,8 @@ func fetchContainersData(p *v1.Pod) map[string]definition.RawMetrics {
 			"namespace":      p.GetObjectMeta().GetNamespace(),
 			"podName":        p.GetObjectMeta().GetName(),
 			"nodeName":       p.Spec.NodeName,
-			"podIP":          p.Status.PodIP, // TODO REMOVE!
 		}
 
-		// TODO if not found, get it from other pod. Due to Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 		if v := p.Status.HostIP; v != "" {
 			specs[id]["nodeIP"] = v
 		}
@@ -141,10 +172,16 @@ func fetchContainersData(p *v1.Pod) map[string]definition.RawMetrics {
 			specs[id]["deploymentName"] = deploymentNameBasedOnCreator(ref[0].Kind, ref[0].Name)
 		}
 
+		// Assuming that the container is running. See https://github.com/kubernetes/kubernetes/pull/57106
+		if _, ok := status[id]; !ok {
+			specs[id]["status"] = "Running"
+		}
+
 		// merging status data
 		for k, v := range status[id] {
 			specs[id][k] = v
 		}
+
 	}
 
 	return specs
@@ -166,12 +203,10 @@ func fetchPodData(p *v1.Pod) (definition.RawMetrics, string) {
 		"namespace":   p.GetObjectMeta().GetNamespace(),
 		"podName":     p.GetObjectMeta().GetName(),
 		"nodeName":    p.Spec.NodeName,
-		"podIP":       p.Status.PodIP,
 		"isReady":     isReady,
 		"isScheduled": isScheduled,
 	}
 
-	// TODO if not found, get it from other pod. Due to Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 	if v := p.Status.HostIP; v != "" {
 		r["nodeIP"] = v
 	}

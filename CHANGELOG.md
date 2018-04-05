@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fetch metrics from KSM about pods with status "Pending".
 - Prometheus TextToProtoHandleFunc as http.HandlerFunc. 
   Useful for serving a Prometheus payload in protobuf format from a plain text reader.
+- Both Follower and Leader call kubelet /metrics/cadvisor endpoint in order to fill some missing metrics coming from Kubelet.
   
 ### Removed
 - Follower does not call KSM endpoints anymore.
