@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 1.0.0-beta5
 
+### Added
+- TypeGenerator for entities.
+- Caching discovered endpoints on disk.
+- Implementation of Time-To-Live (TTL) cache expiry functionality.
+- Added the concept of Leader and Follower roles.
+  - Leader represents the node where Kube State Metrics is installed (so only 1 by cluster).
+  - Follower represents any other node.
+- Both Follower and Leader call kubelet /pods endpoint in order to get metrics that were previously fetched from KSM.
+- Fetch metrics from KSM about pods with status "Pending".
+- Prometheus TextToProtoHandleFunc as http.HandlerFunc.
+  Useful for serving a Prometheus payload in protobuf format from a plain text reader.
+- Both Follower and Leader call kubelet /metrics/cadvisor endpoint in order to fill some missing metrics coming from Kubelet.
+
 ### Changed
 - Rename `endpoints` package to `client` package.
 - Moved a bunch of functions related to `Prometheus` from `ksm` package to `prometheus` one.
@@ -18,28 +31,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Prometheus queries now require to use an operator.
 - Prometheus Do method now requires a metrics endpoint.
 
-### Fixed
-- Replace `log.Fatal()` by `log.Panic()` in order to call all defer statements. 
-- Skip missing data from /stats/summary endpoint, instead of reporting them as zero values.
-- Entities not reported in case of problem with setting their name or type.
-
-### Added
-- TypeGenerator for entities.
-- Caching discovered endpoints on disk.
-- Implementation of Time-To-Live (TTL) cache expiry functionality.
-- Added the concept of Leader and Follower roles. 
-  - Leader represents the node where Kube State Metrics is installed (so only 1 by cluster).
-  - Follower represents any other node.
-- Both Follower and Leader call kubelet /pods endpoint in order to get metrics that were previously fetched from KSM.
-- Fetch metrics from KSM about pods with status "Pending".
-- Prometheus TextToProtoHandleFunc as http.HandlerFunc. 
-  Useful for serving a Prometheus payload in protobuf format from a plain text reader.
-- Both Follower and Leader call kubelet /metrics/cadvisor endpoint in order to fill some missing metrics coming from Kubelet.
-  
 ### Removed
 - Follower does not call KSM endpoints anymore.
 - Config package with default unknown namespace value
 - Removed legacy Kubernetes spec files.
+
+### Fixed
+- Replace `log.Fatal()` by `log.Panic()` in order to call all defer statements. 
+- Skip missing data from /stats/summary endpoint, instead of reporting them as zero values.
+- Entities not reported in case of problem with setting their name or type.
 
 ## 1.0.0-beta4
 
@@ -48,21 +48,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Adding toleration for the "NoSchedule" taint, so the integration is deployed on all nodes.
 - Adding new autodiscovery flow with authentication and authorization mechanisms.
 
-### Fixed
-- Integration stops on KSM or Kubelet connection error, instead of continuing.
-
 ### Removed
 - Custom arguments for kubelet and kube-state-metrics endpoints.
 
-## 1.0.0-beta3
-
 ### Fixed
-- Fix debug log level when verbose. Some parts of the code didn't log debug information.
+- Integration stops on KSM or Kubelet connection error, instead of continuing.
+
+## 1.0.0-beta3
 
 ### Changed
 - `updatedAt` metric was renamed to `podsUpdated`.
 - `cpuUsedCores` has been divided by 10^9, to show actual cores instead of nanocores.
 - Update configurable timeout flag using it to connect to kubelet and kube-state-metrics.
+
+### Fixed
+- Fix debug log level when verbose. Some parts of the code didn't log debug information.
 
 ## 1.0.0-beta2
 
