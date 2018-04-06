@@ -43,7 +43,6 @@ var expectedMetrics = []*sdk.EntityData{
 				"isReady":                        "true",
 				"status":                         "Running",
 				"isScheduled":                    "true",
-				"deploymentName":                 "",
 				"label.controller-revision-hash": "3887482659",
 				"label.name":                     "newrelic-infra",
 				"label.pod-template-generation":  "1",
@@ -69,7 +68,6 @@ var expectedMetrics = []*sdk.EntityData{
 				"containerID":          "69d7203a8f2d2d027ffa51d61002eac63357f22a17403363ef79e66d1c3146b2",
 				"containerImage":       "newrelic/ohaik:1.0.0-beta3",
 				"containerImageID":     "sha256:1a95d0df2997f93741fbe2a15d2c31a394e752fd942ec29bf16a44163342f6a1",
-				"deploymentName":       "",
 				"namespace":            "kube-system",
 				"podName":              "newrelic-infra-rz225",
 				"nodeName":             "minikube",
@@ -118,6 +116,8 @@ func TestPopulateK8s(t *testing.T) {
 	expectedErr := MultipleErrs{
 		true,
 		[]error{
+			errors.New("entity id: kube-system_newrelic-infra-rz225: error fetching value for metric deploymentName. Error: FromRaw: metric not found. SpecGroup: pod, EntityID: kube-system_newrelic-infra-rz225, Metric: deploymentName"),
+			errors.New("entity id: kube-system_newrelic-infra-rz225_newrelic-infra: error fetching value for metric deploymentName. Error: FromRaw: metric not found. SpecGroup: container, EntityID: kube-system_newrelic-infra-rz225_newrelic-infra, Metric: deploymentName"),
 			errors.New("entity id: kube-system_newrelic-infra-rz225_newrelic-infra: error fetching value for metric cpuLimitCores. Error: FromRaw: metric not found. SpecGroup: container, EntityID: kube-system_newrelic-infra-rz225_newrelic-infra, Metric: cpuLimitCores"),
 			errors.New("entity id: kube-system_newrelic-infra-rz225_newrelic-infra: error fetching value for metric reason. Error: FromRaw: metric not found. SpecGroup: container, EntityID: kube-system_newrelic-infra-rz225_newrelic-infra, Metric: reason"),
 		},

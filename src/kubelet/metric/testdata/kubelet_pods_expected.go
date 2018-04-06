@@ -10,18 +10,17 @@ import (
 var ExpectedRawData = definition.RawGroups{
 	"pod": {
 		"kube-system_newrelic-infra-rz225": {
-			"createdKind":    "DaemonSet",
-			"createdBy":      "newrelic-infra",
-			"nodeIP":         "192.168.99.100",
-			"namespace":      "kube-system",
-			"podName":        "newrelic-infra-rz225",
-			"nodeName":       "minikube",
-			"startTime":      parseTime("2018-02-14T16:26:33Z"),
-			"status":         "Running",
-			"isReady":        true,
-			"isScheduled":    true,
-			"createdAt":      parseTime("2018-02-14T16:26:33Z"),
-			"deploymentName": "",
+			"createdKind": "DaemonSet",
+			"createdBy":   "newrelic-infra",
+			"nodeIP":      "192.168.99.100",
+			"namespace":   "kube-system",
+			"podName":     "newrelic-infra-rz225",
+			"nodeName":    "minikube",
+			"startTime":   parseTime("2018-02-14T16:26:33Z"),
+			"status":      "Running",
+			"isReady":     true,
+			"isScheduled": true,
+			"createdAt":   parseTime("2018-02-14T16:26:33Z"),
 			"labels": map[string]string{
 				"controller-revision-hash": "3887482659",
 				"name": "newrelic-infra",
@@ -58,7 +57,6 @@ var ExpectedRawData = definition.RawGroups{
 			"restartCount":   int32(6),
 			"isReady":        true,
 			"status":         "Running",
-			"deploymentName": "",
 			//"reason": "", // TODO
 			"startedAt":            parseTime("2018-02-27T15:21:16Z"),
 			"cpuRequestedCores":    int64(100),

@@ -164,9 +164,10 @@ func fetchContainersData(p *v1.Pod) map[string]definition.RawMetrics {
 			specs[id]["memoryLimitBytes"] = v.Value()
 		}
 
-		// TODO get from already fetched pod data
 		if ref := p.GetOwnerReferences(); len(ref) > 0 {
-			specs[id]["deploymentName"] = deploymentNameBasedOnCreator(ref[0].Kind, ref[0].Name)
+			if d := deploymentNameBasedOnCreator(ref[0].Kind, ref[0].Name); d != "" {
+				specs[id]["deploymentName"] = d
+			}
 		}
 
 		// Assuming that the container is running. See https://github.com/kubernetes/kubernetes/pull/57106
@@ -222,7 +223,9 @@ func fetchPodData(p *v1.Pod) (definition.RawMetrics, string) {
 	if ref := p.GetOwnerReferences(); len(ref) > 0 {
 		r["createdKind"] = ref[0].Kind
 		r["createdBy"] = ref[0].Name
-		r["deploymentName"] = deploymentNameBasedOnCreator(ref[0].Kind, ref[0].Name)
+		if d := deploymentNameBasedOnCreator(ref[0].Kind, ref[0].Name); d != "" {
+			r["deploymentName"] = d
+		}
 	}
 
 	if p.Status.StartTime != nil {
