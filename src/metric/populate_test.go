@@ -79,8 +79,11 @@ var expectedMetrics = []*sdk.EntityData{
 				"status":               "Running",
 				"isReady":              "true",
 				//"reason":               "",      // TODO ?
-				"displayName": "newrelic-infra", // From manipulator
-				"clusterName": "test-cluster",   // From manipulator
+				"displayName":                    "newrelic-infra", // From manipulator
+				"clusterName":                    "test-cluster",   // From manipulator
+				"label.controller-revision-hash": "3887482659",
+				"label.name":                     "newrelic-infra",
+				"label.pod-template-generation":  "1",
 			},
 		},
 		Inventory: sdk.Inventory{},

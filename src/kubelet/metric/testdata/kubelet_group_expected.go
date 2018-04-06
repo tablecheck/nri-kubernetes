@@ -70,6 +70,11 @@ var ExpectedGroupData = definition.RawGroups{
 			"memoryLimitBytes":     int64(104857600),
 			"usageBytes":           uint64(18083840),
 			"usageNanoCores":       uint64(17428240),
+			"labels": map[string]string{
+				"controller-revision-hash": "3887482659",
+				"name": "newrelic-infra",
+				"pod-template-generation": "1",
+			},
 		},
 		"kube-system_kube-state-metrics-57f4659995-6n2qq_kube-state-metrics": {
 			"containerName":    "kube-state-metrics",
@@ -91,6 +96,10 @@ var ExpectedGroupData = definition.RawGroups{
 			"memoryLimitBytes":     int64(106954752),
 			"usageBytes":           uint64(15568896),
 			"usageNanoCores":       uint64(941138),
+			"labels": map[string]string{
+				"k8s-app":           "kube-state-metrics",
+				"pod-template-hash": "1390215551",
+			},
 		},
 		"kube-system_kube-state-metrics-57f4659995-6n2qq_addon-resizer": {
 			"containerName":    "addon-resizer",
@@ -113,6 +122,10 @@ var ExpectedGroupData = definition.RawGroups{
 			"memoryLimitBytes":     int64(31457280),
 			"usageBytes":           uint64(6373376),
 			"usageNanoCores":       uint64(131742),
+			"labels": map[string]string{
+				"k8s-app":           "kube-state-metrics",
+				"pod-template-hash": "1390215551",
+			},
 		},
 	},
 	"node": {
