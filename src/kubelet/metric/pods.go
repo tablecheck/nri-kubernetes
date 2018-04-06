@@ -119,15 +119,12 @@ func fetchContainersData(p *v1.Pod) map[string]definition.RawMetrics {
 		case c.State.Running != nil:
 			status[id]["status"] = "Running"
 			status[id]["startedAt"] = c.State.Running.StartedAt.Time.In(time.UTC)
-			status[id]["containerID"] = c.ContainerID
-			status[id]["containerImageID"] = c.ImageID
 			status[id]["restartCount"] = c.RestartCount
 			status[id]["isReady"] = c.Ready
 		case c.State.Waiting != nil:
 			status[id]["status"] = "Waiting"
 			status[id]["reason"] = c.State.Waiting.Reason
 		case c.State.Terminated != nil:
-			status[id]["containerID"] = c.State.Terminated.ContainerID
 			status[id]["status"] = "Terminated"
 			status[id]["startedAt"] = c.State.Terminated.StartedAt.Time.In(time.UTC)
 		default:

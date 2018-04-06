@@ -54,9 +54,9 @@ var ExpectedGroupData = definition.RawGroups{
 	"container": {
 		"kube-system_newrelic-infra-rz225_newrelic-infra": {
 			"containerName":    "newrelic-infra",
-			"containerID":      "docker://ef0b60ee1eea54af356847a5c99a3ec91a57bae627028e3efe41c1a29fe641e5",
+			"containerID":      "ef0b60ee1eea54af356847a5c99a3ec91a57bae627028e3efe41c1a29fe641e5",
 			"containerImage":   "newrelic/ohaik:1.0.0-beta3",
-			"containerImageID": "docker-pullable://newrelic/ohaik@sha256:115eb17a8242c02bf698259f6c883c9ad5e9e020517156881a4017fd88295444",
+			"containerImageID": "newrelic/ohaik@sha256:115eb17a8242c02bf698259f6c883c9ad5e9e020517156881a4017fd88295444",
 			"namespace":        "kube-system",
 			"podName":          "newrelic-infra-rz225",
 			"nodeName":         "minikube",
@@ -74,14 +74,14 @@ var ExpectedGroupData = definition.RawGroups{
 			"usageNanoCores":       uint64(17428240),
 		},
 		"kube-system_kube-state-metrics-57f4659995-6n2qq_kube-state-metrics": {
-			"containerName": "kube-state-metrics",
-			//"containerID":      "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
-			"containerImage": "quay.io/coreos/kube-state-metrics:v1.1.0",
-			//"containerImageID": "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
-			"namespace": "kube-system",
-			"podName":   "kube-state-metrics-57f4659995-6n2qq",
-			"nodeName":  "minikube",
-			"nodeIP":    "192.168.99.100",
+			"containerName":    "kube-state-metrics",
+			"containerID":      "c452821fcf6c5f594d4f98a1426e7a2c51febb65d5d50d92903f9dfb367bfba7",
+			"containerImage":   "quay.io/coreos/kube-state-metrics:v1.1.0",
+			"containerImageID": "quay.io/coreos/kube-state-metrics@sha256:52a2c47355c873709bb4e37e990d417e9188c2a778a0c38ed4c09776ddc54efb",
+			"namespace":        "kube-system",
+			"podName":          "kube-state-metrics-57f4659995-6n2qq",
+			"nodeName":         "minikube",
+			"nodeIP":           "192.168.99.100",
 			//"restartCount": int32(7), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 			//"isReady":              false, // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106 // TODO investigate. See https://newrelic.atlassian.net/browse/IHOST-658
 			"status":         "Running", // The value does not exist but we force it to "Running" because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
@@ -95,14 +95,14 @@ var ExpectedGroupData = definition.RawGroups{
 			"usageNanoCores":       uint64(941138),
 		},
 		"kube-system_kube-state-metrics-57f4659995-6n2qq_addon-resizer": {
-			"containerName": "addon-resizer",
-			//"containerID":      "", //"containerID":      "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
-			"containerImage": "gcr.io/google_containers/addon-resizer:1.0",
-			//"containerImageID": "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
-			"namespace": "kube-system",
-			"podName":   "kube-state-metrics-57f4659995-6n2qq",
-			"nodeName":  "minikube",
-			"nodeIP":    "192.168.99.100",
+			"containerName":    "addon-resizer",
+			"containerID":      "3328c17bfd22f1a82fcdf8707c2f8f040c462e548c24780079bba95d276d93e1",
+			"containerImage":   "gcr.io/google_containers/addon-resizer:1.0",
+			"containerImageID": "gcr.io/google_containers/addon-resizer@sha256:e77acf80697a70386c04ae3ab494a7b13917cb30de2326dcf1a10a5118eddabe",
+			"namespace":        "kube-system",
+			"podName":          "kube-state-metrics-57f4659995-6n2qq",
+			"nodeName":         "minikube",
+			"nodeIP":           "192.168.99.100",
 			//"restartCount": int32(7), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 			//"isReady":        false, // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106 // TODO investigate. See https://newrelic.atlassian.net/browse/IHOST-658
 			"status":         "Running", // The value does not exist but we force it to "Running" because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106

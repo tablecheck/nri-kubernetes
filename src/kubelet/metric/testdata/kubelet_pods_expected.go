@@ -49,18 +49,16 @@ var ExpectedRawData = definition.RawGroups{
 	},
 	"container": {
 		"kube-system_newrelic-infra-rz225_newrelic-infra": {
-			"containerName":    "newrelic-infra",
-			"containerID":      "docker://ef0b60ee1eea54af356847a5c99a3ec91a57bae627028e3efe41c1a29fe641e5",
-			"containerImage":   "newrelic/ohaik:1.0.0-beta3",
-			"containerImageID": "docker-pullable://newrelic/ohaik@sha256:115eb17a8242c02bf698259f6c883c9ad5e9e020517156881a4017fd88295444",
-			"namespace":        "kube-system",
-			"podName":          "newrelic-infra-rz225",
-			"nodeName":         "minikube",
-			"nodeIP":           "192.168.99.100",
-			"restartCount":     int32(6),
-			"isReady":          true,
-			"status":           "Running",
-			"deploymentName":   "",
+			"containerName":  "newrelic-infra",
+			"containerImage": "newrelic/ohaik:1.0.0-beta3",
+			"namespace":      "kube-system",
+			"podName":        "newrelic-infra-rz225",
+			"nodeName":       "minikube",
+			"nodeIP":         "192.168.99.100",
+			"restartCount":   int32(6),
+			"isReady":        true,
+			"status":         "Running",
+			"deploymentName": "",
 			//"reason": "", // TODO
 			"startedAt":            parseTime("2018-02-27T15:21:16Z"),
 			"cpuRequestedCores":    int64(100),
@@ -68,14 +66,12 @@ var ExpectedRawData = definition.RawGroups{
 			"memoryLimitBytes":     int64(104857600),
 		},
 		"kube-system_kube-state-metrics-57f4659995-6n2qq_kube-state-metrics": {
-			"containerName": "kube-state-metrics",
-			//"containerID":      "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			"containerName":  "kube-state-metrics",
 			"containerImage": "quay.io/coreos/kube-state-metrics:v1.1.0",
-			//"containerImageID": "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
-			"namespace": "kube-system",
-			"podName":   "kube-state-metrics-57f4659995-6n2qq",
-			"nodeName":  "minikube",
-			"nodeIP":    "192.168.99.100",
+			"namespace":      "kube-system",
+			"podName":        "kube-state-metrics-57f4659995-6n2qq",
+			"nodeName":       "minikube",
+			"nodeIP":         "192.168.99.100",
 			//"restartCount": int32(7), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 			//"isReady":              false, // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106 // TODO investigate. See https://newrelic.atlassian.net/browse/IHOST-658
 			"status":         "Running", // The value does not exist but we force it to "Running" because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
@@ -87,14 +83,12 @@ var ExpectedRawData = definition.RawGroups{
 			"memoryLimitBytes":     int64(106954752),
 		},
 		"kube-system_kube-state-metrics-57f4659995-6n2qq_addon-resizer": {
-			"containerName": "addon-resizer",
-			//"containerID":      "", //"containerID":      "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			"containerName":  "addon-resizer",
 			"containerImage": "gcr.io/google_containers/addon-resizer:1.0",
-			//"containerImageID": "", // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
-			"namespace": "kube-system",
-			"podName":   "kube-state-metrics-57f4659995-6n2qq",
-			"nodeName":  "minikube",
-			"nodeIP":    "192.168.99.100",
+			"namespace":      "kube-system",
+			"podName":        "kube-state-metrics-57f4659995-6n2qq",
+			"nodeName":       "minikube",
+			"nodeIP":         "192.168.99.100",
 			//"restartCount": int32(7), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 			//"isReady":        false, // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106 // TODO investigate. See https://newrelic.atlassian.net/browse/IHOST-658
 			"status":         "Running", // The value does not exist but we force it to "Running" because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106

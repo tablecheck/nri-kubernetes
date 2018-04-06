@@ -9,6 +9,7 @@ import (
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric/testdata"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -51,7 +52,16 @@ func rawGroupsHandlerFunc(w http.ResponseWriter, r *http.Request) {
 		defer f.Close() // nolint: errcheck
 
 		io.Copy(w, f)
+	case metric.CadvisorMetricsPath:
+		f, err := os.Open("metric/testdata/kubelet_metrics_cadvisor_payload_plain.txt")
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close() // nolint: errcheck
+
+		prometheus.TextToProtoHandleFunc(f)(w, r)
 	}
+
 }
 
 func TestGroup(t *testing.T) {
@@ -59,8 +69,20 @@ func TestGroup(t *testing.T) {
 		handler: rawGroupsHandlerFunc,
 	}
 
-	grouper := NewGrouper(&c, logrus.StandardLogger(), metric.PodsFetchFunc(&c))
-	r, errGroup := grouper.Group(nil) // TODO pass definition once this feature is developed. See IHOST-332.
+	queries := []prometheus.Query{
+		{
+			MetricName: "container_memory_usage_bytes",
+			Labels: prometheus.QueryLabels{
+				Operator: prometheus.QueryOpNor,
+				Labels: prometheus.Labels{
+					"container_name": "",
+				},
+			},
+		},
+	}
+
+	grouper := NewGrouper(&c, logrus.StandardLogger(), metric.PodsFetchFunc(&c), metric.CadvisorFetchFunc(&c, queries))
+	r, errGroup := grouper.Group(nil)
 	assert.Nil(t, errGroup)
 
 	assert.Equal(t, testdata.ExpectedGroupData, r)
