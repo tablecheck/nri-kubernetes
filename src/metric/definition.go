@@ -235,6 +235,9 @@ var KubeletSpecs = definition.SpecGroups{
 			{"status", definition.FromRaw("status"), sdkMetric.ATTRIBUTE},
 			{"isReady", definition.Transform(definition.FromRaw("isReady"), toStringBoolean), sdkMetric.ATTRIBUTE},
 			{"reason", definition.FromRaw("reason"), sdkMetric.ATTRIBUTE}, // Previously called statusWaitingReason
+
+			// Inherit from pod
+			{"label.*", definition.Transform(definition.FromRaw("labels"), kubeletMetric.OneMetricPerLabel), sdkMetric.ATTRIBUTE},
 		},
 	},
 	"node": {

@@ -180,6 +180,10 @@ func fetchContainersData(p *v1.Pod) map[string]definition.RawMetrics {
 			specs[id][k] = v
 		}
 
+		labels := podLabels(p)
+		if len(labels) > 0 {
+			specs[id]["labels"] = labels
+		}
 	}
 
 	return specs
@@ -232,16 +236,23 @@ func fetchPodData(p *v1.Pod) (definition.RawMetrics, string) {
 		r["startTime"] = p.Status.StartTime.Time.In(time.UTC)
 	}
 
-	if l := len(p.GetObjectMeta().GetLabels()); l > 0 {
-		r["labels"] = make(map[string]string, l)
-		for k, v := range p.GetObjectMeta().GetLabels() {
-			r["labels"].(map[string]string)[k] = v
-		}
+	labels := podLabels(p)
+	if len(labels) > 0 {
+		r["labels"] = labels
 	}
 
 	rawEntityID := fmt.Sprintf("%v_%v", p.GetObjectMeta().GetNamespace(), p.GetObjectMeta().GetName())
 
 	return r, rawEntityID
+}
+
+func podLabels(p *v1.Pod) map[string]string {
+	labels := make(map[string]string, len(p.GetObjectMeta().GetLabels()))
+	for k, v := range p.GetObjectMeta().GetLabels() {
+		labels[k] = v
+	}
+
+	return labels
 }
 
 func deploymentNameBasedOnCreator(creatorKind, creatorName string) string {
