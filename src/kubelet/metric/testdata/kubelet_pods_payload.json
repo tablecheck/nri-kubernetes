@@ -201,7 +201,7 @@
             "restartCount":6,
             "image":"newrelic/ohaik:1.0.0-beta3",
             "imageID":"docker-pullable://newrelic/ohaik@sha256:115eb17a8242c02bf698259f6c883c9ad5e9e020517156881a4017fd88295444",
-            "containerID":"docker://ef0b60ee1eea54af356847a5c99a3ec91a57bae627028e3efe41c1a29fe641e5"
+            "containerID":"docker://69d7203a8f2d2d027ffa51d61002eac63357f22a17403363ef79e66d1c3146b2"
           }
         ],
         "qosClass":"Burstable"

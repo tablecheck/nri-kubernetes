@@ -54,9 +54,9 @@ var ExpectedGroupData = definition.RawGroups{
 	"container": {
 		"kube-system_newrelic-infra-rz225_newrelic-infra": {
 			"containerName":    "newrelic-infra",
-			"containerID":      "ef0b60ee1eea54af356847a5c99a3ec91a57bae627028e3efe41c1a29fe641e5",
+			"containerID":      "69d7203a8f2d2d027ffa51d61002eac63357f22a17403363ef79e66d1c3146b2",
 			"containerImage":   "newrelic/ohaik:1.0.0-beta3",
-			"containerImageID": "newrelic/ohaik@sha256:115eb17a8242c02bf698259f6c883c9ad5e9e020517156881a4017fd88295444",
+			"containerImageID": "sha256:1a95d0df2997f93741fbe2a15d2c31a394e752fd942ec29bf16a44163342f6a1",
 			"namespace":        "kube-system",
 			"podName":          "newrelic-infra-rz225",
 			"nodeName":         "minikube",

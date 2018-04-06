@@ -47,7 +47,7 @@ var ExpectedCadvisorRawData = definition.RawGroups{
 			"containerID":      "413bbcacdd1ea51fd3471beac717af55cd771f08993ce7b5fe66803835dc8421",
 			"containerImageID": "sha256:e94d2f21bc0c297cb74c1dfdd23e2eace013f532c60726601af67984d97f718a",
 		},
-		"kube-system_newrelic-infra-ld98c_newrelic-infra": {
+		"kube-system_newrelic-infra-rz225_newrelic-infra": {
 			"containerID":      "69d7203a8f2d2d027ffa51d61002eac63357f22a17403363ef79e66d1c3146b2",
 			"containerImageID": "sha256:1a95d0df2997f93741fbe2a15d2c31a394e752fd942ec29bf16a44163342f6a1",
 		},
