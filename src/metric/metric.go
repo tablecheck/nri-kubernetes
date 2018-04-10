@@ -20,12 +20,8 @@ func K8sClusterMetricsManipulator(ms metric.MetricSet, _ sdk.Entity, clusterName
 	return ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
 }
 
-// K8sEntityMetricsManipulator adds 'displayName' and 'entityName' metrics to
-// the MetricSet, taking values from entity.name and entity.type
+// K8sEntityMetricsManipulator adds 'displayName' metric to
+// the MetricSet, taking values from entity.name
 func K8sEntityMetricsManipulator(ms metric.MetricSet, entity sdk.Entity, _ string) error {
-	err := ms.SetMetric("displayName", entity.Name, metric.ATTRIBUTE)
-	if err != nil {
-		return err
-	}
-	return ms.SetMetric("entityName", fmt.Sprintf("%s:%s", entity.Type, entity.Name), metric.ATTRIBUTE)
+	return ms.SetMetric("displayName", entity.Name, metric.ATTRIBUTE)
 }

@@ -61,7 +61,7 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName s
 					continue
 				}
 
-				ms := metric.NewMetricSet(msType)
+				ms := e.NewMetricSet(msType)
 				for _, m := range msManipulators {
 					err = m(ms, e.Entity, clusterName)
 					if err != nil {
@@ -78,9 +78,9 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName s
 				}
 
 				if wasPopulated {
-					e.Metrics = append(e.Metrics, ms)
 					populated = true
 				}
+
 			}
 		}
 

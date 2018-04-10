@@ -51,7 +51,6 @@ func TestK8sEntityMetricsManipulator(t *testing.T) {
 		"event_type":        "K8sPodSample",
 		"podInfo.namespace": "kube-system",
 		"podInfo.pod":       "fluentd-elasticsearch-jnqb7",
-		"displayName":       "fluentd-elasticsearch-jnqb7",
 		"entityName":        "fluentd-elasticsearch-jnqb7",
 		"clusterName":       "playground",
 	}
@@ -64,7 +63,7 @@ func TestK8sEntityMetricsManipulator(t *testing.T) {
 		"podInfo.namespace": "kube-system",
 		"podInfo.pod":       "fluentd-elasticsearch-jnqb7",
 		"displayName":       "fluentd-elasticsearch-jnqb7",
-		"entityName":        "k8s:playground:kube-system:pod:fluentd-elasticsearch-jnqb7",
+		"entityName":        "fluentd-elasticsearch-jnqb7",
 		"clusterName":       "playground",
 	}
 	assert.Equal(t, expectedMetricSet, metricSet)

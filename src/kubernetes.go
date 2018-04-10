@@ -48,6 +48,9 @@ func group(grouper data.Grouper, specs definition.SpecGroups, i *sdk.Integration
 	}
 
 	ok, err := metric.NewK8sPopulator().Populate(groups, specs, i, clusterName)
+	if !ok {
+		logger.Warn("No data was populated")
+	}
 	if err != nil {
 		if multiple, ok := err.(metric.MultipleErrs); ok {
 			if multiple.Recoverable {
@@ -78,10 +81,6 @@ func group(grouper data.Grouper, specs definition.SpecGroups, i *sdk.Integration
 		}
 	}
 
-	if !ok {
-		// TODO better error
-		return errors.New("no data was populated")
-	}
 	return nil
 }
 

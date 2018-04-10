@@ -75,11 +75,7 @@ func clusterMetricsManipulator(ms metric.MetricSet, entity sdk.Entity, clusterNa
 }
 
 func metricsNamingManipulator(ms metric.MetricSet, entity sdk.Entity, clusterName string) error {
-	err := ms.SetMetric("displayName", entity.Name, metric.ATTRIBUTE)
-	if err != nil {
-		return err
-	}
-	return ms.SetMetric("entityName", fmt.Sprintf("%s:%s", entity.Type, entity.Name), metric.ATTRIBUTE)
+	return ms.SetMetric("displayName", entity.Name, metric.ATTRIBUTE)
 }
 
 func TestIntegrationProtocol2PopulateFunc_CorrectValue(t *testing.T) {
@@ -238,10 +234,27 @@ func TestIntegrationProtocol2PopulateFunc_MetricsSetsNotPopulated_OnlyEntity(t *
 	if err != nil {
 		t.Fatal()
 	}
+
+	expectedMetricSet1 := metric.MetricSet{
+		"event_type":  "TestSample",
+		"entityName":  "playground:test:entity_id_1",
+		"displayName": "entity_id_1",
+		"clusterName": "playground",
+	}
+	expectedEntityData1.Metrics = []metric.MetricSet{expectedMetricSet1}
+
 	expectedEntityData2, err := sdk.NewEntityData("entity_id_2", "playground:test")
 	if err != nil {
 		t.Fatal()
 	}
+
+	expectedMetricSet2 := metric.MetricSet{
+		"event_type":  "TestSample",
+		"entityName":  "playground:test:entity_id_2",
+		"displayName": "entity_id_2",
+		"clusterName": "playground",
+	}
+	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
 	populated, errs := IntegrationProtocol2PopulateFunc(integration, defaultNS, fromGroupMetricSetTypeGuessFunc, metricsNamingManipulator, clusterMetricsManipulator)(rawGroupsSample, metricSpecsIncorrect)
 	assert.False(t, populated)
@@ -478,6 +491,7 @@ func TestIntegrationProtocol2PopulateFunc_ManipulatorFuncWithError(t *testing.T)
 	}
 
 	expectedMetricSet1 := metric.MetricSet{
+		"entityName": "playground:test:entity_id_1",
 		"event_type": "TestSample",
 		"metric_1":   1,
 		"metric_2":   "metric_value_2",
@@ -491,6 +505,7 @@ func TestIntegrationProtocol2PopulateFunc_ManipulatorFuncWithError(t *testing.T)
 		t.Fatal()
 	}
 	expectedMetricSet2 := metric.MetricSet{
+		"entityName": "playground:test:entity_id_2",
 		"event_type": "TestSample",
 		"metric_1":   2,
 		"metric_2":   "metric_value_4",

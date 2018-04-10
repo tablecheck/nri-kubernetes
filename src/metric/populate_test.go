@@ -51,7 +51,7 @@ var expectedMetrics = []*sdk.EntityData{
 			},
 		},
 		Inventory: sdk.Inventory{},
-		Events:    []sdk.Event{},
+		Events:    []*sdk.Event{},
 	},
 	{
 		Entity: sdk.Entity{
@@ -87,7 +87,7 @@ var expectedMetrics = []*sdk.EntityData{
 			},
 		},
 		Inventory: sdk.Inventory{},
-		Events:    []sdk.Event{},
+		Events:    []*sdk.Event{},
 	},
 }
 
