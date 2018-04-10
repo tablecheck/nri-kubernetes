@@ -23,6 +23,9 @@ type FetchFunc func(groupLabel, entityID string, groups RawGroups) (FetchedValue
 // RawGroups are grouped raw metrics.
 type RawGroups map[string]map[string]RawMetrics
 
+// TransformFunc transforms a FetchedValue.
+type TransformFunc func(FetchedValue) (FetchedValue, error)
+
 // FromRaw fetches metrics from raw metrics. Is the most simple use case.
 func FromRaw(metricKey string) FetchFunc {
 	return func(groupLabel, entityID string, groups RawGroups) (FetchedValue, error) {
@@ -46,12 +49,12 @@ func FromRaw(metricKey string) FetchFunc {
 }
 
 // Transform return a new FetchFunc that applies the transformFunc to the result of the fetchFunc passed as argument
-func Transform(fetchFunc FetchFunc, transformFunc func(FetchedValue) FetchedValue) FetchFunc {
+func Transform(fetchFunc FetchFunc, transformFunc TransformFunc) FetchFunc {
 	return func(groupLabel, entityID string, groups RawGroups) (FetchedValue, error) {
 		fetchedVal, err := fetchFunc(groupLabel, entityID, groups)
 		if err != nil {
 			return nil, err
 		}
-		return transformFunc(fetchedVal), nil
+		return transformFunc(fetchedVal)
 	}
 }

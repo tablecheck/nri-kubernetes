@@ -1,6 +1,7 @@
 package metric
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -271,10 +272,10 @@ func replicasetNameToDeploymentName(rsName string) string {
 // OneMetricPerLabel transforms a map of labels to FetchedValues type,
 // which will be converted later to one metric per label.
 // It also prefix the labels with 'label.'
-func OneMetricPerLabel(rawLabels definition.FetchedValue) definition.FetchedValue {
+func OneMetricPerLabel(rawLabels definition.FetchedValue) (definition.FetchedValue, error) {
 	labels, ok := rawLabels.(map[string]string)
 	if !ok {
-		return rawLabels
+		return rawLabels, errors.New("error on creating kubelet label metrics")
 	}
 
 	modified := make(definition.FetchedValues)
@@ -282,5 +283,5 @@ func OneMetricPerLabel(rawLabels definition.FetchedValue) definition.FetchedValu
 		modified[fmt.Sprintf("label.%v", k)] = v
 	}
 
-	return modified
+	return modified, nil
 }

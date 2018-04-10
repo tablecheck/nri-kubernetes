@@ -72,8 +72,8 @@ func TestTransform(t *testing.T) {
 	}
 
 	v, err := Transform(FromRaw("metric_name_3"),
-		func(in FetchedValue) FetchedValue {
-			return strings.ToUpper(in.(string))
+		func(in FetchedValue) (FetchedValue, error) {
+			return strings.ToUpper(in.(string)), nil
 		})("group1", "entity2", raw)
 	assert.NoError(t, err)
 	assert.Equal(t, "METRIC_VALUE_3", v)
@@ -94,8 +94,8 @@ func TestTransformBypassesError(t *testing.T) {
 		},
 	}
 
-	transformFunc := func(in FetchedValue) FetchedValue {
-		return in
+	transformFunc := func(in FetchedValue) (FetchedValue, error) {
+		return in, nil
 	}
 
 	v, err := Transform(FromRaw("metric_name_3"), transformFunc)("nonExistingGroup", "entity2", raw)

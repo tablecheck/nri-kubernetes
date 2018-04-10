@@ -1,6 +1,7 @@
 package metric
 
 import (
+	"errors"
 	"time"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
@@ -272,39 +273,39 @@ var KubeletSpecs = definition.SpecGroups{
 }
 
 // Used to transform from usageNanoCores to cpuUsedCores
-func fromNano(value definition.FetchedValue) definition.FetchedValue {
+func fromNano(value definition.FetchedValue) (definition.FetchedValue, error) {
 	v, ok := value.(uint64)
 	if !ok {
-		// TODO: is it correct to return original value?
-		return value
+		return nil, errors.New("error transforming to cpu cores")
 	}
 
-	return float64(v) / 1000000000
+	return float64(v) / 1000000000, nil
 }
 
-func toTimestamp(value definition.FetchedValue) definition.FetchedValue {
+func toTimestamp(value definition.FetchedValue) (definition.FetchedValue, error) {
 	v, ok := value.(time.Time)
 	if !ok {
-		return value
+		return nil, errors.New("error transforming to timestamp")
 	}
 
-	return v.Unix()
+	return v.Unix(), nil
 }
 
-func toStringBoolean(value definition.FetchedValue) definition.FetchedValue {
+func toStringBoolean(value definition.FetchedValue) (definition.FetchedValue, error) {
 	if value == true || value == 1 {
-		return "true"
+		return "true", nil
 	}
-	return "false"
+
+	return "false", nil
 }
 
-func toCores(value definition.FetchedValue) definition.FetchedValue {
+func toCores(value definition.FetchedValue) (definition.FetchedValue, error) {
 	switch v := value.(type) {
 	case int:
-		return float64(v) / 1000
+		return float64(v) / 1000, nil
 	case int64:
-		return float64(v) / 1000
+		return float64(v) / 1000, nil
 	default:
-		return value
+		return nil, errors.New("error transforming to cores")
 	}
 }

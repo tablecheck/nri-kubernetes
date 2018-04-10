@@ -98,7 +98,8 @@ func TestOneMetricPerLabel(t *testing.T) {
 		"label.3": "3",
 	}
 
-	v := OneMetricPerLabel(g)
+	v, err := OneMetricPerLabel(g)
+	assert.NoError(t, err)
 	assert.Equal(t, expected, v)
 }
 
