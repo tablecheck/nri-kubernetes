@@ -8,7 +8,4 @@ build:
 deploy:
   kubectl:
     manifests:
-    - paths:
       - deploy/local.yaml
-      parameters:
-        IMAGE_NAME: ohaik/nr-k8s-integration-dev
