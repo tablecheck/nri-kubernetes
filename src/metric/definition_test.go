@@ -34,22 +34,26 @@ func TestToTimestap(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestToStringBoolean(t *testing.T) {
-	v, err := toStringBoolean(1)
-	assert.Equal(t, "true", v)
+func TestToNumericBoolean(t *testing.T) {
+	v, err := toNumericBoolean(1)
+	assert.Equal(t, 1, v)
 	assert.NoError(t, err)
 
-	v, err = toStringBoolean(0)
-	assert.Equal(t, "false", v)
+	v, err = toNumericBoolean(0)
+	assert.Equal(t, 0, v)
 	assert.NoError(t, err)
 
-	v, err = toStringBoolean(true)
-	assert.Equal(t, "true", v)
+	v, err = toNumericBoolean(true)
+	assert.Equal(t, 1, v)
 	assert.NoError(t, err)
 
-	v, err = toStringBoolean(false)
-	assert.Equal(t, "false", v)
+	v, err = toNumericBoolean(false)
+	assert.Equal(t, 0, v)
 	assert.NoError(t, err)
+
+	v, err = toNumericBoolean("invalid")
+	assert.Nil(t, v)
+	assert.EqualError(t, err, "value can not be converted to numeric boolean")
 }
 
 func TestToCores(t *testing.T) {

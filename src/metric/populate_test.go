@@ -40,9 +40,9 @@ var expectedMetrics = []*sdk.EntityData{
 				"namespace":                      "kube-system",
 				"nodeName":                       "minikube",
 				"podName":                        "newrelic-infra-rz225",
-				"isReady":                        "true",
+				"isReady":                        1,
 				"status":                         "Running",
-				"isScheduled":                    "true",
+				"isScheduled":                    1,
 				"label.controller-revision-hash": "3887482659",
 				"label.name":                     "newrelic-infra",
 				"label.pod-template-generation":  "1",
@@ -77,7 +77,7 @@ var expectedMetrics = []*sdk.EntityData{
 				"memoryRequestedBytes": int64(104857600),
 				"memoryLimitBytes":     int64(104857600),
 				"status":               "Running",
-				"isReady":              "true",
+				"isReady":              1,
 				//"reason":               "",      // TODO ?
 				"displayName":                    "newrelic-infra", // From manipulator
 				"clusterName":                    "test-cluster",   // From manipulator

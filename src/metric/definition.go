@@ -201,9 +201,9 @@ var KubeletSpecs = definition.SpecGroups{
 			{"namespace", definition.FromRaw("namespace"), sdkMetric.ATTRIBUTE},
 			{"nodeName", definition.FromRaw("nodeName"), sdkMetric.ATTRIBUTE},
 			{"podName", definition.FromRaw("podName"), sdkMetric.ATTRIBUTE},
-			{"isReady", definition.Transform(definition.FromRaw("isReady"), toStringBoolean), sdkMetric.ATTRIBUTE},
+			{"isReady", definition.Transform(definition.FromRaw("isReady"), toNumericBoolean), sdkMetric.GAUGE},
 			{"status", definition.FromRaw("status"), sdkMetric.ATTRIBUTE},
-			{"isScheduled", definition.Transform(definition.FromRaw("isScheduled"), toStringBoolean), sdkMetric.ATTRIBUTE},
+			{"isScheduled", definition.Transform(definition.FromRaw("isScheduled"), toNumericBoolean), sdkMetric.GAUGE},
 			{"deploymentName", definition.FromRaw("deploymentName"), sdkMetric.ATTRIBUTE},
 			{"label.*", definition.Transform(definition.FromRaw("labels"), kubeletMetric.OneMetricPerLabel), sdkMetric.ATTRIBUTE},
 		},
@@ -234,7 +234,7 @@ var KubeletSpecs = definition.SpecGroups{
 			{"memoryRequestedBytes", definition.FromRaw("memoryRequestedBytes"), sdkMetric.GAUGE},
 			{"memoryLimitBytes", definition.FromRaw("memoryLimitBytes"), sdkMetric.GAUGE},
 			{"status", definition.FromRaw("status"), sdkMetric.ATTRIBUTE},
-			{"isReady", definition.Transform(definition.FromRaw("isReady"), toStringBoolean), sdkMetric.ATTRIBUTE},
+			{"isReady", definition.Transform(definition.FromRaw("isReady"), toNumericBoolean), sdkMetric.GAUGE},
 			{"reason", definition.FromRaw("reason"), sdkMetric.ATTRIBUTE}, // Previously called statusWaitingReason
 
 			// Inherit from pod
@@ -291,12 +291,15 @@ func toTimestamp(value definition.FetchedValue) (definition.FetchedValue, error)
 	return v.Unix(), nil
 }
 
-func toStringBoolean(value definition.FetchedValue) (definition.FetchedValue, error) {
-	if value == true || value == 1 {
-		return "true", nil
+func toNumericBoolean(value definition.FetchedValue) (definition.FetchedValue, error) {
+	switch value {
+	case true, 1:
+		return 1, nil
+	case false, 0:
+		return 0, nil
+	default:
+		return nil, errors.New("value can not be converted to numeric boolean")
 	}
-
-	return "false", nil
 }
 
 func toCores(value definition.FetchedValue) (definition.FetchedValue, error) {

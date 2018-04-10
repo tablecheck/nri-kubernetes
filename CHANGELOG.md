@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - TransformFunc now handles errors.
 - Add checks for missing data coming from kube-state-metrics.
+- Boolean values have changed from `"true"` and `"false"` to `1` and `0` respectively from the following metrics:
+  1. isReady and isScheduled for pods.
+  2. isReady for containers.
 
 ## 1.0.0-beta5
 
