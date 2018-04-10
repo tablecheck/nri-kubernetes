@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - TransformFunc now handles errors.
+- Add checks for missing data coming from kube-state-metrics.
 
 ## 1.0.0-beta5
 

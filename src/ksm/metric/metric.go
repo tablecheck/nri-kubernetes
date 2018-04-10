@@ -1,6 +1,7 @@
 package metric
 
 import (
+	"errors"
 	"fmt"
 
 	"strings"
@@ -36,6 +37,11 @@ func GetDeploymentNameForReplicaSet() definition.FetchFunc {
 		if err != nil {
 			return nil, err
 		}
+
+		if replicasetName.(string) == "" {
+			return nil, errors.New("error generating deployment name for replica set. replicaset field is empty")
+		}
+
 		return replicasetNameToDeploymentName(replicasetName.(string)), nil
 	}
 }
@@ -48,10 +54,20 @@ func GetDeploymentNameForPod() definition.FetchFunc {
 		if err != nil {
 			return nil, err
 		}
+
+		if creatorKind.(string) == "" {
+			return nil, errors.New("error generating deployment name for pod. created_by_kind field is empty")
+		}
+
 		creatorName, err := prometheus.FromLabelValue("kube_pod_info", "created_by_name")(groupLabel, entityID, groups)
 		if err != nil {
 			return nil, err
 		}
+
+		if creatorName.(string) == "" {
+			return nil, errors.New("error generating deployment name for pod. created_by_name field is empty")
+		}
+
 		return deploymentNameBasedOnCreator(creatorKind.(string), creatorName.(string)), nil
 	}
 }
@@ -70,6 +86,14 @@ func GetDeploymentNameForContainer() definition.FetchFunc {
 			return nil, err
 		}
 		podMetrics := podValues.(definition.FetchedValues)
+		if _, ok := podMetrics["created_by_kind"].(string); !ok || podMetrics["created_by_kind"].(string) == "" {
+			return nil, errors.New("error generating deployment name for container. created_by_kind field is missing")
+		}
+
+		if _, ok := podMetrics["created_by_name"].(string); !ok || podMetrics["created_by_name"].(string) == "" {
+			return nil, errors.New("error generating deployment name for container. created_by_name field is missing")
+		}
+
 		return deploymentNameBasedOnCreator(podMetrics["created_by_kind"].(string), podMetrics["created_by_name"].(string)), nil
 
 	}
