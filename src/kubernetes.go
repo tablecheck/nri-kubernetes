@@ -33,7 +33,7 @@ type argumentList struct {
 
 const (
 	integrationName    = "com.newrelic.kubernetes"
-	integrationVersion = "1.0.0-beta5"
+	integrationVersion = "1.0.0-beta5.1"
 )
 
 var args argumentList
