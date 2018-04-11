@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   1. isReady and isScheduled for pods.
   2. isReady for containers.
 - Update metrics
-  1. `errorCountPerSecond` to `errorCountPerSecond` for pods and nodes.
+  1. `errorCountPerSecond` to `errorsPerSecond` for pods and nodes.
   2. `usageCoreSeconds` to `cpuUsedCoreMilliseconds` for nodes.
   3. `memoryMajorPageFaults` to `memoryMajorPageFaultsPerSecond` for nodes.
 

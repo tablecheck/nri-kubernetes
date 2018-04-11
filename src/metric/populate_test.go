@@ -31,7 +31,7 @@ var expectedMetrics = []*sdk.EntityData{
 				"event_type":                     "K8sPodSample",
 				"net.rxBytesPerSecond":           0., // 106175985, but is RATE
 				"net.txBytesPerSecond":           0., // 35714359, but is RATE
-				"net.errorCountPerSecond":        0.,
+				"net.errorsPerSecond":            0.,
 				"createdAt":                      parseTime("2018-02-14T16:26:33Z").Unix(),
 				"startTime":                      parseTime("2018-02-14T16:26:33Z").Unix(),
 				"createdKind":                    "DaemonSet",

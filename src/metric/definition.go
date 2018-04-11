@@ -190,7 +190,7 @@ var KubeletSpecs = definition.SpecGroups{
 			// /stats/summary endpoint
 			{"net.rxBytesPerSecond", definition.FromRaw("rxBytes"), sdkMetric.RATE},
 			{"net.txBytesPerSecond", definition.FromRaw("txBytes"), sdkMetric.RATE},
-			{"net.errorCountPerSecond", definition.FromRaw("errors"), sdkMetric.RATE},
+			{"net.errorsPerSecond", definition.FromRaw("errors"), sdkMetric.RATE},
 
 			// /pods endpoint
 			{"createdAt", definition.Transform(definition.FromRaw("createdAt"), toTimestamp), sdkMetric.GAUGE},
@@ -255,7 +255,7 @@ var KubeletSpecs = definition.SpecGroups{
 			{"memoryMajorPageFaultsPerSecond", definition.FromRaw("memoryMajorPageFaults"), sdkMetric.RATE},
 			{"net.rxBytesPerSecond", definition.FromRaw("rxBytes"), sdkMetric.RATE},
 			{"net.txBytesPerSecond", definition.FromRaw("txBytes"), sdkMetric.RATE},
-			{"net.errorCountPerSecond", definition.FromRaw("errors"), sdkMetric.RATE},
+			{"net.errorsPerSecond", definition.FromRaw("errors"), sdkMetric.RATE},
 			{"fsAvailableBytes", definition.FromRaw("fsAvailableBytes"), sdkMetric.GAUGE},
 			{"fsCapacityBytes", definition.FromRaw("fsCapacityBytes"), sdkMetric.GAUGE},
 			{"fsUsedBytes", definition.FromRaw("fsUsedBytes"), sdkMetric.GAUGE},
