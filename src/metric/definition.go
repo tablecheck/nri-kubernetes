@@ -246,7 +246,7 @@ var KubeletSpecs = definition.SpecGroups{
 		Specs: []definition.Spec{
 			{"nodeName", definition.FromRaw("nodeName"), sdkMetric.ATTRIBUTE},
 			{"cpuUsedCores", definition.Transform(definition.FromRaw("usageNanoCores"), fromNano), sdkMetric.GAUGE},
-			{"cpuUsedCoresMilliseconds", definition.Transform(definition.FromRaw("usageCoreNanoSeconds"), fromNanoToMilli), sdkMetric.GAUGE},
+			{"cpuUsedCoreMilliseconds", definition.Transform(definition.FromRaw("usageCoreNanoSeconds"), fromNanoToMilli), sdkMetric.GAUGE},
 			{"memoryUsedBytes", definition.FromRaw("memoryUsageBytes"), sdkMetric.GAUGE},
 			{"memoryAvailableBytes", definition.FromRaw("memoryAvailableBytes"), sdkMetric.GAUGE},
 			{"memoryWorkingSetBytes", definition.FromRaw("memoryWorkingSetBytes"), sdkMetric.GAUGE},
