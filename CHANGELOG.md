@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Boolean values have changed from `"true"` and `"false"` to `1` and `0` respectively from the following metrics:
   1. isReady and isScheduled for pods.
   2. isReady for containers.
+- Update metrics
+  1. `errorCountPerSecond` to `errorCountPerSecond` for pods and nodes.
+  2. `usageCoreSeconds` to `cpuUsedCoresMilliseconds` for nodes.
+  3. `memoryMajorPageFaults` to `memoryMajorPageFaultsPerSecond` for nodes.
+
+### Fixed
+- Calculate properly RATE metrics.
 
 ## 1.0.0-beta5
 

@@ -1,6 +1,7 @@
 package metric
 
 import (
+	"errors"
 	"testing"
 
 	"time"
@@ -9,7 +10,6 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric/testdata"
 	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,7 +31,7 @@ var expectedMetrics = []*sdk.EntityData{
 				"event_type":                     "K8sPodSample",
 				"net.rxBytesPerSecond":           0., // 106175985, but is RATE
 				"net.txBytesPerSecond":           0., // 35714359, but is RATE
-				"net.errorCount":                 uint64(0),
+				"net.errorCountPerSecond":        0.,
 				"createdAt":                      parseTime("2018-02-14T16:26:33Z").Unix(),
 				"startTime":                      parseTime("2018-02-14T16:26:33Z").Unix(),
 				"createdKind":                    "DaemonSet",

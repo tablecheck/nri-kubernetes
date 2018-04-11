@@ -190,7 +190,7 @@ var KubeletSpecs = definition.SpecGroups{
 			// /stats/summary endpoint
 			{"net.rxBytesPerSecond", definition.FromRaw("rxBytes"), sdkMetric.RATE},
 			{"net.txBytesPerSecond", definition.FromRaw("txBytes"), sdkMetric.RATE},
-			{"net.errorCount", definition.FromRaw("errors"), sdkMetric.GAUGE},
+			{"net.errorCountPerSecond", definition.FromRaw("errors"), sdkMetric.RATE},
 
 			// /pods endpoint
 			{"createdAt", definition.Transform(definition.FromRaw("createdAt"), toTimestamp), sdkMetric.GAUGE},
@@ -246,16 +246,16 @@ var KubeletSpecs = definition.SpecGroups{
 		Specs: []definition.Spec{
 			{"nodeName", definition.FromRaw("nodeName"), sdkMetric.ATTRIBUTE},
 			{"cpuUsedCores", definition.Transform(definition.FromRaw("usageNanoCores"), fromNano), sdkMetric.GAUGE},
-			{"usageCoreSeconds", definition.Transform(definition.FromRaw("usageCoreNanoSeconds"), fromNano), sdkMetric.GAUGE},
+			{"cpuUsedCoresMilliseconds", definition.Transform(definition.FromRaw("usageCoreNanoSeconds"), fromNanoToMilli), sdkMetric.GAUGE},
 			{"memoryUsedBytes", definition.FromRaw("memoryUsageBytes"), sdkMetric.GAUGE},
 			{"memoryAvailableBytes", definition.FromRaw("memoryAvailableBytes"), sdkMetric.GAUGE},
 			{"memoryWorkingSetBytes", definition.FromRaw("memoryWorkingSetBytes"), sdkMetric.GAUGE},
 			{"memoryRssBytes", definition.FromRaw("memoryRssBytes"), sdkMetric.GAUGE},
 			{"memoryPageFaults", definition.FromRaw("memoryPageFaults"), sdkMetric.GAUGE},
-			{"memoryMajorPageFaults", definition.FromRaw("memoryMajorPageFaults"), sdkMetric.GAUGE},
+			{"memoryMajorPageFaultsPerSecond", definition.FromRaw("memoryMajorPageFaults"), sdkMetric.RATE},
 			{"net.rxBytesPerSecond", definition.FromRaw("rxBytes"), sdkMetric.RATE},
 			{"net.txBytesPerSecond", definition.FromRaw("txBytes"), sdkMetric.RATE},
-			{"net.errorCount", definition.FromRaw("errors"), sdkMetric.GAUGE},
+			{"net.errorCountPerSecond", definition.FromRaw("errors"), sdkMetric.RATE},
 			{"fsAvailableBytes", definition.FromRaw("fsAvailableBytes"), sdkMetric.GAUGE},
 			{"fsCapacityBytes", definition.FromRaw("fsCapacityBytes"), sdkMetric.GAUGE},
 			{"fsUsedBytes", definition.FromRaw("fsUsedBytes"), sdkMetric.GAUGE},
@@ -280,6 +280,15 @@ func fromNano(value definition.FetchedValue) (definition.FetchedValue, error) {
 	}
 
 	return float64(v) / 1000000000, nil
+}
+
+func fromNanoToMilli(value definition.FetchedValue) (definition.FetchedValue, error) {
+	v, ok := value.(uint64)
+	if !ok {
+		return nil, errors.New("error transforming cpu cores to milliseconds")
+	}
+
+	return float64(v) / 1000000, nil
 }
 
 func toTimestamp(value definition.FetchedValue) (definition.FetchedValue, error) {

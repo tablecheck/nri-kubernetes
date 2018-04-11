@@ -22,6 +22,20 @@ func TestFromNano(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestFromNanoToMilli(t *testing.T) {
+	v, err := fromNanoToMilli(uint64(123456789))
+	assert.Equal(t, 123.456789, v)
+	assert.NoError(t, err)
+
+	v, err = fromNano(123456789)
+	assert.Nil(t, v)
+	assert.Error(t, err)
+
+	v, err = fromNano("not-valid")
+	assert.Nil(t, v)
+	assert.Error(t, err)
+}
+
 func TestToTimestap(t *testing.T) {
 	t1, _ := time.Parse(time.RFC3339, "2018-02-14T16:26:33Z")
 	v, err := toTimestamp(t1)
