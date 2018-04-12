@@ -36,12 +36,12 @@ For development process [Skaffold](https://github.com/GoogleCloudPlatform/skaffo
 ### Configuration
 
 * Copy the daemonset file `deploy/newrelic-infra.yaml` to `deploy/local.yaml`.
-* Edit the file and set the following value as container image: `IMAGE_NAME`.
+* Edit the file and set the following value as container image: `newrelic/infrastructure-k8s-dev`.
 
 ```yaml
   containers:
     - name: newrelic-infra
-      image: IMAGE_NAME
+      image: newrelic/infrastructure-k8s-dev
       resources:
 ```
 
@@ -64,24 +64,24 @@ Then you can [view your data](#usage) or run the integration standalone. To do s
 * Run
 
 ```bash
-$ NR_POD_NAME=$(kubectl get pods --namespace kube-system -l name=newrelic-infra -o jsonpath='{.items[0].metadata.name}')
+NR_POD_NAME=$(kubectl get pods -l name=newrelic-infra -o jsonpath='{.items[0].metadata.name}')
 ```
 This will retrieve the name of a pod where the Infrastructure agent and Kuberntetes Infrastructure Integration are installed.
 
 * Enter to the pod
 
 ```bash
-kubectl exec -it $NR_POD_NAME --namespace kube-system -- /bin/bash
+kubectl exec -it $NR_POD_NAME -- /bin/bash
 ```
 
 * Execute the Kubernetes integration
 
 ```bash
-$ /var/db/newrelic-infra/newrelic-integrations/bin/nr-kubernetes -pretty
+/var/db/newrelic-infra/newrelic-integrations/bin/nr-kubernetes -pretty
 ```
 
 * For running test, use
 
-```
-$ make test
+```bash
+make test
 ```

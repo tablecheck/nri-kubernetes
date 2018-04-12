@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.0.0-beta5.1
+## 1.0.0-beta1.0
+
+Initial public beta release.
+
+## 1.0.0-alpha5.1
 
 ### Changed
 - TransformFunc now handles errors.
@@ -21,7 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Calculate properly RATE metrics.
 
-## 1.0.0-beta5
+## 1.0.0-alpha5
 
 ### Added
 - TypeGenerator for entities.
@@ -57,7 +61,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Skip missing data from /stats/summary endpoint, instead of reporting them as zero values.
 - Entities not reported in case of problem with setting their name or type.
 
-## 1.0.0-beta4
+## 1.0.0-alpha4
 
 ### Added
 - Adding node metrics. Data is fetched from Kubelet and kube-state-metrics.
@@ -70,7 +74,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Integration stops on KSM or Kubelet connection error, instead of continuing.
 
-## 1.0.0-beta3
+## 1.0.0-alpha3
 
 ### Changed
 - `updatedAt` metric was renamed to `podsUpdated`.
@@ -80,7 +84,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Fix debug log level when verbose. Some parts of the code didn't log debug information.
 
-## 1.0.0-beta2
+## 1.0.0-alpha2
 
 ### Added
 - Metrics for unscheduled Pods.
@@ -89,7 +93,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fix format of inherited labels. Remove unnecessary prefix `label_` included by kube-state-metrics.
 - Fix labels inheritance. Labels weren't propagating between "entities" correctly.
 
-## 1.0.0-beta
+## 1.0.0-alpha
 
 ### Added
 - Initial version reporting metrics about Namespaces, Deployments, ReplicaSets,
