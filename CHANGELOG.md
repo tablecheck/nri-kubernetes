@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+### Unreleased
+
+### Added
+- nodes/metrics resource was added to the newrelic cluster role.
+
 ## 1.0.0-beta1.0
 
 Initial public beta release.
