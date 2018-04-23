@@ -58,17 +58,15 @@ container_memory_usage_bytes{container_name="influxdb",id="/kubepods/besteffort/
 	}
 
 	_, err := CadvisorFetchFunc(&c, cadvisorQueries)()
-
 	assert.Error(t, err)
-	expectedErr := data.ErrorGroup{
-		Errors: []error{
-			errors.New("container name not found in cadvisor metrics"),
-			errors.New("namespace not found in cadvisor metrics"),
-			errors.New("pod name not found in cadvisor metrics"),
-			errors.New("container id not found in cadvisor metrics"),
-			errors.New("container image not found in cadvisor metrics"),
-		},
+
+	expectedErrs := []error{
+		errors.New("container name not found in cadvisor metrics"),
+		errors.New("namespace not found in cadvisor metrics"),
+		errors.New("pod name not found in cadvisor metrics"),
+		errors.New("container id not found in cadvisor metrics"),
+		errors.New("container image not found in cadvisor metrics"),
 	}
 
-	assert.EqualError(t, err, expectedErr.Error())
+	assert.ElementsMatch(t, expectedErrs, err.(data.ErrorGroup).Errors)
 }
