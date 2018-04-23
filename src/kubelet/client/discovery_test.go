@@ -27,8 +27,6 @@ func failingClientMock() *client.MockedKubernetes {
 	c := new(client.MockedKubernetes)
 	c.On("Config").Return(nil)
 	c.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
-	c.On("FindPodByName", mock.Anything).Return(&v1.PodList{}, errors.New("FindPodByName should not be invoked"))
-	c.On("FindPodsByHostname", mock.Anything).Return(&v1.PodList{}, errors.New("FindPodsByHostname should not be invoked"))
 	c.On("FindNode", mock.Anything).Return(nil, errors.New("FindNode should not be invoked"))
 	return c
 }
@@ -39,12 +37,6 @@ func mockedClient() *client.MockedKubernetes {
 	c.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
 	c.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
 	return c
-}
-
-// sets the result of the FindPodByName function in the Kubernetes API Client
-func onFindPodByName(c *client.MockedKubernetes, nodeName string) {
-	c.On("FindPodByName", mock.Anything).
-		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: nodeName}}}}, nil)
 }
 
 // sets the result of the FindNode function in the Kubernetes API Client
@@ -97,7 +89,6 @@ func TestDiscoverHTTP_DefaultInsecurePort(t *testing.T) {
 	// Given a client
 	c := mockedClient()
 
-	onFindPodByName(c, "the-node-name")
 	onFindNode(c, "the-node-name", "1.2.3.4", defaultInsecureKubeletPort)
 
 	// and an Discoverer implementation
@@ -105,6 +96,8 @@ func TestDiscoverHTTP_DefaultInsecurePort(t *testing.T) {
 		apiClient:   c,
 		connChecker: allOkConnectionChecker,
 		logger:      logger,
+		nodeName:    "the-node-name",
+		hostIP:      "1.2.3.4",
 	}
 
 	// When retrieving the Kubelet URL
@@ -117,39 +110,9 @@ func TestDiscoverHTTP_DefaultInsecurePort(t *testing.T) {
 	assert.Equal(t, "http", kclient.(*kubelet).endpoint.Scheme)
 }
 
-func TestDiscoverHTTP_NotFoundByName(t *testing.T) {
-	// Given a client
-	c := mockedClient()
-
-	// That doesn't find the pod by name
-	c.On("FindPodByName", mock.Anything).
-		Return(&v1.PodList{Items: []v1.Pod{}}, nil)
-
-	// But finds it by hostname
-	c.On("FindPodsByHostname", mock.Anything).
-		Return(&v1.PodList{Items: []v1.Pod{{Spec: v1.PodSpec{NodeName: "the-node-name"}}}}, nil)
-	onFindNode(c, "the-node-name", "11.22.33.44", 5432)
-
-	d := discoverer{
-		apiClient:   c,
-		connChecker: allOkConnectionChecker,
-		logger:      logger,
-	}
-
-	// When retrieving the Kubelet URL
-	kclient, err := d.Discover(timeout)
-	// The call works correctly
-	assert.Nil(t, err, "should not return error")
-	// And the discovered host:port of the Kubelet is returned
-	assert.Equal(t, "11.22.33.44", kclient.NodeIP())
-	assert.Equal(t, "11.22.33.44:5432", kclient.(*kubelet).endpoint.Host)
-	assert.Equal(t, "http", kclient.(*kubelet).endpoint.Scheme)
-}
-
 func TestDiscoverHTTPS_DefaultSecurePort(t *testing.T) {
 	// Given a client
 	c := mockedClient()
-	onFindPodByName(c, "the-node-name")
 	onFindNode(c, "the-node-name", "1.2.3.4", defaultSecureKubeletPort)
 
 	// and an Discoverer implementation
@@ -157,6 +120,8 @@ func TestDiscoverHTTPS_DefaultSecurePort(t *testing.T) {
 		apiClient:   c,
 		connChecker: allOkConnectionChecker,
 		logger:      logger,
+		nodeName:    "the-node-name",
+		hostIP:      "1.2.3.4",
 	}
 
 	// When retrieving the Kubelet URL
@@ -172,7 +137,6 @@ func TestDiscoverHTTPS_DefaultSecurePort(t *testing.T) {
 func TestDiscoverHTTP_CheckingConnection(t *testing.T) {
 	// Given a client
 	c := mockedClient()
-	onFindPodByName(c, "the-node-name")
 	// Whose Kubelet has an endpoint in a non-default port
 	onFindNode(c, "the-node-name", "1.2.3.4", 55332)
 
@@ -181,6 +145,8 @@ func TestDiscoverHTTP_CheckingConnection(t *testing.T) {
 		apiClient:   c,
 		connChecker: allOkConnectionChecker,
 		logger:      logger,
+		nodeName:    "the-node-name",
+		hostIP:      "1.2.3.4",
 	}
 
 	// When retrieving the Kubelet URL
@@ -196,7 +162,6 @@ func TestDiscoverHTTP_CheckingConnection(t *testing.T) {
 func TestDiscoverHTTPS_CheckingConnection(t *testing.T) {
 	// Given a client
 	c := mockedClient()
-	onFindPodByName(c, "the-node-name")
 	// Whose Kubelet has an endpoint in a non-default port
 	onFindNode(c, "the-node-name", "1.2.3.4", 55332)
 
@@ -205,6 +170,8 @@ func TestDiscoverHTTPS_CheckingConnection(t *testing.T) {
 		apiClient:   c,
 		connChecker: failOnInsecureConnection,
 		logger:      logger,
+		nodeName:    "the-node-name",
+		hostIP:      "1.2.3.4",
 	}
 
 	// When retrieving the Kubelet URL
@@ -220,7 +187,6 @@ func TestDiscoverHTTPS_CheckingConnection(t *testing.T) {
 func TestDiscoverHTTPS_ApiConnection(t *testing.T) {
 	// Given a client
 	c := mockedClient()
-	onFindPodByName(c, "the-node-name")
 	// Whose Kubelet has an endpoint in a non-default port
 	onFindNode(c, "the-node-name", "1.2.3.4", 55332)
 
@@ -229,6 +195,8 @@ func TestDiscoverHTTPS_ApiConnection(t *testing.T) {
 		apiClient:   c,
 		connChecker: onlyAPIConnectionChecker,
 		logger:      logger,
+		nodeName:    "the-node-name",
+		hostIP:      "1.2.3.4",
 	}
 
 	// When retrieving the Kubelet URL
@@ -246,34 +214,13 @@ func TestDiscover_NodeNotFoundError(t *testing.T) {
 	c := mockedClient()
 
 	// That doesn't find the pod neither by name nor hostname
-	c.On("FindPodByName", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
-	c.On("FindPodsByHostname", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
 	c.On("FindNode", "the-node-name").Return(nil, fmt.Errorf("Node not found"))
 
 	d := discoverer{
 		apiClient: c,
 		logger:    logger,
-	}
-
-	// When retrieving the Kubelet URL
-	_, err := d.Discover(timeout)
-	// The system returns an error
-	assert.NotNil(t, err, "should return error")
-}
-
-func TestDiscover_NilNodeError(t *testing.T) {
-	// Given a client
-	c := mockedClient()
-
-	// That doesn't find the pod neither by name nor hostname
-	c.On("FindPodByName", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
-	c.On("FindPodsByHostname", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
-	c.On("FindNode", "the-node-name").Return(nil, nil)
-
-	d := discoverer{
-		apiClient:   c,
-		connChecker: allOkConnectionChecker,
-		logger:      logger,
+		nodeName:  "the-node-name",
+		hostIP:    "1.2.3.4",
 	}
 
 	// When retrieving the Kubelet URL

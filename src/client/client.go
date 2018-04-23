@@ -19,10 +19,6 @@ type Kubernetes interface {
 	FindNode(name string) (*v1.Node, error)
 	// FindPodsByLabel returns a PodList reference containing the pods matching the provided name/value label pair
 	FindPodsByLabel(name, value string) (*v1.PodList, error)
-	// FindPodByName returns a PodList reference that should contain the pod whose name matches with the name argument
-	FindPodByName(name string) (*v1.PodList, error)
-	// FindPodsByHostname returns a Podlist reference containing the pod or pods whose hostname matches the argument
-	FindPodsByHostname(hostname string) (*v1.PodList, error)
 	// FindServiceByLabel returns a ServiceList containing the services matching the provided name/value label pair
 	// name/value pairs
 	FindServiceByLabel(name, value string) (*v1.ServiceList, error)
@@ -48,18 +44,6 @@ func (ka *goClientImpl) FindNode(name string) (*v1.Node, error) {
 func (ka *goClientImpl) FindPodsByLabel(name, value string) (*v1.PodList, error) {
 	return ka.client.CoreV1().Pods("").List(metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", name, value),
-	})
-}
-
-func (ka *goClientImpl) FindPodByName(name string) (*v1.PodList, error) {
-	return ka.client.CoreV1().Pods("").List(metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("metadata.name=%s", name),
-	})
-}
-
-func (ka *goClientImpl) FindPodsByHostname(hostname string) (*v1.PodList, error) {
-	return ka.client.CoreV1().Pods("").List(metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("spec.hostname=%s", hostname),
 	})
 }
 

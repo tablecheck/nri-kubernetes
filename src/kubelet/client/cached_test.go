@@ -10,14 +10,11 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"k8s.io/api/core/v1"
 )
 
 func TestDiscover_Cache_HTTP(t *testing.T) {
 	// Given a Kubernetes API client
 	c := mockedClient()
-	onFindPodByName(c, "the-node-name")
 	onFindNode(c, "the-node-name", "1.2.3.4", defaultInsecureKubeletPort)
 
 	// And a disk cache storage
@@ -29,6 +26,8 @@ func TestDiscover_Cache_HTTP(t *testing.T) {
 		apiClient:   c,
 		connChecker: allOkConnectionChecker,
 		logger:      logger,
+		nodeName:    "the-node-name",
+		hostIP:      "1.2.3.4",
 	}
 
 	// And a Kubelet Discovery Cacher
@@ -36,6 +35,7 @@ func TestDiscover_Cache_HTTP(t *testing.T) {
 
 	// That successfully retrieved the insecure Kubelet URL
 	caClient, err := cacher.Discover(timeout)
+	assert.NoError(t, err)
 	kclient := client.WrappedClient(caClient)
 	assert.Equal(t, "d34db33f", kclient.(*kubelet).config.BearerToken)
 
@@ -58,7 +58,6 @@ func TestDiscover_Cache_HTTP(t *testing.T) {
 func TestDiscover_Cache_HTTPS_InsecureClient(t *testing.T) {
 	// Given a Kubernetes API Client
 	c := mockedClient()
-	onFindPodByName(c, "the-node-name")
 	onFindNode(c, "the-node-name", "1.2.3.4", defaultSecureKubeletPort)
 
 	// And a disk cache storage
@@ -70,6 +69,8 @@ func TestDiscover_Cache_HTTPS_InsecureClient(t *testing.T) {
 		apiClient:   c,
 		connChecker: allOkConnectionChecker,
 		logger:      logger,
+		nodeName:    "the-node-name",
+		hostIP:      "1.2.3.4",
 	}
 
 	// And a Kubelet Discovery Cacher
@@ -97,7 +98,6 @@ func TestDiscover_Cache_HTTPS_InsecureClient(t *testing.T) {
 func TestDiscover_Cache_HTTPS_SecureClient(t *testing.T) {
 	// Given a Kubernetes API Client
 	c := mockedClient()
-	onFindPodByName(c, "the-node-name")
 	// In a node whose Kubelet endpoint has not an standard port
 	onFindNode(c, "the-node-name", "1.2.3.4", 55332)
 
@@ -110,6 +110,8 @@ func TestDiscover_Cache_HTTPS_SecureClient(t *testing.T) {
 		apiClient:   c,
 		connChecker: onlyAPIConnectionChecker,
 		logger:      logger,
+		nodeName:    "the-node-name",
+		hostIP:      "1.2.3.4",
 	}
 
 	// And a Kubelet Discovery Cacher
@@ -137,9 +139,7 @@ func TestDiscover_Cache_DiscoveryError(t *testing.T) {
 	// Given a Kubernetes API Client
 	c := mockedClient()
 
-	// That doesn't find the pod neither by name nor hostname
-	c.On("FindPodByName", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
-	c.On("FindPodsByHostname", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
+	// That doesn't find the node
 	c.On("FindNode", "the-node-name").Return(nil, fmt.Errorf("Node not found"))
 
 	// And a disk cache storage
@@ -147,10 +147,13 @@ func TestDiscover_Cache_DiscoveryError(t *testing.T) {
 	assert.NoError(t, err)
 	storage := storage.NewJSONDiskStorage(tmpDir)
 	// and an Discoverer implementation
+
 	wrappedDiscoverer := discoverer{
 		apiClient:   c,
 		connChecker: onlyAPIConnectionChecker,
 		logger:      logger,
+		nodeName:    "the-node-name",
+		hostIP:      "1.2.3.4",
 	}
 
 	// And a Kubelet Discovery Cacher without any cached data
