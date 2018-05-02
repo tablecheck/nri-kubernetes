@@ -5,13 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+### Unreleased
 
 ### Added
 - nodes/metrics resource was added to the newrelic cluster role.
-
-### Changed
-- Most part of the Kubelet autodiscovery process is now done using env vars specified in our config file and set by Kubernetes.
 
 ## 1.0.0-beta1.0
 

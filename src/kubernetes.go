@@ -12,8 +12,6 @@ import (
 	ksmClient "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet"
 
-	"os"
-
 	kubeletClient "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/client"
 	metric2 "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/metric"
@@ -36,9 +34,6 @@ type argumentList struct {
 const (
 	integrationName    = "com.newrelic.kubernetes"
 	integrationVersion = "1.0.0-beta1.0"
-
-	nodeNameEnvVar = "NRK8S_NODE_NAME"
-	hostIPEnvVar   = "NRK8S_HOST_IP"
 )
 
 var args argumentList
@@ -115,16 +110,6 @@ func main() {
 		logger.Panic(errors.New("cluster_name argument is mandatory"))
 	}
 
-	nodeName := os.Getenv(nodeNameEnvVar)
-	if nodeName == "" {
-		logger.Panicf("%s env var should be provided by Kubernetes and is mandatory", nodeNameEnvVar)
-	}
-
-	hostIP := os.Getenv(hostIPEnvVar)
-	if hostIP == "" {
-		logger.Panicf("%s env var should be provided by Kubernetes and is mandatory", hostIPEnvVar)
-	}
-
 	if args.All || args.Metrics {
 		ttl, err := time.ParseDuration(args.DiscoveryCacheTTL)
 		if err != nil {
@@ -134,9 +119,9 @@ func main() {
 
 		timeout := time.Millisecond * time.Duration(args.Timeout)
 
-		innerKubeletDiscoverer, err := kubeletClient.NewDiscoverer(nodeName, hostIP, logger)
+		innerKubeletDiscoverer, err := kubeletClient.NewDiscoverer(logger)
 		if err != nil {
-			logger.Panicf("error during Kubelet auto discovering process. %s", err)
+			logger.Panic(err)
 		}
 		cacheStorage := storage.NewJSONDiskStorage(args.DiscoveryCacheDir)
 		kubeletDiscoverer := kubeletClient.NewDiscoveryCacher(innerKubeletDiscoverer, cacheStorage, ttl, logger)

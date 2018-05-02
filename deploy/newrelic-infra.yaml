@@ -82,15 +82,7 @@ spec:
                   apiVersion: "v1"
                   fieldPath: "spec.nodeName"
             - name: "NRIA_PASSTHROUGH_ENVIRONMENT"
-              value: "KUBERNETES_SERVICE_HOST,KUBERNETES_SERVICE_PORT,CLUSTER_NAME,NRK8S_NODE_NAME,NRK8S_HOST_IP"
-            - name: "NRK8S_HOST_IP"
-              valueFrom:
-                fieldRef:
-                  fieldPath: "status.hostIP"
-            - name: "NRK8S_NODE_NAME"
-              valueFrom:
-                fieldRef:
-                  fieldPath: "spec.nodeName"
+              value: "KUBERNETES_SERVICE_HOST,KUBERNETES_SERVICE_PORT,CLUSTER_NAME"
       volumes:
         - name: host-volume
           hostPath:
