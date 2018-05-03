@@ -21,10 +21,14 @@ func (r *kubelet) Group(definition.SpecGroups) (definition.RawGroups, *data.Erro
 	for _, f := range r.fetchers {
 		g, err := f()
 		if err != nil {
-			return nil, &data.ErrorGroup{
-				Recoverable: false,
-				Errors:      []error{fmt.Errorf("error querying Kubelet. %s", err)},
+			// TODO We don't have to panic when multiple err
+			if _, ok := err.(data.ErrorGroup); !ok {
+				return nil, &data.ErrorGroup{
+					Recoverable: false,
+					Errors:      []error{fmt.Errorf("error querying Kubelet. %s", err)},
+				}
 			}
+
 		}
 		fillGroupsAndMergeNonExistent(rawGroups, g)
 	}

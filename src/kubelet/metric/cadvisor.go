@@ -12,7 +12,7 @@ import (
 )
 
 // CadvisorMetricsPath is the path where kubelet serves information about cadvisor.
-const CadvisorMetricsPath = "/metrics/cadvisor"
+const CadvisorMetricsPath = "/metrics"
 
 // CadvisorFetchFunc creates a FetchFunc that fetches data from the kubelet cadvisor metrics path.
 func CadvisorFetchFunc(c client.HTTPClient, queries []prometheus.Query) data.FetchFunc {
@@ -83,7 +83,8 @@ func CadvisorFetchFunc(c client.HTTPClient, queries []prometheus.Query) data.Fet
 
 		if len(errs) > 0 {
 			return g, data.ErrorGroup{
-				Errors: errs,
+				Errors:      errs,
+				Recoverable: true,
 			}
 		}
 

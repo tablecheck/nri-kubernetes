@@ -2,10 +2,13 @@ package client
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
@@ -28,6 +31,7 @@ const (
 	apiHost                    = "kubernetes.default"
 	defaultInsecureKubeletPort = 10255
 	defaultSecureKubeletPort   = 10250
+	defaultCadvisorPort        = 4194
 )
 
 // client type (if you need to add new values, do it at the end of the list)
@@ -69,6 +73,13 @@ func (c *kubelet) Do(method, path string) (*http.Response, error) {
 	var err error
 	if path == metric.CadvisorMetricsPath {
 		r, err = prometheus.NewRequest(method, e.String())
+		// Use proper cadvisor port
+		_, p, splitErr := net.SplitHostPort(e.Host)
+		if splitErr != nil {
+			err = splitErr
+		}
+
+		r, err = prometheus.NewRequest(method, strings.Replace(strings.Replace(e.String(), p, strconv.Itoa(defaultCadvisorPort), 1), "https", "http", 1))
 	} else {
 		r, err = http.NewRequest(method, e.String(), nil)
 	}

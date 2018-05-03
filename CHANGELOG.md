@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - nodes/metrics resource was added to the newrelic cluster role.
 
+### Changed
+- CAdvisor call is now bypassing Kubelet endpoint talking then directoy to CAdvisor port
+
 ## 1.0.0-beta1.0
 
 Initial public beta release.
