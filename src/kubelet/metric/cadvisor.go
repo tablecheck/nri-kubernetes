@@ -11,15 +11,20 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
 )
 
-// CadvisorMetricsPath is the path where kubelet serves information about cadvisor.
-const CadvisorMetricsPath = "/metrics"
+const (
+	// KubeletCAdvisorMetricsPath is the path where kubelet serves information about cadvisor.
+	KubeletCAdvisorMetricsPath = "/metrics/cadvisor"
+
+	// StandaloneCAdvisorMetricsPath is the path where standalone cadvisor serves information.
+	StandaloneCAdvisorMetricsPath = "/metrics"
+)
 
 // CadvisorFetchFunc creates a FetchFunc that fetches data from the kubelet cadvisor metrics path.
 func CadvisorFetchFunc(c client.HTTPClient, queries []prometheus.Query) data.FetchFunc {
 	return func() (definition.RawGroups, error) {
-		families, err := prometheus.Do(c, CadvisorMetricsPath, queries)
+		families, err := prometheus.Do(c, KubeletCAdvisorMetricsPath, queries)
 		if err != nil {
-			return nil, fmt.Errorf("error requesting cadvisor metrics endpoint. %s", err)
+			return nil, fmt.Errorf("error requesting cadvisor metrics endpoint. %s. Try setting the CADVISOR_PORT env variable in the configuration", err)
 		}
 
 		var errs []error

@@ -2,13 +2,10 @@ package client
 
 import (
 	"fmt"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
@@ -31,7 +28,6 @@ const (
 	apiHost                    = "kubernetes.default"
 	defaultInsecureKubeletPort = 10255
 	defaultSecureKubeletPort   = 10250
-	defaultCadvisorPort        = 4194
 )
 
 // client type (if you need to add new values, do it at the end of the list)
@@ -71,15 +67,19 @@ func (c *kubelet) Do(method, path string) (*http.Response, error) {
 
 	var r *http.Request
 	var err error
-	if path == metric.CadvisorMetricsPath {
-		r, err = prometheus.NewRequest(method, e.String())
-		// Use proper cadvisor port
-		_, p, splitErr := net.SplitHostPort(e.Host)
-		if splitErr != nil {
-			err = splitErr
+
+	// TODO Create a new discoverer and client for cadvisor
+	if path == metric.KubeletCAdvisorMetricsPath {
+		if port := os.Getenv("CADVISOR_PORT"); port != "" {
+			// We force to call the standalone cadvisor because k8s < 1.7.6 do not have /metrics/cadvisor kubelet endpoint.
+			e.Scheme = "http"
+			e.Host = fmt.Sprintf("%s:%s", c.nodeIP, port)
+			e.Path = metric.StandaloneCAdvisorMetricsPath
+
+			c.logger.Debugf("Using standalone cadvisor on port %s", port)
 		}
 
-		r, err = prometheus.NewRequest(method, strings.Replace(strings.Replace(e.String(), p, strconv.Itoa(defaultCadvisorPort), 1), "https", "http", 1))
+		r, err = prometheus.NewRequest(method, e.String())
 	} else {
 		r, err = http.NewRequest(method, e.String(), nil)
 	}
@@ -93,6 +93,7 @@ func (c *kubelet) Do(method, path string) (*http.Response, error) {
 	}
 
 	c.logger.Debugf("Calling Kubelet endpoint: %s", r.URL.String())
+
 	return c.httpClient.Do(r)
 }
 

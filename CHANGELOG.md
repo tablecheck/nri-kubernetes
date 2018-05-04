@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+### 1.0.0-beta2.1
+
+### Added
+- Allow direct connection to cAdvisor by specifying the port.
+
+### Fixed
+- Call to CAdvisor was failing when Kubelet was secure.
+
 ### 1.0.0-beta2.0
 
 ### Added

@@ -52,7 +52,7 @@ func rawGroupsHandlerFunc(w http.ResponseWriter, r *http.Request) {
 		defer f.Close() // nolint: errcheck
 
 		io.Copy(w, f)
-	case metric.CadvisorMetricsPath:
+	case metric.KubeletCAdvisorMetricsPath:
 		f, err := os.Open("metric/testdata/kubelet_metrics_cadvisor_payload_plain.txt")
 		if err != nil {
 			panic(err)
