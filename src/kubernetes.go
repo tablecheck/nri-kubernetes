@@ -56,11 +56,13 @@ func group(grouper data.Grouper, specs definition.SpecGroups, i *sdk.Integration
 			if multiple.Recoverable {
 				logger.WithError(multiple).Debug("populating metrics")
 			} else {
+
+				// TODO consider avoid panic here
 				logger.WithError(multiple).Panic("populating metrics")
 			}
-		} else {
-			logger.Panic(err)
 		}
+
+		return err
 	}
 
 	e, err := i.Entity("nr-errors", "error")
@@ -156,28 +158,37 @@ func main() {
 
 		kubeletGrouper := kubelet.NewGrouper(kubeletClient, logger, metric2.PodsFetchFunc(kubeletClient), metric2.CadvisorFetchFunc(kubeletClient, metric.CadvisorQueries))
 
+		mustPublish := true
 		switch role {
 		case "leader":
-			err = group(kubeletGrouper, metric.KubeletSpecs, integration, args.ClusterName, logger)
-			if err != nil {
-				logger.Panic(err)
+			kubeletErr := group(kubeletGrouper, metric.KubeletSpecs, integration, args.ClusterName, logger)
+			if kubeletErr != nil {
+				logger.Errorf("Error grouping Kubelet metrics: %s", kubeletErr)
 			}
 
 			ksmGrouper := ksm.NewGrouper(ksmClient, metric.KSMQueries, logger)
-			err = group(ksmGrouper, metric.KSMSpecs, integration, args.ClusterName, logger)
-			if err != nil {
-				logger.Panic(err)
+			ksmErr := group(ksmGrouper, metric.KSMSpecs, integration, args.ClusterName, logger)
+			if ksmErr != nil {
+				logger.Errorf("Error grouping KSM metrics: %s", ksmErr)
 			}
+
+			if kubeletErr != nil && ksmErr != nil {
+				mustPublish = false
+			}
+
 		case "follower":
 			err = group(kubeletGrouper, metric.KubeletSpecs, integration, args.ClusterName, logger)
+			if err != nil {
+				logger.Errorf("Error grouping Kubelet metrics: %s", err)
+				mustPublish = false
+			}
+		}
+
+		if mustPublish {
+			err = integration.Publish()
 			if err != nil {
 				logger.Panic(err)
 			}
 		}
-	}
-
-	err = integration.Publish()
-	if err != nil {
-		logger.Panic(err)
 	}
 }
