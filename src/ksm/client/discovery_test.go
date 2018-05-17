@@ -326,13 +326,12 @@ func TestNodeIP(t *testing.T) {
 
 // Testing Do() method
 func TestDo(t *testing.T) {
-	// Given a ksm struct initialized
-	endpoint, err := url.Parse("http://example.com/")
+	r := strings.NewReader("Foo")
+	s := httptest.NewServer(mockResponseHandler(r))
+	endpoint, err := url.Parse(s.URL)
 	if err != nil {
 		assert.FailNow(t, err.Error())
 	}
-	r := strings.NewReader("Foo")
-	s := httptest.NewServer(mockResponseHandler(r))
 
 	var c = &ksm{
 		nodeIP:     "1.2.3.4",
@@ -347,13 +346,11 @@ func TestDo(t *testing.T) {
 	// The call works correctly
 	assert.NoError(t, err)
 	// The request was created with updated path for URL
-	assert.Equal(t, "http://example.com/foo", resp.Request.URL.String())
+	assert.Equal(t, fmt.Sprintf("%s/foo", s.URL), resp.Request.URL.String())
 	// Accept Header was added to the request
 	assert.Equal(t, prometheus.ProtobufferAcceptHeader, resp.Request.Header.Get("Accept"))
 	// Correct http method was used
 	assert.Equal(t, "GET", resp.Request.Method)
-	// endpoint field of ksm struct was not modified
-	assert.Equal(t, "http://example.com/", endpoint.String())
 }
 
 func TestDo_error(t *testing.T) {
