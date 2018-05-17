@@ -17,8 +17,7 @@ type k8sPopulator struct {
 // Recoverable == true means that you can keep working with those errors.
 // Recoverable == false means you must handle the errors or panic.
 type MultipleErrs struct {
-	Recoverable bool
-	Errs        []error
+	Errs []error
 }
 
 // Error implements error interface
@@ -32,20 +31,27 @@ func (e MultipleErrs) Error() string {
 }
 
 // Populate populates k8s raw data to sdk metrics.
-func (p *k8sPopulator) Populate(groups definition.RawGroups, specGroups definition.SpecGroups, i *sdk.IntegrationProtocol2, clusterName string) (bool, error) {
+func (p *k8sPopulator) Populate(groups definition.RawGroups, specGroups definition.SpecGroups, i *sdk.IntegrationProtocol2, clusterName string) (err *data.PopulateErr) {
 	populatorFunc := definition.IntegrationProtocol2PopulateFunc(i, clusterName, K8sMetricSetTypeGuesser, K8sEntityMetricsManipulator, K8sClusterMetricsManipulator)
 	ok, errs := populatorFunc(groups, specGroups)
 
 	if len(errs) > 0 {
-		return true, MultipleErrs{true, errs}
+		err = &data.PopulateErr{
+			Errs:      errs,
+			Populated: ok,
+		}
+		return
 	}
 
+	// This should not happen ideally if no errors were reported.
 	if !ok {
-		// TODO better error
-		return false, errors.New("no data was populated")
+		return &data.PopulateErr{
+			Errs:      []error{errors.New("no data was populated")},
+			Populated: ok,
+		}
 	}
 
-	return true, nil
+	return err
 }
 
 // NewK8sPopulator creates a Kubernetes aware populator.

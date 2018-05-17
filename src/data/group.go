@@ -15,7 +15,7 @@ type Grouper interface {
 
 // Populator populates a given integration with grouped raw data.
 type Populator interface {
-	Populate(definition.RawGroups, definition.SpecGroups, *sdk.IntegrationProtocol2, string) (bool, error)
+	Populate(definition.RawGroups, definition.SpecGroups, *sdk.IntegrationProtocol2, string) *PopulateErr
 }
 
 // ErrorGroup groups errors that can be recoverable (the execution can continue) or not
@@ -47,4 +47,20 @@ func (g ErrorGroup) String() string {
 // Error implements error interface.
 func (g ErrorGroup) Error() string {
 	return g.String()
+}
+
+// PopulateErr represents an error or a bunch of errors during populate.
+type PopulateErr struct {
+	Errs      []error
+	Populated bool
+}
+
+// Error implements error interface
+func (e PopulateErr) Error() string {
+	s := "populate errors:"
+	for _, err := range e.Errs {
+		s = fmt.Sprintf("%s\n%s", s, err)
+	}
+
+	return s
 }

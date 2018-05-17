@@ -6,6 +6,7 @@ import (
 
 	"time"
 
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric/testdata"
 	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
@@ -113,9 +114,8 @@ func TestPopulateK8s(t *testing.T) {
 			"kube-system_newrelic-infra-rz225_newrelic-infra": testdata.ExpectedGroupData["container"]["kube-system_newrelic-infra-rz225_newrelic-infra"],
 		},
 	}
-	ok, err := p.Populate(foo, kubeletSpecs, i, "test-cluster")
+	err = p.Populate(foo, kubeletSpecs, i, "test-cluster")
 	assert.Error(t, err)
-	assert.True(t, ok)
 
 	// Expected errs (missing data)
 	expectedErrs := []error{
@@ -125,6 +125,6 @@ func TestPopulateK8s(t *testing.T) {
 		errors.New("entity id: kube-system_newrelic-infra-rz225_newrelic-infra: error fetching value for metric reason. Error: FromRaw: metric not found. SpecGroup: container, EntityID: kube-system_newrelic-infra-rz225_newrelic-infra, Metric: reason"),
 	}
 
-	assert.ElementsMatch(t, expectedErrs, err.(MultipleErrs).Errs)
+	assert.ElementsMatch(t, expectedErrs, err.(*data.PopulateErr).Errs)
 	assert.ElementsMatch(t, expectedMetrics, i.Data)
 }
