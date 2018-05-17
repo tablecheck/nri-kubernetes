@@ -169,6 +169,7 @@ PodListLoop:
 		g["pod"][rawEntityID] = rawPodMetrics
 
 		if pod.Containers == nil {
+			// Some pods could have no containers yet or containers could be in a back-off pulling image status.
 			continue PodListLoop
 		}
 
