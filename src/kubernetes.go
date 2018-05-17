@@ -18,7 +18,6 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
 	sdkArgs "github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/newrelic/infra-integrations-sdk/log"
-	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
 	"github.com/sirupsen/logrus"
 )
@@ -38,50 +37,20 @@ const (
 
 var args argumentList
 
-func group(grouper data.Grouper, specs definition.SpecGroups, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) error {
+func populate(grouper data.Grouper, specs definition.SpecGroups, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) *data.PopulateErr {
 	groups, errs := grouper.Group(specs)
 	if errs != nil && len(errs.Errors) > 0 {
 		if !errs.Recoverable {
-			return errors.New(errs.String())
-		}
-		logger.Warnf("%s", errs.String())
-	}
-
-	ok, err := metric.NewK8sPopulator().Populate(groups, specs, i, clusterName)
-	if !ok {
-		logger.Warn("No data was populated")
-	}
-	if err != nil {
-		if multiple, ok := err.(metric.MultipleErrs); ok {
-			if multiple.Recoverable {
-				logger.WithError(multiple).Debug("populating metrics")
-			} else {
-				logger.WithError(multiple).Panic("populating metrics")
-			}
-		} else {
-			logger.Panic(err)
-		}
-	}
-
-	e, err := i.Entity("nr-errors", "error")
-	if err != nil {
-		logger.Panic(err)
-	}
-	if errs != nil {
-		for _, err := range errs.Errors {
-			ms := e.NewMetricSet("K8sDebugErrors")
-			mserr := ms.SetMetric("error", err.Error(), sdkMetric.ATTRIBUTE)
-			if mserr != nil {
-				logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "error", "K8sDebugErrors", mserr)
-			}
-			mserr = ms.SetMetric("clusterName", clusterName, sdkMetric.ATTRIBUTE)
-			if mserr != nil {
-				logger.Debugf("error setting a value in '%s' in metric set '%s': %v", "clusterName", "K8sDebugErrors", mserr)
+			return &data.PopulateErr{
+				Errs:      errs.Errors,
+				Populated: false,
 			}
 		}
+
+		logger.Warnf("%s", errs)
 	}
 
-	return nil
+	return metric.NewK8sPopulator().Populate(groups, specs, i, clusterName)
 }
 
 func main() {
@@ -158,26 +127,37 @@ func main() {
 
 		switch role {
 		case "leader":
-			err = group(kubeletGrouper, metric.KubeletSpecs, integration, args.ClusterName, logger)
-			if err != nil {
-				logger.Panic(err)
+			kubeletErr := populate(kubeletGrouper, metric.KubeletSpecs, integration, args.ClusterName, logger)
+			if kubeletErr != nil {
+				// We don't panic as we want to try populating ksm metrics.
+				logger.Errorf("Error populating Kubelet metrics: %s", kubeletErr)
 			}
 
 			ksmGrouper := ksm.NewGrouper(ksmClient, metric.KSMQueries, logger)
-			err = group(ksmGrouper, metric.KSMSpecs, integration, args.ClusterName, logger)
-			if err != nil {
-				logger.Panic(err)
+			ksmErr := populate(ksmGrouper, metric.KSMSpecs, integration, args.ClusterName, logger)
+			if ksmErr != nil {
+				logger.Errorf("Error populating KSM metrics: %s", ksmErr)
+			}
+
+			if !ksmErr.Populated && !kubeletErr.Populated {
+				// We panic since both populate processes failed.
+				logger.Panic("No data was populated")
 			}
 		case "follower":
-			err = group(kubeletGrouper, metric.KubeletSpecs, integration, args.ClusterName, logger)
+			populateErr := populate(kubeletGrouper, metric.KubeletSpecs, integration, args.ClusterName, logger)
 			if err != nil {
-				logger.Panic(err)
+				logger.Errorf("Error populating Kubelet metrics: %s", err)
+			}
+
+			if !populateErr.Populated {
+				// We panic since the only populate process failed.
+				logger.Panic("No data was populated")
 			}
 		}
-	}
 
-	err = integration.Publish()
-	if err != nil {
-		logger.Panic(err)
+		err = integration.Publish()
+		if err != nil {
+			logger.Panic(err)
+		}
 	}
 }

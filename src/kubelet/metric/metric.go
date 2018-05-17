@@ -169,7 +169,7 @@ PodListLoop:
 		g["pod"][rawEntityID] = rawPodMetrics
 
 		if pod.Containers == nil {
-			errs = append(errs, fmt.Errorf("containers data not found, possible data error in %s response", StatsSummaryPath))
+			// Some pods could have no containers yet or containers could be in a back-off pulling image status.
 			continue PodListLoop
 		}
 
