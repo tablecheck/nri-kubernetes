@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Unreleased
 
+### 1.0.0-beta2.2
+
 ### Fixed
 - Fix bug in error handling where recoverable errors made the integration to panic.
 
