@@ -18,6 +18,12 @@ func (m *MockDiscoverer) Discover(timeout time.Duration) (HTTPClient, error) {
 	return args.Get(0).(HTTPClient), args.Error(1)
 }
 
+// NodeIP provides a mock implementation for Discoverer interface
+func (m *MockDiscoverer) NodeIP() (string, error) {
+	args := m.Called()
+	return args.Get(0).(string), args.Error(1)
+}
+
 // MockDiscoveredHTTPClient is a mock implementation of the HTTPClient interface
 type MockDiscoveredHTTPClient struct {
 	mock.Mock

@@ -281,3 +281,15 @@ func getHostIP(node *v1.Node) (string, error) {
 
 	return ip, nil
 }
+
+// NodeIP discover IP of a current node
+func (sd *discoverer) NodeIP() (string, error) {
+	node, err := sd.getNode(sd.nodeName)
+	if err != nil {
+		return "", err
+	}
+
+	hostIP, err := getHostIP(node)
+	return hostIP, err
+
+}

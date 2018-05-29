@@ -56,7 +56,7 @@ func (sd *discoverer) Discover(timeout time.Duration) (client.HTTPClient, error)
 
 	// KSM and Prometheus only work with HTTP
 	endpoint.Scheme = "http"
-	nodeIP, err := sd.nodeIP()
+	nodeIP, err := sd.NodeIP()
 	if err != nil {
 		return nil, fmt.Errorf("failed to discover nodeIP with kube-state-metrics, got error: %s", err)
 	}
@@ -69,6 +69,19 @@ func (sd *discoverer) Discover(timeout time.Duration) (client.HTTPClient, error)
 		},
 		logger: sd.logger,
 	}, nil
+}
+
+// New sets up a HTTPClient based on sent arguments
+func New(logger *logrus.Logger, nodeIP, endpoint string, timeout time.Duration) (client.HTTPClient, error) {
+	e, err := url.Parse(endpoint)
+	return &ksm{
+		nodeIP:   nodeIP,
+		endpoint: *e,
+		httpClient: &http.Client{
+			Timeout: timeout,
+		},
+		logger: logger,
+	}, err
 }
 
 func (c *ksm) NodeIP() string {
@@ -137,7 +150,8 @@ func (sd *discoverer) apiDiscover() (url.URL, error) {
 	return endpoint, fmt.Errorf("could not guess the Kube State Metrics host/port")
 }
 
-func (sd *discoverer) nodeIP() (string, error) {
+// NodeIP discover IP of a node, where kube-state-metrics is installed
+func (sd *discoverer) NodeIP() (string, error) {
 	pods, err := sd.apiClient.FindPodsByLabel(ksmAppLabelName, ksmAppLabelValue)
 	if err != nil {
 		return "", err

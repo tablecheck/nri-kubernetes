@@ -6,14 +6,15 @@ import (
 	"os"
 	"time"
 
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm"
-	ksmClient "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet"
 
-	kubeletClient "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/client"
+	clientKsm "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/client"
+	clientKubelet "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/client"
 	metric2 "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/metric"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
@@ -25,10 +26,11 @@ import (
 
 type argumentList struct {
 	sdkArgs.DefaultArgumentList
-	Timeout           int    `default:"5000" help:"timeout in milliseconds for calling metrics sources"`
-	ClusterName       string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
-	DiscoveryCacheDir string `default:"/var/cache/nr-kubernetes" help:"The location of the cached values for discovered endpoints."`
-	DiscoveryCacheTTL string `default:"1h" help:"Duration since the discovered endpoints are stored in the cache until they expire. Valid time units: 'ns', 'us', 'ms', 's', 'm', 'h'"`
+	Timeout             int    `default:"5000" help:"timeout in milliseconds for calling metrics sources"`
+	ClusterName         string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
+	DiscoveryCacheDir   string `default:"/var/cache/nr-kubernetes" help:"The location of the cached values for discovered endpoints."`
+	DiscoveryCacheTTL   string `default:"1h" help:"Duration since the discovered endpoints are stored in the cache until they expire. Valid time units: 'ns', 'us', 'ms', 's', 'm', 'h'"`
+	KubeStateMetricsURL string `help: kube-state-metrics URL`
 }
 
 const (
@@ -95,12 +97,12 @@ func main() {
 
 		timeout := time.Millisecond * time.Duration(args.Timeout)
 
-		innerKubeletDiscoverer, err := kubeletClient.NewDiscoverer(nodeName, logger)
+		innerKubeletDiscoverer, err := clientKubelet.NewDiscoverer(nodeName, logger)
 		if err != nil {
 			logger.Panicf("error during Kubelet auto discovering process. %s", err)
 		}
 		cacheStorage := storage.NewJSONDiskStorage(args.DiscoveryCacheDir)
-		kubeletDiscoverer := kubeletClient.NewDiscoveryCacher(innerKubeletDiscoverer, cacheStorage, ttl, logger)
+		kubeletDiscoverer := clientKubelet.NewDiscoveryCacher(innerKubeletDiscoverer, cacheStorage, ttl, logger)
 
 		kubeletClient, err := kubeletDiscoverer.Discover(timeout)
 		if err != nil {
@@ -109,16 +111,31 @@ func main() {
 		kubeletNodeIP := kubeletClient.NodeIP()
 		logger.Debugf("Kubelet Node = %s", kubeletNodeIP)
 
-		innerKSMDiscoverer, err := ksmClient.NewDiscoverer(logger)
+		var ksmClient client.HTTPClient
+		var ksmNodeIP string
+		innerKSMDiscoverer, err := clientKsm.NewDiscoverer(logger)
 		if err != nil {
 			logger.Panic(err)
 		}
-		ksmDiscoverer := ksmClient.NewDiscoveryCacher(innerKSMDiscoverer, cacheStorage, ttl, logger)
-		ksmClient, err := ksmDiscoverer.Discover(timeout)
-		if err != nil {
-			logger.Panic(err)
+
+		if args.KubeStateMetricsURL != "" {
+			// ksmNodeIP is not cached. Temporal solution.
+			ksmNodeIP, err = innerKSMDiscoverer.NodeIP()
+			if err != nil {
+				logger.Panic(err)
+			}
+			ksmClient, err = clientKsm.New(logger, ksmNodeIP, args.KubeStateMetricsURL, timeout)
+			if err != nil {
+				logger.Panic(err)
+			}
+		} else {
+			ksmDiscoverer := clientKsm.NewDiscoveryCacher(innerKSMDiscoverer, cacheStorage, ttl, logger)
+			ksmClient, err = ksmDiscoverer.Discover(timeout)
+			if err != nil {
+				logger.Panic(err)
+			}
+			ksmNodeIP = ksmClient.NodeIP()
 		}
-		ksmNodeIP := ksmClient.NodeIP()
 		logger.Debugf("KSM Node = %s", ksmNodeIP)
 
 		// setting role by auto discovery
