@@ -10,15 +10,14 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"k8s.io/api/core/v1"
 )
 
+const defaultNodeName = "the-node-name"
+
 func TestDiscover_Cache_HTTP(t *testing.T) {
-	// Given a Kubernetes API client
 	c := mockedClient()
-	onFindPodByName(c, "the-node-name")
-	onFindNode(c, "the-node-name", "1.2.3.4", defaultInsecureKubeletPort)
+	onFindNode(c, defaultNodeName, "1.2.3.4", defaultInsecureKubeletPort)
 
 	// And a disk cache storage
 	tmpDir, err := ioutil.TempDir("", "test_discover_cached_kubelet")
@@ -26,6 +25,7 @@ func TestDiscover_Cache_HTTP(t *testing.T) {
 	storage := storage.NewJSONDiskStorage(tmpDir)
 	// and an Discoverer implementation
 	wrappedDiscoverer := discoverer{
+		nodeName:    defaultNodeName,
 		apiClient:   c,
 		connChecker: allOkConnectionChecker,
 		logger:      logger,
@@ -51,15 +51,13 @@ func TestDiscover_Cache_HTTP(t *testing.T) {
 	assert.Equal(t, "http", kclient.(*kubelet).endpoint.Scheme)
 	assert.Equal(t, "d34db33f", kclient.(*kubelet).config.BearerToken)
 	assert.Equal(t, "d34db33f", kclient.(*kubelet).config.BearerToken)
-	assert.Equal(t, "the-node-name", kclient.(*kubelet).nodeName)
+	assert.Equal(t, defaultNodeName, kclient.(*kubelet).nodeName)
 	assert.Nil(t, kclient.(*kubelet).httpClient.Transport)
 }
 
 func TestDiscover_Cache_HTTPS_InsecureClient(t *testing.T) {
-	// Given a Kubernetes API Client
 	c := mockedClient()
-	onFindPodByName(c, "the-node-name")
-	onFindNode(c, "the-node-name", "1.2.3.4", defaultSecureKubeletPort)
+	onFindNode(c, defaultNodeName, "1.2.3.4", defaultSecureKubeletPort)
 
 	// And a disk cache storage
 	tmpDir, err := ioutil.TempDir("", "test_discover_cached_kubelet")
@@ -67,6 +65,7 @@ func TestDiscover_Cache_HTTPS_InsecureClient(t *testing.T) {
 	storage := storage.NewJSONDiskStorage(tmpDir)
 	// and an Discoverer implementation
 	wrappedDiscoverer := discoverer{
+		nodeName:    defaultNodeName,
 		apiClient:   c,
 		connChecker: allOkConnectionChecker,
 		logger:      logger,
@@ -90,16 +89,14 @@ func TestDiscover_Cache_HTTPS_InsecureClient(t *testing.T) {
 	assert.Equal(t, "1.2.3.4:10250", kclient.(*kubelet).endpoint.Host)
 	assert.Equal(t, "https", kclient.(*kubelet).endpoint.Scheme)
 	assert.Equal(t, "d34db33f", kclient.(*kubelet).config.BearerToken)
-	assert.Equal(t, "the-node-name", kclient.(*kubelet).nodeName)
+	assert.Equal(t, defaultNodeName, kclient.(*kubelet).nodeName)
 	assert.True(t, kclient.(*kubelet).httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify)
 }
 
 func TestDiscover_Cache_HTTPS_SecureClient(t *testing.T) {
-	// Given a Kubernetes API Client
 	c := mockedClient()
-	onFindPodByName(c, "the-node-name")
 	// In a node whose Kubelet endpoint has not an standard port
-	onFindNode(c, "the-node-name", "1.2.3.4", 55332)
+	onFindNode(c, defaultNodeName, "1.2.3.4", 55332)
 
 	// And a disk cache storage
 	tmpDir, err := ioutil.TempDir("", "test_discover_cached_kubelet")
@@ -107,6 +104,7 @@ func TestDiscover_Cache_HTTPS_SecureClient(t *testing.T) {
 	storage := storage.NewJSONDiskStorage(tmpDir)
 	// and an Discoverer implementation
 	wrappedDiscoverer := discoverer{
+		nodeName:    defaultNodeName,
 		apiClient:   c,
 		connChecker: onlyAPIConnectionChecker,
 		logger:      logger,
@@ -134,13 +132,10 @@ func TestDiscover_Cache_HTTPS_SecureClient(t *testing.T) {
 }
 
 func TestDiscover_Cache_DiscoveryError(t *testing.T) {
-	// Given a Kubernetes API Client
 	c := mockedClient()
 
-	// That doesn't find the pod neither by name nor hostname
-	c.On("FindPodByName", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
-	c.On("FindPodsByHostname", mock.Anything).Return(&v1.PodList{Items: []v1.Pod{}}, nil)
-	c.On("FindNode", "the-node-name").Return(nil, fmt.Errorf("Node not found"))
+	// That doesn't find node so it isn't going to be able to find the kubelet host IP
+	c.On("FindNode", defaultNodeName).Return(&v1.Node{}, fmt.Errorf("Node not found"))
 
 	// And a disk cache storage
 	tmpDir, err := ioutil.TempDir("", "test_discover_cached_kubelet")
@@ -148,6 +143,7 @@ func TestDiscover_Cache_DiscoveryError(t *testing.T) {
 	storage := storage.NewJSONDiskStorage(tmpDir)
 	// and an Discoverer implementation
 	wrappedDiscoverer := discoverer{
+		nodeName:    defaultNodeName,
 		apiClient:   c,
 		connChecker: onlyAPIConnectionChecker,
 		logger:      logger,

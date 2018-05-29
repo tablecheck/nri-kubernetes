@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
@@ -33,6 +34,7 @@ type argumentList struct {
 const (
 	integrationName    = "com.newrelic.kubernetes"
 	integrationVersion = "1.0.0-beta2.2"
+	nodeNameEnvVar     = "NRK8S_NODE_NAME"
 )
 
 var args argumentList
@@ -79,6 +81,11 @@ func main() {
 		logger.Panic(errors.New("cluster_name argument is mandatory"))
 	}
 
+	nodeName := os.Getenv(nodeNameEnvVar)
+	if nodeName == "" {
+		logger.Panicf("%s env var should be provided by Kubernetes and is mandatory", nodeNameEnvVar)
+	}
+
 	if args.All || args.Metrics {
 		ttl, err := time.ParseDuration(args.DiscoveryCacheTTL)
 		if err != nil {
@@ -88,9 +95,9 @@ func main() {
 
 		timeout := time.Millisecond * time.Duration(args.Timeout)
 
-		innerKubeletDiscoverer, err := kubeletClient.NewDiscoverer(logger)
+		innerKubeletDiscoverer, err := kubeletClient.NewDiscoverer(nodeName, logger)
 		if err != nil {
-			logger.Panic(err)
+			logger.Panicf("error during Kubelet auto discovering process. %s", err)
 		}
 		cacheStorage := storage.NewJSONDiskStorage(args.DiscoveryCacheDir)
 		kubeletDiscoverer := kubeletClient.NewDiscoveryCacher(innerKubeletDiscoverer, cacheStorage, ttl, logger)

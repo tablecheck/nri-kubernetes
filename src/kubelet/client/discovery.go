@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -21,6 +22,7 @@ type discoverer struct {
 	apiClient   client.Kubernetes
 	logger      *logrus.Logger
 	connChecker connectionChecker
+	nodeName    string
 }
 
 const (
@@ -98,13 +100,12 @@ func (c *kubelet) Do(method, path string) (*http.Response, error) {
 }
 
 func (sd *discoverer) Discover(timeout time.Duration) (client.HTTPClient, error) {
-	pod, err := sd.getPod()
+	node, err := sd.getNode(sd.nodeName)
 	if err != nil {
 		return nil, err
 	}
-	nodeName := getNodeName(pod)
 
-	node, err := sd.getNode(nodeName)
+	hostIP, err := getHostIP(node)
 	if err != nil {
 		return nil, err
 	}
@@ -113,15 +114,11 @@ func (sd *discoverer) Discover(timeout time.Duration) (client.HTTPClient, error)
 	if err != nil {
 		return nil, err
 	}
-	host, err := getHost(node)
-	if err != nil {
-		return nil, err
-	}
 
 	config := sd.apiClient.Config()
-	hostURL := fmt.Sprintf("%s:%d", host, port)
+	hostURL := fmt.Sprintf("%s:%d", hostIP, port)
 
-	connectionAPIHTTPS, secErr := sd.connectionAPIHTTPS(nodeName, timeout)
+	connectionAPIHTTPS, secErr := sd.connectionAPIHTTPS(sd.nodeName, timeout)
 
 	usedConnectionCases := make([]connectionParams, 0)
 	switch port {
@@ -144,7 +141,7 @@ func (sd *discoverer) Discover(timeout time.Duration) (client.HTTPClient, error)
 			continue
 		}
 
-		return newKubelet(host, nodeName, c.url, config.BearerToken, c.client, c.httpType, sd.logger), nil
+		return newKubelet(hostIP, sd.nodeName, c.url, config.BearerToken, c.client, c.httpType, sd.logger), nil
 	}
 	return nil, err
 }
@@ -227,50 +224,24 @@ func checkCall(client *http.Client, URL url.URL, path, token string) error {
 }
 
 // NewDiscoverer instantiates a new Discoverer
-func NewDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
-	var discoverer discoverer
+func NewDiscoverer(nodeName string, logger *logrus.Logger) (client.Discoverer, error) {
+	if nodeName == "" {
+		return nil, errors.New("nodeName is empty")
+	}
+
+	d := discoverer{
+		nodeName:    nodeName,
+		logger:      logger,
+		connChecker: checkCall,
+	}
 	var err error
 
-	discoverer.apiClient, err = client.NewKubernetes()
+	d.apiClient, err = client.NewKubernetes()
 	if err != nil {
 		return nil, err
 	}
-	discoverer.logger = logger
-	discoverer.connChecker = checkCall
 
-	return &discoverer, nil
-}
-
-func (sd *discoverer) getPod() (v1.Pod, error) {
-	var pod v1.Pod
-	hostname, _ := os.Hostname()
-
-	// get current pod whose name is equal to hostname and get the Node name
-	pods, err := sd.apiClient.FindPodByName(hostname)
-	if err != nil {
-		return pod, err
-	}
-
-	// If not found by name, looking for the pod whose hostname annotation coincides (if unique in the cluster)
-	if len(pods.Items) == 0 {
-		pods, err = sd.apiClient.FindPodsByHostname(hostname)
-		if err != nil {
-			return pod, err
-		}
-		if len(pods.Items) == 0 {
-			return pod, fmt.Errorf("no pods found whose name or hostname is %q", hostname)
-		}
-		if len(pods.Items) > 1 {
-			return pod, fmt.Errorf("multiple pods sharing the hostname %q, can't apply autodiscovery", hostname)
-		}
-	}
-
-	pod = pods.Items[0]
-	return pod, nil
-}
-
-func getNodeName(pod v1.Pod) string {
-	return pod.Spec.NodeName
+	return &d, nil
 }
 
 func (sd *discoverer) getNode(nodeName string) (*v1.Node, error) {
@@ -294,19 +265,19 @@ func getPort(node *v1.Node) (int, error) {
 	return port, nil
 }
 
-func getHost(node *v1.Node) (string, error) {
-	var host string
+func getHostIP(node *v1.Node) (string, error) {
+	var ip string
 
 	for _, address := range node.Status.Addresses {
 		if address.Type == "InternalIP" {
-			host = address.Address
+			ip = address.Address
 			break
 		}
 	}
 
-	if host == "" {
+	if ip == "" {
 		return "", fmt.Errorf("could not get Kubelet host IP")
 	}
 
-	return host, nil
+	return ip, nil
 }
