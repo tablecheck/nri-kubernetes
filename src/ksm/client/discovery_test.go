@@ -308,6 +308,48 @@ func TestDiscover_errorRetrievingNodeIPWhenErrorFindingPod(t *testing.T) {
 	assert.Nil(t, ksmClient)
 }
 
+func TestNodeIPForDiscoverer_GuessedNodeIPFromMultiplePods(t *testing.T) {
+	c := new(client.MockedKubernetes)
+	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
+		Return(&v1.PodList{Items: []v1.Pod{
+			{Status: v1.PodStatus{HostIP: "6.7.8.9"}},
+			{Status: v1.PodStatus{HostIP: "162.178.1.1"}},
+			{Status: v1.PodStatus{HostIP: "4.3.2.1"}},
+		}}, nil)
+
+	// and an Discoverer implementation
+	d := discoverer{
+		lookupSRV: fakeLookupSRV,
+		apiClient: c,
+		logger:    logger,
+	}
+	// When retrieving the KSM client with no port named 'http-metrics'
+	nodeIP, err := d.NodeIP()
+
+	assert.Nil(t, err, "should not return error")
+	assert.Equal(t, "162.178.1.1", nodeIP)
+}
+
+func TestNodeIPForDiscoverer_Error(t *testing.T) {
+	c := new(client.MockedKubernetes)
+	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
+		Return(&v1.PodList{Items: []v1.Pod{
+			{Status: v1.PodStatus{HostIP: "6.7.8.9"}},
+		}}, errors.New("no label"))
+
+	// and an Discoverer implementation
+	d := discoverer{
+		lookupSRV: fakeLookupSRV,
+		apiClient: c,
+		logger:    logger,
+	}
+	// When retrieving the KSM client with no port named 'http-metrics'
+	nodeIP, err := d.NodeIP()
+
+	assert.EqualError(t, err, "no label")
+	assert.Equal(t, "", nodeIP)
+}
+
 // Testing NodeIP() method
 func TestNodeIP(t *testing.T) {
 	// Given a ksm struct initialized
