@@ -29,9 +29,10 @@ const (
 
 // discoverer implements Discoverer interface by using official Kubernetes' Go client
 type discoverer struct {
-	lookupSRV func(service, proto, name string) (cname string, addrs []*net.SRV, err error)
-	apiClient client.Kubernetes
-	logger    *logrus.Logger
+	lookupSRV         func(service, proto, name string) (cname string, addrs []*net.SRV, err error)
+	apiClient         client.Kubernetes
+	logger            *logrus.Logger
+	overridenEndpoint string
 }
 
 // ksm implements Client interface
@@ -45,18 +46,27 @@ type ksm struct {
 func (sd *discoverer) Discover(timeout time.Duration) (client.HTTPClient, error) {
 
 	var endpoint url.URL
-	endpoint, err := sd.dnsDiscover()
-	if err != nil {
-		// if DNS discovery fails, we dig into Kubernetes API to get the service data
-		endpoint, err = sd.apiDiscover()
+	if sd.overridenEndpoint != "" {
+		ep, err := url.Parse(sd.overridenEndpoint)
 		if err != nil {
-			return nil, fmt.Errorf("failed to discover kube-state-metrics endpoint, got error: %s", err)
+			return nil, fmt.Errorf("wrong user-provided KSM endpoint: %s", err)
+		}
+		endpoint = *ep
+	} else {
+		var err error
+		endpoint, err = sd.dnsDiscover()
+		if err != nil {
+			// if DNS discovery fails, we dig into Kubernetes API to get the service data
+			endpoint, err = sd.apiDiscover()
+			if err != nil {
+				return nil, fmt.Errorf("failed to discover kube-state-metrics endpoint, got error: %s", err)
+			}
 		}
 	}
 
 	// KSM and Prometheus only work with HTTP
 	endpoint.Scheme = "http"
-	nodeIP, err := sd.NodeIP()
+	nodeIP, err := sd.nodeIP()
 	if err != nil {
 		return nil, fmt.Errorf("failed to discover nodeIP with kube-state-metrics, got error: %s", err)
 	}
@@ -69,19 +79,6 @@ func (sd *discoverer) Discover(timeout time.Duration) (client.HTTPClient, error)
 		},
 		logger: sd.logger,
 	}, nil
-}
-
-// New sets up a HTTPClient based on sent arguments
-func New(logger *logrus.Logger, nodeIP, endpoint string, timeout time.Duration) (client.HTTPClient, error) {
-	e, err := url.Parse(endpoint)
-	return &ksm{
-		nodeIP:   nodeIP,
-		endpoint: *e,
-		httpClient: &http.Client{
-			Timeout: timeout,
-		},
-		logger: logger,
-	}, err
 }
 
 func (c *ksm) NodeIP() string {
@@ -151,7 +148,7 @@ func (sd *discoverer) apiDiscover() (url.URL, error) {
 }
 
 // NodeIP discover IP of a node, where kube-state-metrics is installed
-func (sd *discoverer) NodeIP() (string, error) {
+func (sd *discoverer) nodeIP() (string, error) {
 	pods, err := sd.apiClient.FindPodsByLabel(ksmAppLabelName, ksmAppLabelValue)
 	if err != nil {
 		return "", err
@@ -175,6 +172,10 @@ func (sd *discoverer) NodeIP() (string, error) {
 
 // NewDiscoverer instantiates a new Discoverer
 func NewDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
+	return NewNodeIPDiscoverer("", logger)
+}
+
+func NewNodeIPDiscoverer(ksmEndpoint string, logger *logrus.Logger) (client.Discoverer, error) {
 	var discoverer discoverer
 	var err error
 
@@ -184,5 +185,6 @@ func NewDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
 	}
 	discoverer.lookupSRV = net.LookupSRV
 	discoverer.logger = logger
+	discoverer.overridenEndpoint = ksmEndpoint
 	return &discoverer, nil
 }

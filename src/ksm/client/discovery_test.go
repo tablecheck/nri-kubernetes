@@ -324,7 +324,7 @@ func TestNodeIPForDiscoverer_GuessedNodeIPFromMultiplePods(t *testing.T) {
 		logger:    logger,
 	}
 	// When retrieving the KSM client with no port named 'http-metrics'
-	nodeIP, err := d.NodeIP()
+	nodeIP, err := d.nodeIP()
 
 	assert.Nil(t, err, "should not return error")
 	assert.Equal(t, "162.178.1.1", nodeIP)
@@ -344,7 +344,7 @@ func TestNodeIPForDiscoverer_Error(t *testing.T) {
 		logger:    logger,
 	}
 	// When retrieving the KSM client with no port named 'http-metrics'
-	nodeIP, err := d.NodeIP()
+	nodeIP, err := d.nodeIP()
 
 	assert.EqualError(t, err, "no label")
 	assert.Equal(t, "", nodeIP)

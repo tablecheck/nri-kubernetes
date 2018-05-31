@@ -111,31 +111,21 @@ func main() {
 		kubeletNodeIP := kubeletClient.NodeIP()
 		logger.Debugf("Kubelet Node = %s", kubeletNodeIP)
 
-		var ksmClient client.HTTPClient
-		var ksmNodeIP string
-		innerKSMDiscoverer, err := clientKsm.NewDiscoverer(logger)
+		var innerKSMDiscoverer client.Discoverer
+		if args.KubeStateMetricsURL != "" {
+			innerKSMDiscoverer, err = clientKsm.NewNodeIPDiscoverer(args.KubeStateMetricsURL, logger)
+		} else {
+			innerKSMDiscoverer, err = clientKsm.NewDiscoverer(logger)
+		}
 		if err != nil {
 			logger.Panic(err)
 		}
-
-		if args.KubeStateMetricsURL != "" {
-			// ksmNodeIP is not cached. Temporal solution.
-			ksmNodeIP, err = innerKSMDiscoverer.NodeIP()
-			if err != nil {
-				logger.Panic(err)
-			}
-			ksmClient, err = clientKsm.New(logger, ksmNodeIP, args.KubeStateMetricsURL, timeout)
-			if err != nil {
-				logger.Panic(err)
-			}
-		} else {
-			ksmDiscoverer := clientKsm.NewDiscoveryCacher(innerKSMDiscoverer, cacheStorage, ttl, logger)
-			ksmClient, err = ksmDiscoverer.Discover(timeout)
-			if err != nil {
-				logger.Panic(err)
-			}
-			ksmNodeIP = ksmClient.NodeIP()
+		ksmDiscoverer := clientKsm.NewDiscoveryCacher(innerKSMDiscoverer, cacheStorage, ttl, logger)
+		ksmClient, err := ksmDiscoverer.Discover(timeout)
+		if err != nil {
+			logger.Panic(err)
 		}
+		ksmNodeIP := ksmClient.NodeIP()
 		logger.Debugf("KSM Node = %s", ksmNodeIP)
 
 		// setting role by auto discovery

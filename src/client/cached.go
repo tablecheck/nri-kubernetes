@@ -57,12 +57,6 @@ func (d *DiscoveryCacher) Discover(timeout time.Duration) (HTTPClient, error) {
 	return d.wrap(client, timeout), nil
 }
 
-// NodeIP it is a dummy function just to implement the interface. It is not used
-// and it is a temporal solution
-func (d *DiscoveryCacher) NodeIP() (string, error) {
-	return "", nil
-}
-
 func (d *DiscoveryCacher) discoverAndCache(timeout time.Duration) (HTTPClient, error) {
 	client, err := d.Discoverer.Discover(timeout)
 	if err != nil {
