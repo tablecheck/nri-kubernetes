@@ -147,7 +147,7 @@ func (sd *discoverer) apiDiscover() (url.URL, error) {
 	return endpoint, fmt.Errorf("could not guess the Kube State Metrics host/port")
 }
 
-// NodeIP discover IP of a node, where kube-state-metrics is installed
+// nodeIP discover IP of a node, where kube-state-metrics is installed
 func (sd *discoverer) nodeIP() (string, error) {
 	pods, err := sd.apiClient.FindPodsByLabel(ksmAppLabelName, ksmAppLabelValue)
 	if err != nil {
@@ -170,12 +170,15 @@ func (sd *discoverer) nodeIP() (string, error) {
 	return nodeIP, nil
 }
 
-// NewDiscoverer instantiates a new Discoverer
+// NewDiscoverer instantiates a new Discoverer required for discovering node IP
+// of kube-state-metrics pod and endpoint of kube-state-metrics service
 func NewDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
-	return NewNodeIPDiscoverer("", logger)
+	return NewDiscovererForNodeIP("", logger)
 }
 
-func NewNodeIPDiscoverer(ksmEndpoint string, logger *logrus.Logger) (client.Discoverer, error) {
+// NewDiscovererForNodeIP instantiates a new Discoverer required for discovering only
+// node IP of kube-state-metrics pod
+func NewDiscovererForNodeIP(ksmEndpoint string, logger *logrus.Logger) (client.Discoverer, error) {
 	var discoverer discoverer
 	var err error
 

@@ -113,7 +113,7 @@ func main() {
 
 		var innerKSMDiscoverer client.Discoverer
 		if args.KubeStateMetricsURL != "" {
-			innerKSMDiscoverer, err = clientKsm.NewNodeIPDiscoverer(args.KubeStateMetricsURL, logger)
+			innerKSMDiscoverer, err = clientKsm.NewDiscovererForNodeIP(args.KubeStateMetricsURL, logger)
 		} else {
 			innerKSMDiscoverer, err = clientKsm.NewDiscoverer(logger)
 		}
