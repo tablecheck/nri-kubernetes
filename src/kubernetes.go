@@ -30,7 +30,7 @@ type argumentList struct {
 	ClusterName         string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
 	DiscoveryCacheDir   string `default:"/var/cache/nr-kubernetes" help:"The location of the cached values for discovered endpoints."`
 	DiscoveryCacheTTL   string `default:"1h" help:"Duration since the discovered endpoints are stored in the cache until they expire. Valid time units: 'ns', 'us', 'ms', 's', 'm', 'h'"`
-	KubeStateMetricsURL string `help: kube-state-metrics URL`
+	KubeStateMetricsURL string `help: kube-state-metrics URL. If it is not provided, it will be discovered.`
 }
 
 const (

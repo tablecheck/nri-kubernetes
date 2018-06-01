@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Unreleased
 
+### Added
+- Add configurable flag for kube-state-metrics endpoint (only HTTP)
+
 ### 1.0.0-beta2.2
 
 ### Fixed
