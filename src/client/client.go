@@ -23,9 +23,9 @@ type Kubernetes interface {
 	FindPodByName(name string) (*v1.PodList, error)
 	// FindPodsByHostname returns a Podlist reference containing the pod or pods whose hostname matches the argument
 	FindPodsByHostname(hostname string) (*v1.PodList, error)
-	// FindServiceByLabel returns a ServiceList containing the services matching the provided name/value label pair
+	// FindServicesByLabel returns a ServiceList containing the services matching the provided name/value label pair
 	// name/value pairs
-	FindServiceByLabel(name, value string) (*v1.ServiceList, error)
+	FindServicesByLabel(name, value string) (*v1.ServiceList, error)
 	// Config returns a config of API client
 	Config() *rest.Config
 	// SecureHTTPClient returns http.Client configured with timeout and CA Cert
@@ -63,7 +63,7 @@ func (ka *goClientImpl) FindPodsByHostname(hostname string) (*v1.PodList, error)
 	})
 }
 
-func (ka *goClientImpl) FindServiceByLabel(name, value string) (*v1.ServiceList, error) {
+func (ka *goClientImpl) FindServicesByLabel(name, value string) (*v1.ServiceList, error) {
 	return ka.client.CoreV1().Services("").List(metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", name, value),
 	})

@@ -18,13 +18,14 @@ import (
 )
 
 const (
-	ksmAppLabelName  = "k8s-app"
-	ksmAppLabelValue = "kube-state-metrics"
-	ksmPortName      = "http-metrics"
-	k8sTCP           = "TCP"
-	ksmQualifiedName = "kube-state-metrics.kube-system.svc.cluster.local"
-	ksmDNSService    = "http-metrics"
-	ksmDNSProto      = "tcp"
+	ksmK8sAppLabelName = "k8s-app"
+	ksmAppLabelName    = "app"
+	ksmAppLabelValue   = "kube-state-metrics"
+	ksmPortName        = "http-metrics"
+	k8sTCP             = "TCP"
+	ksmQualifiedName   = "kube-state-metrics.kube-system.svc.cluster.local"
+	ksmDNSService      = "http-metrics"
+	ksmDNSProto        = "tcp"
 )
 
 // discoverer implements Discoverer interface by using official Kubernetes' Go client
@@ -116,13 +117,16 @@ func (sd *discoverer) dnsDiscover() (url.URL, error) {
 func (sd *discoverer) apiDiscover() (url.URL, error) {
 	var endpoint url.URL
 
-	services, err := sd.apiClient.FindServiceByLabel(ksmAppLabelName, ksmAppLabelValue)
+	services, err := sd.apiClient.FindServicesByLabel(ksmK8sAppLabelName, ksmAppLabelValue)
+	if err != nil || len(services.Items) == 0 {
+		services, err = sd.apiClient.FindServicesByLabel(ksmAppLabelName, ksmAppLabelValue)
+	}
+
 	if err != nil {
 		return endpoint, err
 	}
-
 	if len(services.Items) == 0 {
-		return endpoint, fmt.Errorf("no service found by label %s=%s", ksmAppLabelName, ksmAppLabelValue)
+		return endpoint, fmt.Errorf("no services found by any of labels %s, %s with value %s", ksmK8sAppLabelName, ksmAppLabelName, ksmAppLabelValue)
 	}
 
 	for _, service := range services.Items {
@@ -149,13 +153,17 @@ func (sd *discoverer) apiDiscover() (url.URL, error) {
 
 // nodeIP discover IP of a node, where kube-state-metrics is installed
 func (sd *discoverer) nodeIP() (string, error) {
-	pods, err := sd.apiClient.FindPodsByLabel(ksmAppLabelName, ksmAppLabelValue)
+	pods, err := sd.apiClient.FindPodsByLabel(ksmK8sAppLabelName, ksmAppLabelValue)
+	if err != nil || len(pods.Items) == 0 {
+		pods, err = sd.apiClient.FindPodsByLabel(ksmAppLabelName, ksmAppLabelValue)
+	}
 	if err != nil {
 		return "", err
 	}
 	if len(pods.Items) == 0 {
-		return "", fmt.Errorf("no pod found by label %s=%s", ksmAppLabelName, ksmAppLabelValue)
+		return "", fmt.Errorf("no pods found by any of labels %s, %s with value %s", ksmK8sAppLabelName, ksmAppLabelName, ksmAppLabelValue)
 	}
+
 	// In case there are multiple pods for the same service, we must be sure we always show the Node IP of the
 	// same pod. So we chose, for example, the HostIp with highest precedence in alphabetical order
 	var nodeIP string

@@ -64,7 +64,7 @@ func TestDiscover_Cache_BothFail(t *testing.T) {
 	c := new(client.MockedKubernetes)
 	c.On("FindPodsByLabel", mock.Anything, mock.Anything).
 		Return(&v1.PodList{Items: []v1.Pod{}}, fmt.Errorf("error invoking Kubernetes API"))
-	c.On("FindServiceByLabel", mock.Anything, mock.Anything).
+	c.On("FindServicesByLabel", mock.Anything, mock.Anything).
 		Return(&v1.ServiceList{Items: []v1.Service{}}, fmt.Errorf("error invoking Kubernetes API"))
 
 	// And a cache that does not store any cached copy
