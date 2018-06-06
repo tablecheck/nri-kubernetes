@@ -5,11 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-### Unreleased
+### 1.0.0-beta2.3
 
 ### Added
-- Add configurable flag for kube-state-metrics endpoint (only HTTP)
-- Add additional label `app` for discovering kube-state-metrics endpoint
+- Add configurable flag for kube-state-metrics endpoint (only HTTP).
+- Add additional label `app` for discovering kube-state-metrics endpoint.
+
+### Changed
+- Kubelet discovery process fetches now the nodeName directly from the spec using downward API.
 
 ### 1.0.0-beta2.2
 
