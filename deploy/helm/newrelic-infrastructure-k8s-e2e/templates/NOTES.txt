@@ -1,0 +1,12 @@
+Please find here the deployed kube-state-metrics instances info:
+{{- $values := .Values }}
+{{- $release := .Release }}
+{{- range tuple "ksm-1-1-0-instance-one" "ksm-1-1-0-instance-two" "ksm-1-2-0-instance-one" "ksm-1-2-0-instance-two" }}
+{{- $ksm := index $values . }}
+{{- if $ksm.service }}
+{{ $name := default . $ksm.nameOverride }}
+  - {{.}}
+    RBAC enabled: {{ $ksm.rbac.create }}
+    Endpoint: {{printf "%s-%s" $release.Name $name | trunc 63 | trimSuffix "-" -}}.{{ $release.Namespace }}.svc.cluster.local:{{ $ksm.service.port }}/metrics
+{{- end }}
+{{- end }}
