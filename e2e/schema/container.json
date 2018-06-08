@@ -1,0 +1,84 @@
+{
+  "$id": "http://newrelic.com/on-host-integration.json",
+  "type": "object",
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "clusterName": {
+      "$id": "/properties/clusterName",
+      "type": "string"
+    },
+    "containerID": {
+      "$id": "/properties/containerID",
+      "type": "string"
+    },
+    "containerImage": {
+      "$id": "/properties/containerImage",
+      "type": "string"
+    },
+    "containerImageID": {
+      "$id": "/properties/containerImageID",
+      "type": "string"
+    },
+    "containerName": {
+      "$id": "/properties/containerName",
+      "type": "string"
+    },
+    "cpuUsedCores": {
+      "$id": "/properties/cpuUsedCores",
+      "type": "number"
+    },
+    "displayName": {
+      "$id": "/properties/displayName",
+      "type": "string"
+    },
+    "entityName": {
+      "$id": "/properties/entityName",
+      "type": "string"
+    },
+    "event_type": {
+      "$id": "/properties/event_type",
+      "type": "string"
+    },
+    "isReady": {
+      "$id": "/properties/isReady",
+      "type": "integer"
+    },
+    "label.addonmanager.kubernetes.io/mode": {
+      "$id": "/properties/label.addonmanager.kubernetes.io/mode",
+      "type": "string"
+    },
+    "label.integration-test": {
+      "$id": "/properties/label.integration-test",
+      "type": "string"
+    },
+    "memoryUsedBytes": {
+      "$id": "/properties/memoryUsedBytes",
+      "type": "integer"
+    },
+    "namespace": {
+      "$id": "/properties/namespace",
+      "type": "string"
+    },
+    "nodeIP": {
+      "$id": "/properties/nodeIP",
+      "type": "string"
+    },
+    "nodeName": {
+      "$id": "/properties/nodeName",
+      "type": "string"
+    },
+    "podName": {
+      "$id": "/properties/podName",
+      "type": "string"
+    },
+    "restartCount": {
+      "$id": "/properties/restartCount",
+      "type": "integer"
+    },
+    "status": {
+      "$id": "/properties/status",
+      "type": "string"
+    }
+  }
+}
