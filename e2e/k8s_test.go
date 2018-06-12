@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/remotecommand"
 )
@@ -30,25 +30,7 @@ type integrationData struct {
 	stdErr []byte
 }
 
-func execIntegration() (map[string]integrationData, error) {
-	var kubeconfig *string
-	if home := homeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	flag.Parse()
-
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		return nil, err
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
+func execIntegration(clientset *kubernetes.Clientset, config *rest.Config) (map[string]integrationData, error) {
 	sv, err := clientset.ServerVersion()
 	if err != nil {
 		return nil, err
@@ -124,18 +106,17 @@ func execIntegration() (map[string]integrationData, error) {
 	return output, nil
 }
 
-func homeDir() string {
-	if h := os.Getenv("HOME"); h != "" {
-		return h
-	}
-	return os.Getenv("USERPROFILE") // windows
-}
-
 func TestBasic(t *testing.T) {
 	if os.Getenv("RUN_TESTS") == "" {
 		t.Skip("Flag RUN_TESTS is not specified, skipping tests")
 	}
-	output, err := execIntegration()
+	config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube", "config"))
+	assert.NoError(t, err)
+
+	clientset, err := kubernetes.NewForConfig(config)
+	assert.NoError(t, err)
+
+	output, err := execIntegration(clientset, config)
 	assert.NoError(t, err)
 
 	leaderMap := jsonschema.EventTypeToSchemaFilepath{
@@ -154,12 +135,17 @@ func TestBasic(t *testing.T) {
 	}
 
 	var errs []error
+	var lcount int
+	var fcount int
+
 	for podName, o := range output {
 		var m jsonschema.EventTypeToSchemaFilepath
 		switch o.role {
 		case "leader":
+			lcount++
 			m = leaderMap
 		case "follower":
+			fcount++
 			m = followerMap
 		}
 
@@ -168,6 +154,10 @@ func TestBasic(t *testing.T) {
 			errs = append(errs, fmt.Errorf("\n------ %s pod %s ------\n\n%s", o.role, podName, err))
 		}
 	}
+	nodes, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+	assert.NoError(t, err)
 
+	assert.Equal(t, (lcount + fcount), len(nodes.Items))
+	assert.Equal(t, 1, lcount)
 	assert.Empty(t, errs)
 }
