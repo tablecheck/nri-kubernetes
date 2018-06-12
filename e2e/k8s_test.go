@@ -49,6 +49,11 @@ func execIntegration() (map[string]integrationData, error) {
 		return nil, err
 	}
 
+	sv, err := clientset.ServerVersion()
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("Executing our integration in %q cluster. K8s version: %s\n", config.Host, sv.String())
 	pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", nrLabelKey, nrLabelValue),
 	})
