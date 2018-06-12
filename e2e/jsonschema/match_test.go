@@ -29,6 +29,19 @@ func TestErrorValidatingInputWithNoData(t *testing.T) {
 	assert.Contains(t, err.Error(), "data: Array must have at least 1 items")
 }
 
+func TestErrorValidatingEventTypes(t *testing.T) {
+	c := readTestInput(t, "testdata/input-missing-event-type.json")
+
+	err := Match(c, EventTypeToSchemaFilepath{
+		"TestNodeSample":    "testdata/schema-testnode.json",
+		"TestServiceSample": "testdata/schema-testservice.json",
+		"TestPodSample":     "testdata/schema-testpod.json", // this file doesn't exist, I just want to test with 2 missing types
+	})
+	assert.Contains(t, err.Error(), "Mandatory types were not found: ")
+	assert.Contains(t, err.Error(), "TestServiceSample, ")
+	assert.Contains(t, err.Error(), "TestPodSample, ")
+}
+
 func TestErrorValidatingTestNode(t *testing.T) {
 	c := readTestInput(t, "testdata/input-invalid-testnode.json")
 

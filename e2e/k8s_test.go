@@ -151,7 +151,7 @@ func TestBasic(t *testing.T) {
 
 		err := jsonschema.Match(o.stdOut, m)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("\n------ %s pod %s ------\n\n%s", o.role, podName, err))
+			errs = append(errs, fmt.Errorf("\n------ %s pod %s ------\n%s", o.role, podName, err))
 		}
 	}
 	nodes, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})

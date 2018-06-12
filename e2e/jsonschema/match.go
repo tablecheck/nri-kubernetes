@@ -24,7 +24,7 @@ type ErrMatch struct {
 func (errMatch ErrMatch) Error() string {
 	var out string
 	for _, e := range errMatch.errs {
-		out = fmt.Sprintf("%s\t%s", out, e)
+		out = fmt.Sprintf("\n%s\t- %s\n", out, e)
 	}
 
 	return out
@@ -45,10 +45,12 @@ func Match(input []byte, m EventTypeToSchemaFilepath) error {
 
 	// Then we validate each metric set
 	var errs []error
-	missingTypes := make(map[string]struct{})
+	missingSchemas := make(map[string]struct{})
+	foundTypes := make(map[string]struct{})
 	for _, e := range o.Data {
 		for _, ms := range e.Metrics {
 			if t, ok := m[ms["event_type"].(string)]; ok {
+				foundTypes[ms["event_type"].(string)] = struct{}{}
 				fp, err := schemaFilepath(t)
 				if err != nil {
 					errs = append(errs, fmt.Errorf("%s schema not found", t))
@@ -60,14 +62,24 @@ func Match(input []byte, m EventTypeToSchemaFilepath) error {
 					errs = append(errs, fmt.Errorf("%s:%s %s:\n%s", e.Entity.Type, e.Entity.Name, ms["event_type"], err))
 				}
 			} else {
-				missingTypes[ms["event_type"].(string)] = struct{}{}
+				missingSchemas[ms["event_type"].(string)] = struct{}{}
 			}
 		}
 	}
 
-	if len(missingTypes) > 0 {
+	var terr string
+	for t := range m {
+		if _, ok := foundTypes[t]; !ok {
+			terr = fmt.Sprintf("%s%s, ", terr, t)
+		}
+	}
+	if len(terr) > 0 {
+		errs = append(errs, fmt.Errorf("Mandatory types were not found: %s", terr))
+	}
+
+	if len(missingSchemas) > 0 {
 		e := fmt.Sprint("Some types were not validated because no schema was found: ")
-		for t := range missingTypes {
+		for t := range missingSchemas {
 			e = fmt.Sprintf("%s%s, ", e, t)
 		}
 
