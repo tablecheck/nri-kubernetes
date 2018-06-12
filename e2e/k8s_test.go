@@ -82,7 +82,7 @@ func execIntegration(clientset *kubernetes.Clientset, config *rest.Config) (map[
 		})
 
 		if err != nil {
-			return nil, fmt.Errorf("could not execute command inside pod %s: %v", pName, err)
+			return nil, fmt.Errorf("could not execute command inside pod %s: %v. Integration error output:\n\n%v", pName, err, execErr.String())
 		}
 
 		re, err := regexp.Compile("Auto-discovered role = (\\w*)")
