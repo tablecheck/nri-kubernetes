@@ -1,0 +1,54 @@
+daemonset:
+  name: newrelic-infra
+  image:
+    repository: newrelic/infrastructure-k8s
+    tag: 1.0.0-beta2.3
+  resources:
+    limits:
+      memory: 100Mi
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+serviceAccount:
+  name: newrelic
+  automountServiceAccountToken: true
+
+clusterRole:
+  name: newrelic
+
+integration:
+  k8sClusterName: "<YOUR_CLUSTER_NAME>"
+  newRelicLicenseKey: "<YOUR_LICENSE_KEY>"
+  verbose: "0"
+  collectorURL: "https://staging-infra-api.newrelic.com"
+#  cadvisor:
+#    port: "4194"
+#  ksm:
+#    url: "http://172.17.0.3:8080"
+
+#########################################
+######## DO NOT MODIFY FROM HERE ########
+#########################################
+rbac: &rbac-create false
+
+ksm-1-1-0-instance-one:
+  nameOverride: kube-state-metrics
+  rbac:
+    create: *rbac-create
+ksm-1-1-0-instance-two:
+  rbac:
+    create: *rbac-create
+ksm-1-2-0-instance-one:
+  nameOverride: kube-state-metrics
+  rbac:
+    create: *rbac-create
+ksm-1-2-0-instance-two:
+  rbac:
+    create: *rbac-create
+
+tags:
+  scenario-ksm-1-1-0-one-instances: false
+  scenario-ksm-1-1-0-two-instances: false
+  scenario-ksm-1-2-0-one-instances: false
+  scenario-ksm-1-2-0-two-instances: false
