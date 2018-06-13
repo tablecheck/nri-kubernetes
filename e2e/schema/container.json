@@ -107,13 +107,11 @@
     "displayName",
     "entityName",
     "event_type",
-    "isReady",
     "memoryUsedBytes",
     "namespace",
     "nodeIP",
     "nodeName",
     "podName",
-    "restartCount",
     "status"
   ]
 }
