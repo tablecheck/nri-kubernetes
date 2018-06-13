@@ -23,7 +23,7 @@ spec:
         - name: {{ .Values.daemonset.name }}
           image: "{{ .Values.daemonset.image.repository }}:{{ .Values.daemonset.image.tag }}"
           resources:
-{{ toYaml .Values.daemonset.resources | indent 12}}
+{{ toYaml .Values.daemonset.resources | indent 12 }}
           volumeMounts:
             - mountPath: /host
               name: host-volume
@@ -37,18 +37,18 @@ spec:
               value: {{ .Values.integration.newRelicLicenseKey | quote }}
             - name: "NRIA_VERBOSE"
               value: {{ .Values.integration.verbose | quote }}
-            {{ if .Values.integration.collectorURL }}
+            {{- if .Values.integration.collectorURL }}
             - name: "NRIA_COLLECTOR_URL"
               value: {{ .Values.integration.collectorURL }}
-            {{ end }}
-            {{ if .Values.integration.cadvisor }}
+            {{- end }}
+            {{- if .Values.integration.cadvisor }}
             - name: "CADVISOR_PORT" # Enable direct connection to cAdvisor by specifying the port. Needed for Kubernetes versions prior to 1.7.6.
               value: .Values.integration.cadvisor.port
-            {{ end }}
-            {{ if .Values.integration.ksm }}
+            {{- end }}
+            {{- if .Values.integration.ksm }}
             - name: "KUBE_STATE_METRICS_URL" # If this value is specified then discovery process for kube-state-metrics endpoint won't be triggered.
               value: {{ .Values.integration.ksm.url | quote}} # This is example value. Only HTTP request is accepted.
-            {{ end }}
+            {{- end }}
             - name: "NRIA_DISPLAY_NAME"
               valueFrom:
                 fieldRef:
