@@ -33,12 +33,14 @@ integration:
 rbac: &rbac-create false
 
 ksm-1-1-0-instance-one:
+  nameOverride: kube-state-metrics
   rbac:
     create: *rbac-create
 ksm-1-1-0-instance-two:
   rbac:
     create: *rbac-create
 ksm-1-2-0-instance-one:
+  nameOverride: kube-state-metrics
   rbac:
     create: *rbac-create
 ksm-1-2-0-instance-two:
