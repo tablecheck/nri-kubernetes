@@ -6,7 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/jsonschema"
 	"github.com/stretchr/testify/assert"
@@ -25,12 +27,16 @@ const (
 )
 
 type integrationData struct {
-	role   string
-	stdOut []byte
-	stdErr []byte
+	role    string
+	podName string
+	stdOut  []byte
+	stdErr  []byte
+	err     error
 }
 
-func execIntegration(clientset *kubernetes.Clientset, config *rest.Config) (map[string]integrationData, error) {
+var dataChannel = make(chan integrationData)
+
+func getNRPods(clientset *kubernetes.Clientset, config *rest.Config) ([]string, error) {
 	sv, err := clientset.ServerVersion()
 	if err != nil {
 		return nil, err
@@ -45,65 +51,78 @@ func execIntegration(clientset *kubernetes.Clientset, config *rest.Config) (map[
 	if len(pods.Items) == 0 {
 		return nil, fmt.Errorf("pods not found by label: %s=%s", nrLabelKey, nrLabelValue)
 	}
-
-	output := make(map[string]integrationData)
-
+	podsName := make([]string, 0)
 	for i := 0; i < len(pods.Items); i++ {
-		pName := pods.Items[i].Name
+		podsName = append(podsName, pods.Items[i].Name)
+	}
+	return podsName, nil
+}
 
-		execReq := clientset.CoreV1().RESTClient().Post().
-			Resource("pods").
-			Name(pName).
-			Namespace(namespace).
-			SubResource("exec").
-			Param("container", nrContainer).
-			Param("command", "/var/db/newrelic-infra/newrelic-integrations/bin/nr-kubernetes").
-			// Param("command", "-pretty").
-			Param("command", "-verbose").
-			Param("stdin", "false").
-			Param("stdout", "true").
-			Param("stderr", "true").
-			Param("tty", "false")
-
-		var (
-			execOut bytes.Buffer
-			execErr bytes.Buffer
-		)
-
-		exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.URL())
-		if err != nil {
-			return nil, fmt.Errorf("failed to init executor for pod %s: %v", pName, err)
-
-		}
-
-		err = exec.Stream(remotecommand.StreamOptions{
-			Stdout: &execOut,
-			Stderr: &execErr,
-		})
-
-		if err != nil {
-			return nil, fmt.Errorf("could not execute command inside pod %s: %v. Integration error output:\n\n%v", pName, err, execErr.String())
-		}
-
-		re, err := regexp.Compile("Auto-discovered role = (\\w*)")
-		if err != nil {
-			return nil, fmt.Errorf("cannot compile regex and determine role for pod %s, err: %v", pName, err)
-		}
-
-		matches := re.FindStringSubmatch(execErr.String())
-		role := matches[1]
-		if role == "" {
-			return nil, fmt.Errorf("cannot find a role for pod %s", pName)
-		}
-
-		output[pName] = integrationData{
-			role:   role,
-			stdOut: execOut.Bytes(),
-			stdErr: execErr.Bytes(),
-		}
+func execIntegration(clientset *kubernetes.Clientset, config *rest.Config, podName string, wg *sync.WaitGroup) {
+	defer wg.Done()
+	d := integrationData{
+		podName: podName,
 	}
 
-	return output, nil
+	execReq := clientset.CoreV1().RESTClient().Post().
+		Resource("pods").
+		Name(podName).
+		Namespace(namespace).
+		SubResource("exec").
+		Param("container", nrContainer).
+		Param("command", "/var/db/newrelic-infra/newrelic-integrations/bin/nr-kubernetes").
+		// Param("command", "-pretty").
+		Param("command", "-verbose").
+		Param("stdin", "false").
+		Param("stdout", "true").
+		Param("stderr", "true").
+		Param("tty", "false")
+
+	var (
+		execOut bytes.Buffer
+		execErr bytes.Buffer
+	)
+
+	exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.URL())
+	if err != nil {
+		d.err = fmt.Errorf("failed to init executor for pod %s: %v", podName, err)
+		dataChannel <- d
+		return
+
+	}
+
+	err = exec.Stream(remotecommand.StreamOptions{
+		Stdout: &execOut,
+		Stderr: &execErr,
+	})
+
+	if err != nil {
+		d.err = fmt.Errorf("could not execute command inside pod %s: %v. Integration error output:\n\n%v", podName, err, execErr.String())
+		dataChannel <- d
+		return
+	}
+
+	re, err := regexp.Compile("Auto-discovered role = (\\w*)")
+	if err != nil {
+		d.err = fmt.Errorf("cannot compile regex and determine role for pod %s, err: %v", podName, err)
+		dataChannel <- d
+		return
+	}
+
+	matches := re.FindStringSubmatch(execErr.String())
+	role := matches[1]
+	if role == "" {
+		d.err = fmt.Errorf("cannot find a role for pod %s", podName)
+		dataChannel <- d
+		return
+	}
+
+	d.role = role
+	d.stdOut = execOut.Bytes()
+	d.stdErr = execErr.Bytes()
+
+	dataChannel <- d
+
 }
 
 func TestBasic(t *testing.T) {
@@ -111,13 +130,44 @@ func TestBasic(t *testing.T) {
 		t.Skip("Flag RUN_TESTS is not specified, skipping tests")
 	}
 	config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube", "config"))
-	assert.NoError(t, err)
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
+
+	if config.Timeout == 0 {
+		config.Timeout = 5 * time.Second
+	}
 
 	clientset, err := kubernetes.NewForConfig(config)
-	assert.NoError(t, err)
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
 
-	output, err := execIntegration(clientset, config)
-	assert.NoError(t, err)
+	podsName, err := getNRPods(clientset, config)
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
+
+	output := make(map[string]integrationData)
+
+	var wg sync.WaitGroup
+	wg.Add(len(podsName))
+	go func() {
+		wg.Wait()
+		close(dataChannel)
+	}()
+
+	for _, pName := range podsName {
+		fmt.Printf("Executing integration inside pod: %s\n", pName)
+		go execIntegration(clientset, config, pName, &wg)
+	}
+
+	for d := range dataChannel {
+		if err != nil {
+			assert.FailNow(t, err.Error())
+		}
+		output[d.podName] = d
+	}
 
 	leaderMap := jsonschema.EventTypeToSchemaFilepath{
 		"K8sReplicasetSample": "schema/replicaset.json",
