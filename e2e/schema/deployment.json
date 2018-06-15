@@ -52,6 +52,10 @@
       "$id": "/properties/podsUnavailable",
       "type": "integer"
     },
+    "podsMaxUnavailable": {
+      "$id": "/properties/podsMaxUnavailable",
+      "type": "integer"
+    },
     "podsUpdated": {
       "$id": "/properties/podsUpdated",
       "type": "integer"

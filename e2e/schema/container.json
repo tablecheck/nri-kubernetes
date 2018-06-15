@@ -6,7 +6,8 @@
   "properties": {
     "clusterName": {
       "$id": "/properties/clusterName",
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "containerID": {
       "$id": "/properties/containerID",
@@ -42,22 +43,25 @@
     },
     "displayName": {
       "$id": "/properties/displayName",
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "entityName": {
       "$id": "/properties/entityName",
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "event_type": {
       "$id": "/properties/event_type",
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "isReady": {
       "$id": "/properties/isReady",
       "type": "integer"
     },
     "memoryLimitBytes": {
-      "$id": "/properties/memoryRequestedBytes",
+      "$id": "/properties/memoryLimitBytes",
       "type": "integer"
     },
     "memoryRequestedBytes": {

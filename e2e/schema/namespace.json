@@ -43,6 +43,7 @@
     "entityName",
     "event_type",
     "namespace",
-    "status"
+    "status",
+    "createdAt"
   ]
 }

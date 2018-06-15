@@ -26,6 +26,11 @@
       "type": "string",
       "minLength": 1
     },
+    "deploymentName": {
+      "$id": "/properties/deploymentName",
+      "type": "string",
+      "minLength": 1
+    },
     "entityName": {
       "$id": "/properties/entityName",
       "type": "string",

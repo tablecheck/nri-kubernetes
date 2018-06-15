@@ -122,11 +122,11 @@
   },
   "required": [
     "clusterName",
-    "cpuUsedCoreMilliseconds",
-    "cpuUsedCores",
     "displayName",
     "entityName",
     "event_type",
+    "cpuUsedCoreMilliseconds",
+    "cpuUsedCores",
     "fsAvailableBytes",
     "fsCapacityBytes",
     "fsInodes",
