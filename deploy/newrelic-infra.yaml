@@ -60,10 +60,10 @@ spec:
           image: newrelic/infrastructure-k8s:1.0.0-beta2.3
           resources:
             limits:
-              memory: 100Mi
+              memory: 150M
             requests:
               cpu: 100m
-              memory: 100Mi
+              memory: 30M
           volumeMounts:
             - mountPath: /host
               name: host-volume
