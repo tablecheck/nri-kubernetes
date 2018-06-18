@@ -43,11 +43,13 @@
     },
     "isReady": {
       "$id": "/properties/isReady",
-      "type": "integer"
+      "type": "integer",
+      "enum": [1, 0]
     },
     "isScheduled": {
       "$id": "/properties/isScheduled",
-      "type": "integer"
+      "type": "integer",
+      "enum": [1, 0]
     },
     "namespace": {
       "$id": "/properties/namespace",
