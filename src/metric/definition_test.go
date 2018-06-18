@@ -65,6 +65,14 @@ func TestToNumericBoolean(t *testing.T) {
 	assert.Equal(t, 0, v)
 	assert.NoError(t, err)
 
+	v, err = toNumericBoolean("true")
+	assert.Equal(t, 1, v)
+	assert.NoError(t, err)
+
+	v, err = toNumericBoolean("false")
+	assert.Equal(t, 0, v)
+	assert.NoError(t, err)
+
 	v, err = toNumericBoolean("invalid")
 	assert.Nil(t, v)
 	assert.EqualError(t, err, "value can not be converted to numeric boolean")

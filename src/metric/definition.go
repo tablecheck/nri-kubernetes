@@ -71,9 +71,9 @@ var KSMSpecs = definition.SpecGroups{
 			{"namespace", prometheus.FromLabelValue("kube_pod_info", "namespace"), sdkMetric.ATTRIBUTE},
 			{"nodeName", prometheus.FromLabelValue("kube_pod_info", "node"), sdkMetric.ATTRIBUTE},
 			{"podName", prometheus.FromLabelValue("kube_pod_info", "pod"), sdkMetric.ATTRIBUTE},
-			{"isReady", prometheus.FromLabelValue("kube_pod_status_ready", "condition"), sdkMetric.ATTRIBUTE},
+			{"isReady", definition.Transform(prometheus.FromLabelValue("kube_pod_status_ready", "condition"), toNumericBoolean), sdkMetric.GAUGE},
 			{"status", prometheus.FromLabelValue("kube_pod_status_phase", "phase"), sdkMetric.ATTRIBUTE},
-			{"isScheduled", prometheus.FromLabelValue("kube_pod_status_scheduled", "condition"), sdkMetric.ATTRIBUTE},
+			{"isScheduled", definition.Transform(prometheus.FromLabelValue("kube_pod_status_scheduled", "condition"), toNumericBoolean), sdkMetric.GAUGE},
 			{"deploymentName", ksmMetric.GetDeploymentNameForPod(), sdkMetric.ATTRIBUTE},
 			{"label.*", prometheus.InheritAllLabelsFrom("pod", "kube_pod_labels"), sdkMetric.ATTRIBUTE},
 		},
@@ -162,6 +162,12 @@ var KSMQueries = []prometheus.Query{
 	},
 	{
 		MetricName: "kube_pod_status_scheduled",
+		Value: prometheus.QueryValue{
+			Value: prometheus.GaugeValue(1),
+		},
+	},
+	{
+		MetricName: "kube_pod_status_ready",
 		Value: prometheus.QueryValue{
 			Value: prometheus.GaugeValue(1),
 		},
@@ -302,9 +308,9 @@ func toTimestamp(value definition.FetchedValue) (definition.FetchedValue, error)
 
 func toNumericBoolean(value definition.FetchedValue) (definition.FetchedValue, error) {
 	switch value {
-	case true, 1:
+	case "true", true, 1:
 		return 1, nil
-	case false, 0:
+	case "false", false, 0:
 		return 0, nil
 	default:
 		return nil, errors.New("value can not be converted to numeric boolean")
