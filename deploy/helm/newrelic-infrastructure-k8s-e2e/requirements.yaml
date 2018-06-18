@@ -1,29 +1,15 @@
 dependencies:
   - name: kube-state-metrics
-    version: "0.5.3" # appVersion 1.1.0
+    version: "0.7.1"
     repository: "@stable"
-    alias: ksm-1-1-0-instance-one
+    alias: ksm-instance-one
     tags:
-      - scenario-ksm-1-1-0-one-instances
-      - scenario-ksm-1-1-0-two-instances
+      - one-ksm-instance
+      - two-ksm-instances
 
   - name: kube-state-metrics
-    version: "0.5.3" # appVersion 1.1.0
+    version: "0.7.1"
     repository: "@stable"
-    alias: ksm-1-1-0-instance-two
+    alias: ksm-instance-two
     tags:
-      - scenario-ksm-1-1-0-two-instances
-  - name: kube-state-metrics
-    version: "0.7.1" # appVersion 1.2.0
-    repository: "@stable"
-    alias: ksm-1-2-0-instance-one
-    tags:
-      - scenario-ksm-1-2-0-one-instances
-      - scenario-ksm-1-2-0-two-instances
-
-  - name: kube-state-metrics
-    version: "0.7.1" # appVersion 1.2.0
-    repository: "@stable"
-    alias: ksm-1-2-0-instance-two
-    tags:
-      - scenario-ksm-1-2-0-two-instances
+      - two-ksm-instances

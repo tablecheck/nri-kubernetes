@@ -250,7 +250,7 @@ func (sd *discoverer) getNode(nodeName string) (*v1.Node, error) {
 	// Get the containing node and discover the InternalIP and Kubelet port
 	node, err = sd.apiClient.FindNode(nodeName)
 	if err != nil {
-		return nil, fmt.Errorf("could not find node named %q", nodeName)
+		return nil, fmt.Errorf("could not find node named %q. %s", nodeName, err)
 	}
 
 	return node, nil

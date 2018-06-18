@@ -2,15 +2,24 @@ package e2e
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sync"
 	"testing"
+
+	"bufio"
+
 	"time"
 
+	"strings"
+
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/helm"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/jsonschema"
+	"github.com/newrelic/infra-integrations-sdk/args"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -19,12 +28,36 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 )
 
+var cliArgs = struct {
+	NrChartPath  string `default:"../deploy/helm/newrelic-infrastructure-k8s-e2e",help:"Path to the newrelic-infrastructure-k8s-e2e chart"`
+	ClusterName  string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
+	NrLicenseKey string `help:"New Relic account license key"`
+	Verbose      int    `default:"1",help:"When enabled, more detailed output will be printed"`
+	CollectorURL string `default:"https://staging-infra-api.newrelic.com",help:"New Relic backend collector url"`
+}{}
+
 const (
 	nrLabelKey   = "name"
 	nrLabelValue = "newrelic-infra"
 	namespace    = "default"
 	nrContainer  = "newrelic-infra"
+
+	scenarioKSM110oneInstance  = "ksm.version=v1.1.0"
+	scenarioKSM110twoInstances = "ksm.version=v1.1.0,tags.two-ksm-instances=true"
+	scenarioKSM120oneInstance  = "ksm.version=v1.2.0"
+	scenarioKSM120twoInstances = "ksm.version=v1.2.0,tags.two-ksm-instances=true"
+	scenarioKSM130oneInstance  = "ksm.version=v1.3.0"
+	scenarioKSM130TwoInstances = "ksm.version=v1.3.0,tags.two-ksm-instances=true"
 )
+
+var scenarios = []string{
+	scenarioKSM110oneInstance,
+	scenarioKSM110twoInstances,
+	scenarioKSM120oneInstance,
+	scenarioKSM120twoInstances,
+	scenarioKSM130oneInstance,
+	scenarioKSM130TwoInstances,
+}
 
 type integrationData struct {
 	role    string
@@ -34,9 +67,7 @@ type integrationData struct {
 	err     error
 }
 
-var dataChannel = make(chan integrationData)
-
-func getNRPods(clientset *kubernetes.Clientset, config *rest.Config) ([]string, error) {
+func getNRPods(t *testing.T, clientset *kubernetes.Clientset, config *rest.Config) ([]string, error) {
 	sv, err := clientset.ServerVersion()
 	if err != nil {
 		return nil, err
@@ -58,46 +89,56 @@ func getNRPods(clientset *kubernetes.Clientset, config *rest.Config) ([]string, 
 	return podsName, nil
 }
 
-func execIntegration(clientset *kubernetes.Clientset, config *rest.Config, podName string, wg *sync.WaitGroup) {
-	defer wg.Done()
-	d := integrationData{
-		podName: podName,
-	}
+type execOutput struct {
+	execOut bytes.Buffer
+	execErr bytes.Buffer
+}
 
+func doRequest(clientset *kubernetes.Clientset, config *rest.Config, podName string, command ...string) (execOutput, error) {
 	execReq := clientset.CoreV1().RESTClient().Post().
 		Resource("pods").
 		Name(podName).
 		Namespace(namespace).
 		SubResource("exec").
 		Param("container", nrContainer).
-		Param("command", "/var/db/newrelic-infra/newrelic-integrations/bin/nr-kubernetes").
-		// Param("command", "-pretty").
-		Param("command", "-verbose").
 		Param("stdin", "false").
 		Param("stdout", "true").
 		Param("stderr", "true").
-		Param("tty", "false")
+		Param("tty", "false").
+		Timeout(5 * time.Second)
 
-	var (
-		execOut bytes.Buffer
-		execErr bytes.Buffer
-	)
+	for _, c := range command {
+		execReq.Param("command", c)
+	}
+
+	var output execOutput
 
 	exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.URL())
 	if err != nil {
-		d.err = fmt.Errorf("failed to init executor for pod %s: %v", podName, err)
-		dataChannel <- d
-		return
-
+		return output, fmt.Errorf("failed to init executor for pod %s: %v", podName, err)
 	}
 
 	err = exec.Stream(remotecommand.StreamOptions{
-		Stdout: &execOut,
-		Stderr: &execErr,
+		Stdout: &output.execOut,
+		Stderr: &output.execErr,
 	})
 
 	if err != nil {
-		d.err = fmt.Errorf("could not execute command inside pod %s: %v. Integration error output:\n\n%v", podName, err, execErr.String())
+		return output, fmt.Errorf("could not execute command inside pod %s: %v. Integration error output:\n\n%v", podName, err, output.execErr.String())
+	}
+
+	return output, nil
+}
+
+func execIntegration(clientset *kubernetes.Clientset, config *rest.Config, podName string, dataChannel chan integrationData, wg *sync.WaitGroup) {
+	defer wg.Done()
+	d := integrationData{
+		podName: podName,
+	}
+
+	output, err := doRequest(clientset, config, podName, "/var/db/newrelic-infra/newrelic-integrations/bin/nr-kubernetes", "-timeout=15000", "-verbose")
+	if err != nil {
+		d.err = err
 		dataChannel <- d
 		return
 	}
@@ -109,7 +150,7 @@ func execIntegration(clientset *kubernetes.Clientset, config *rest.Config, podNa
 		return
 	}
 
-	matches := re.FindStringSubmatch(execErr.String())
+	matches := re.FindStringSubmatch(output.execErr.String())
 	role := matches[1]
 	if role == "" {
 		d.err = fmt.Errorf("cannot find a role for pod %s", podName)
@@ -118,37 +159,61 @@ func execIntegration(clientset *kubernetes.Clientset, config *rest.Config, podNa
 	}
 
 	d.role = role
-	d.stdOut = execOut.Bytes()
-	d.stdErr = execErr.Bytes()
+	d.stdOut = output.execOut.Bytes()
+	d.stdErr = output.execErr.Bytes()
 
 	dataChannel <- d
-
 }
 
 func TestBasic(t *testing.T) {
 	if os.Getenv("RUN_TESTS") == "" {
 		t.Skip("Flag RUN_TESTS is not specified, skipping tests")
 	}
-	config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube", "config"))
+
+	err := args.SetupArgs(&cliArgs)
 	if err != nil {
 		assert.FailNow(t, err.Error())
 	}
 
-	if config.Timeout == 0 {
-		config.Timeout = 5 * time.Second
+	if cliArgs.NrLicenseKey == "" || cliArgs.ClusterName == "" {
+		assert.FailNow(t, "license key and cluster name are required args")
+	}
+
+	// TODO
+	ctx := context.TODO()
+	for _, s := range scenarios {
+		fmt.Printf("Executing scenario %q\n", s)
+		err := executeScenario(ctx, t, s)
+		assert.NoError(t, err)
+	}
+}
+
+func executeScenario(ctx context.Context, t *testing.T, scenario string) error {
+	releaseName, err := setScenario(ctx, scenario)
+	if err != nil {
+		return err
+	}
+
+	defer unsetScenario(ctx, releaseName) // nolint: errcheck
+
+	config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube", "config"))
+	if err != nil {
+		return err
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		assert.FailNow(t, err.Error())
+		return err
 	}
 
-	podsName, err := getNRPods(clientset, config)
+	podsName, err := getNRPods(t, clientset, config)
 	if err != nil {
-		assert.FailNow(t, err.Error())
+		return err
 	}
 
 	output := make(map[string]integrationData)
+
+	dataChannel := make(chan integrationData)
 
 	var wg sync.WaitGroup
 	wg.Add(len(podsName))
@@ -158,13 +223,13 @@ func TestBasic(t *testing.T) {
 	}()
 
 	for _, pName := range podsName {
-		fmt.Printf("Executing integration inside pod: %s\n", pName)
-		go execIntegration(clientset, config, pName, &wg)
+		fmt.Printf("Scenario: %s. Executing integration inside pod: %s\n", scenario, pName)
+		go execIntegration(clientset, config, pName, dataChannel, &wg)
 	}
 
 	for d := range dataChannel {
-		if err != nil {
-			assert.FailNow(t, err.Error())
+		if d.err != nil {
+			return fmt.Errorf("scenario: %s. %s", scenario, d.err.Error())
 		}
 		output[d.podName] = d
 	}
@@ -201,13 +266,58 @@ func TestBasic(t *testing.T) {
 
 		err := jsonschema.Match(o.stdOut, m)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("\n------ %s pod %s ------\n%s", o.role, podName, err))
+			errStr := fmt.Sprintf("\n------ scenario: %s. %s pod %s ------\n%s", scenario, o.role, podName, err)
+			if cliArgs.Verbose == 1 {
+				errStr = errStr + fmt.Sprintf("\nStdErr:\n%s\nStdOut:\n%s", string(o.stdErr), string(o.stdOut))
+			}
+
+			errs = append(errs, errors.New(errStr))
 		}
 	}
-	nodes, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
-	assert.NoError(t, err)
 
+	nodes, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+
+	assert.NoError(t, err)
 	assert.Equal(t, (lcount + fcount), len(nodes.Items))
 	assert.Equal(t, 1, lcount)
 	assert.Empty(t, errs)
+
+	return nil
+}
+
+func setScenario(ctx context.Context, scenario string) (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	// ensuring helm (tiller pod) is installed
+	err = helm.Init(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	options := strings.Split(scenario, ",")
+	options = append(options,
+		fmt.Sprintf("integration.k8sClusterName=%s", cliArgs.ClusterName),
+		fmt.Sprintf("integration.newRelicLicenseKey=%s", cliArgs.NrLicenseKey),
+		fmt.Sprintf("integration.verbose=%d", cliArgs.Verbose),
+		fmt.Sprintf("integration.collectorURL=%s", cliArgs.CollectorURL),
+	)
+
+	o, err := helm.InstallRelease(ctx, filepath.Join(dir, cliArgs.NrChartPath), options...)
+	if err != nil {
+		return "", err
+	}
+
+	r := bufio.NewReader(bytes.NewReader(o))
+	v, _, _ := r.ReadLine()
+
+	releaseName := bytes.TrimPrefix(v, []byte("NAME:   "))
+
+	return string(releaseName), nil
+}
+
+func unsetScenario(ctx context.Context, releaseName string) error {
+	return helm.DeleteRelease(ctx, releaseName)
 }

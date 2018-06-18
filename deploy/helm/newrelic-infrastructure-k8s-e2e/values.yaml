@@ -30,25 +30,60 @@ integration:
 #########################################
 ######## DO NOT MODIFY FROM HERE ########
 #########################################
-rbac: &rbac-create false
 
-ksm-1-1-0-instance-one:
+rbac: &rbac-create true
+ksm:
+  version: &ksm-version v1.1.0
+
+ksm-instance-one:
   nameOverride: kube-state-metrics
   rbac:
     create: *rbac-create
-ksm-1-1-0-instance-two:
-  rbac:
-    create: *rbac-create
-ksm-1-2-0-instance-one:
-  nameOverride: kube-state-metrics
-  rbac:
-    create: *rbac-create
-ksm-1-2-0-instance-two:
-  rbac:
-    create: *rbac-create
+  image:
+    tag: *ksm-version
+  collectors:
+    deployments: true
+    namespaces: true
+    replicasets: true
+    pods: true
 
+    nodes: false
+    replicationcontrollers: false
+    resourcequotas: false
+    cronjobs: false
+    daemonsets: false
+    endpoints: false
+    horizontalpodautoscalers: false
+    jobs: false
+    limitranges: false
+    persistentvolumeclaims: false
+    persistentvolumes: false
+    services: false
+    statefulsets: false
+ksm-instance-two:
+  rbac:
+    create: *rbac-create
+  image:
+    tag: *ksm-version
+  collectors:
+    deployments: true
+    namespaces: true
+    replicasets: true
+    pods: true
+
+    nodes: false
+    replicationcontrollers: false
+    resourcequotas: false
+    cronjobs: false
+    daemonsets: false
+    endpoints: false
+    horizontalpodautoscalers: false
+    jobs: false
+    limitranges: false
+    persistentvolumeclaims: false
+    persistentvolumes: false
+    services: false
+    statefulsets: false
 tags:
-  scenario-ksm-1-1-0-one-instances: false
-  scenario-ksm-1-1-0-two-instances: false
-  scenario-ksm-1-2-0-one-instances: false
-  scenario-ksm-1-2-0-two-instances: false
+  one-ksm-instance: true
+  two-ksm-instances: false
