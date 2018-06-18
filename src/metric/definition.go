@@ -143,6 +143,9 @@ var KSMQueries = []prometheus.Query{
 		MetricName: "kube_deployment_status_replicas_updated",
 	},
 	{
+		MetricName: "kube_deployment_spec_strategy_rollingupdate_max_unavailable",
+	},
+	{
 		MetricName: "kube_pod_status_phase",
 		Labels: prometheus.QueryLabels{
 			Labels: prometheus.Labels{"phase": "Pending"},
@@ -171,6 +174,9 @@ var KSMQueries = []prometheus.Query{
 		Value: prometheus.QueryValue{
 			Value: prometheus.GaugeValue(1),
 		},
+	},
+	{
+		MetricName: "kube_pod_start_time",
 	},
 }
 
