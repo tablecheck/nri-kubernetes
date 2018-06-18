@@ -73,6 +73,7 @@
     "podsDesired",
     "podsTotal",
     "podsUnavailable",
-    "podsUpdated"
+    "podsUpdated",
+    "podsMaxUnavailable"
   ]
 }
