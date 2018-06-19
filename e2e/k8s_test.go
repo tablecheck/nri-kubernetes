@@ -189,12 +189,12 @@ func TestBasic(t *testing.T) {
 }
 
 func executeScenario(ctx context.Context, t *testing.T, scenario string) error {
-	releaseName, err := setScenario(ctx, scenario)
+	releaseName, err := installRelease(ctx, scenario)
 	if err != nil {
 		return err
 	}
 
-	defer unsetScenario(ctx, releaseName) // nolint: errcheck
+	defer helm.DeleteRelease(ctx, releaseName) // nolint: errcheck
 
 	config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube", "config"))
 	if err != nil {
@@ -285,7 +285,7 @@ func executeScenario(ctx context.Context, t *testing.T, scenario string) error {
 	return nil
 }
 
-func setScenario(ctx context.Context, scenario string) (string, error) {
+func installRelease(ctx context.Context, scenario string) (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return "", err
@@ -316,8 +316,4 @@ func setScenario(ctx context.Context, scenario string) (string, error) {
 	releaseName := bytes.TrimPrefix(v, []byte("NAME:   "))
 
 	return string(releaseName), nil
-}
-
-func unsetScenario(ctx context.Context, releaseName string) error {
-	return helm.DeleteRelease(ctx, releaseName)
 }
