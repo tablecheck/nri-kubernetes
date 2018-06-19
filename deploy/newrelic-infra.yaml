@@ -52,8 +52,9 @@ spec:
       labels:
         name: newrelic-infra
       annotations:
+        # Needed for Kubernetes versions prior to 1.6.0, where tolerations were set via annotations.
         scheduler.alpha.kubernetes.io/tolerations: |
-          [{"operator": "Exists", "effect": "NoSchedule"}]
+          [{"operator": "Exists", "effect": "NoSchedule"},{"operator": "Exists", "effect": "NoExecute"}]
     spec:
       serviceAccountName: newrelic
       hostNetwork: true # This option is a requirement for the Infrastructure Agent to report the proper hostname in New Relic.
@@ -105,3 +106,5 @@ spec:
       tolerations:
         - operator: "Exists"
           effect: "NoSchedule"
+        - operator: "Exists"
+          effect: "NoExecute"

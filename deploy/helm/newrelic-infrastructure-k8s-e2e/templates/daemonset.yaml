@@ -15,8 +15,9 @@ spec:
       labels:
         name: {{ .Values.daemonset.name }}
       annotations:
+        # Needed for Kubernetes versions prior to 1.6.0, where tolerations were set via annotations.
         scheduler.alpha.kubernetes.io/tolerations: |
-          [{"operator": "Exists", "effect": "NoSchedule"}]
+          [{"operator": "Exists", "effect": "NoSchedule"},{"operator": "Exists", "effect": "NoExecute"}]
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       containers:
@@ -71,3 +72,5 @@ spec:
       tolerations:
         - operator: "Exists"
           effect: "NoSchedule"
+        - operator: "Exists"
+          effect: "NoExecute"

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Update newrelic-infra.yaml to force our objects to be deployed in `default` namespace.
+- Add NoExecute toleration ensuring that our pod is being deployed when the NoExecute node taint is set.
 
 ### Fixed
 - Add missing metric: `podsMaxUnavailable` for deployment
