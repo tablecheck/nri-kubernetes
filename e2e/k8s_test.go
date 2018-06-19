@@ -67,7 +67,7 @@ type integrationData struct {
 	err     error
 }
 
-func getNRPods(t *testing.T, clientset *kubernetes.Clientset, config *rest.Config) ([]string, error) {
+func getNRPods(clientset *kubernetes.Clientset, config *rest.Config) ([]string, error) {
 	sv, err := clientset.ServerVersion()
 	if err != nil {
 		return nil, err
@@ -206,7 +206,7 @@ func executeScenario(ctx context.Context, t *testing.T, scenario string) error {
 		return err
 	}
 
-	podsName, err := getNRPods(t, clientset, config)
+	podsName, err := getNRPods(clientset, config)
 	if err != nil {
 		return err
 	}
