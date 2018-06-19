@@ -104,8 +104,7 @@ func doRequest(clientset *kubernetes.Clientset, config *rest.Config, podName str
 		Param("stdin", "false").
 		Param("stdout", "true").
 		Param("stderr", "true").
-		Param("tty", "false").
-		Timeout(5 * time.Second)
+		Param("tty", "false")
 
 	for _, c := range command {
 		execReq.Param("command", c)
@@ -179,27 +178,31 @@ func TestBasic(t *testing.T) {
 		assert.FailNow(t, "license key and cluster name are required args")
 	}
 
+	config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube", "config"))
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
+
+	if config.Timeout == 0 {
+		config.Timeout = 5 * time.Second
+	}
+
 	// TODO
 	ctx := context.TODO()
 	for _, s := range scenarios {
 		fmt.Printf("Executing scenario %q\n", s)
-		err := executeScenario(ctx, t, s)
+		err := executeScenario(ctx, t, config, s)
 		assert.NoError(t, err)
 	}
 }
 
-func executeScenario(ctx context.Context, t *testing.T, scenario string) error {
+func executeScenario(ctx context.Context, t *testing.T, config *rest.Config, scenario string) error {
 	releaseName, err := installRelease(ctx, scenario)
 	if err != nil {
 		return err
 	}
 
 	defer helm.DeleteRelease(ctx, releaseName) // nolint: errcheck
-
-	config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube", "config"))
-	if err != nil {
-		return err
-	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
