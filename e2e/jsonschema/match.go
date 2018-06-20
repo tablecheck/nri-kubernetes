@@ -74,11 +74,11 @@ func Match(input []byte, m EventTypeToSchemaFilepath) error {
 		}
 	}
 	if len(terr) > 0 {
-		errs = append(errs, fmt.Errorf("Mandatory types were not found: %s", terr))
+		errs = append(errs, fmt.Errorf("mandatory types were not found: %s", terr))
 	}
 
 	if len(missingSchemas) > 0 {
-		e := fmt.Sprint("Some types were not validated because no schema was found: ")
+		e := fmt.Sprint("some types were not validated because no schema was found: ")
 		for t := range missingSchemas {
 			e = fmt.Sprintf("%s%s, ", e, t)
 		}
