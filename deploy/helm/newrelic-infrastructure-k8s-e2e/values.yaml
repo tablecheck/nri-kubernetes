@@ -31,7 +31,7 @@ integration:
 ######## DO NOT MODIFY FROM HERE ########
 #########################################
 
-rbac: &rbac-create true
+rbac: &rbac-create false
 ksm:
   version: &ksm-version v1.1.0
 
