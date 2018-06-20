@@ -41,22 +41,15 @@ const (
 	nrLabelValue = "newrelic-infra"
 	namespace    = "default"
 	nrContainer  = "newrelic-infra"
-
-	scenarioKSM110oneInstance  = "ksm.version=v1.1.0"
-	scenarioKSM110twoInstances = "ksm.version=v1.1.0,tags.two-ksm-instances=true"
-	scenarioKSM120oneInstance  = "ksm.version=v1.2.0"
-	scenarioKSM120twoInstances = "ksm.version=v1.2.0,tags.two-ksm-instances=true"
-	scenarioKSM130oneInstance  = "ksm.version=v1.3.0"
-	scenarioKSM130TwoInstances = "ksm.version=v1.3.0,tags.two-ksm-instances=true"
 )
 
 var scenarios = []string{
-	scenarioKSM110oneInstance,
-	scenarioKSM110twoInstances,
-	scenarioKSM120oneInstance,
-	scenarioKSM120twoInstances,
-	scenarioKSM130oneInstance,
-	scenarioKSM130TwoInstances,
+	"ksm.version=v1.1.0",
+	"ksm.version=v1.1.0,tags.two-ksm-instances=true",
+	"ksm.version=v1.2.0",
+	"ksm.version=v1.2.0,tags.two-ksm-instances=true",
+	"ksm.version=v1.3.0",
+	"ksm.version=v1.3.0,tags.two-ksm-instances=true",
 }
 
 type integrationData struct {
@@ -108,7 +101,7 @@ type execOutput struct {
 	execErr bytes.Buffer
 }
 
-func doRequest(clientset *kubernetes.Clientset, config *rest.Config, podName string, command ...string) (execOutput, error) {
+func podExec(clientset *kubernetes.Clientset, config *rest.Config, podName string, command ...string) (execOutput, error) {
 	execReq := clientset.CoreV1().RESTClient().Post().
 		Resource("pods").
 		Name(podName).
@@ -137,7 +130,7 @@ func doRequest(clientset *kubernetes.Clientset, config *rest.Config, podName str
 	})
 
 	if err != nil {
-		return output, fmt.Errorf("could not execute command inside pod %s: %v. Integration error output:\n\n%v", podName, err, output.execErr.String())
+		return output, fmt.Errorf("could not execute command inside pod %s: %v. Output:\n\n%v", podName, err, output.execErr.String())
 	}
 
 	return output, nil
@@ -149,7 +142,7 @@ func execIntegration(clientset *kubernetes.Clientset, config *rest.Config, podNa
 		podName: podName,
 	}
 
-	output, err := doRequest(clientset, config, podName, "/var/db/newrelic-infra/newrelic-integrations/bin/nr-kubernetes", "-timeout=15000", "-verbose")
+	output, err := podExec(clientset, config, podName, "/var/db/newrelic-infra/newrelic-integrations/bin/nr-kubernetes", "-timeout=15000", "-verbose")
 	if err != nil {
 		d.err = err
 		dataChannel <- d
