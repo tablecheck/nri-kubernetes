@@ -32,7 +32,7 @@ var cliArgs = struct {
 	NrChartPath  string `default:"../deploy/helm/newrelic-infrastructure-k8s-e2e",help:"Path to the newrelic-infrastructure-k8s-e2e chart"`
 	ClusterName  string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
 	NrLicenseKey string `help:"New Relic account license key"`
-	Verbose      int    `default:"1",help:"When enabled, more detailed output will be printed"`
+	Verbose      int    `default:"0",help:"When enabled, more detailed output will be printed"`
 	CollectorURL string `default:"https://staging-infra-api.newrelic.com",help:"New Relic backend collector url"`
 }{}
 
@@ -65,6 +65,20 @@ type integrationData struct {
 	stdOut  []byte
 	stdErr  []byte
 	err     error
+}
+
+type executionErr struct {
+	errs []error
+}
+
+// Error implements Error interface
+func (err executionErr) Error() string {
+	var errsStr string
+	for _, e := range err.errs {
+		errsStr += fmt.Sprintf("%s\n", e)
+	}
+
+	return errsStr
 }
 
 func getNRPods(clientset *kubernetes.Clientset, config *rest.Config) ([]string, error) {
@@ -191,12 +205,12 @@ func TestBasic(t *testing.T) {
 	ctx := context.TODO()
 	for _, s := range scenarios {
 		fmt.Printf("Executing scenario %q\n", s)
-		err := executeScenario(ctx, t, config, s)
+		err := executeScenario(ctx, config, s)
 		assert.NoError(t, err)
 	}
 }
 
-func executeScenario(ctx context.Context, t *testing.T, config *rest.Config, scenario string) error {
+func executeScenario(ctx context.Context, config *rest.Config, scenario string) error {
 	releaseName, err := installRelease(ctx, scenario)
 	if err != nil {
 		return err
@@ -252,7 +266,7 @@ func executeScenario(ctx context.Context, t *testing.T, config *rest.Config, sce
 		"K8sNodeSample":      leaderMap["K8sNodeSample"],
 	}
 
-	var errs []error
+	var execErr executionErr
 	var lcount int
 	var fcount int
 
@@ -274,18 +288,24 @@ func executeScenario(ctx context.Context, t *testing.T, config *rest.Config, sce
 				errStr = errStr + fmt.Sprintf("\nStdErr:\n%s\nStdOut:\n%s", string(o.stdErr), string(o.stdOut))
 			}
 
-			errs = append(errs, errors.New(errStr))
+			execErr.errs = append(execErr.errs, errors.New(errStr))
 		}
 	}
 
 	nodes, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+	if err != nil {
+		execErr.errs = append(execErr.errs, err)
+	}
 
-	assert.NoError(t, err)
-	assert.Equal(t, (lcount + fcount), len(nodes.Items))
-	assert.Equal(t, 1, lcount)
-	assert.Empty(t, errs)
+	if lcount+fcount != len(nodes.Items) {
+		execErr.errs = append(execErr.errs, fmt.Errorf("%d nodes were found, but got: %d", lcount+fcount, len(nodes.Items)))
+	}
 
-	return nil
+	if lcount != 1 {
+		execErr.errs = append(execErr.errs, fmt.Errorf("%d pod leaders were found, but only 1 was expected", lcount))
+	}
+
+	return execErr
 }
 
 func installRelease(ctx context.Context, scenario string) (string, error) {
@@ -314,7 +334,10 @@ func installRelease(ctx context.Context, scenario string) (string, error) {
 	}
 
 	r := bufio.NewReader(bytes.NewReader(o))
-	v, _, _ := r.ReadLine()
+	v, _, err := r.ReadLine()
+	if err != nil {
+		return "", err
+	}
 
 	releaseName := bytes.TrimPrefix(v, []byte("NAME:   "))
 
