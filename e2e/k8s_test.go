@@ -29,11 +29,13 @@ import (
 )
 
 var cliArgs = struct {
-	NrChartPath  string `default:"../deploy/helm/newrelic-infrastructure-k8s-e2e",help:"Path to the newrelic-infrastructure-k8s-e2e chart"`
-	ClusterName  string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
-	NrLicenseKey string `help:"New Relic account license key"`
-	Verbose      int    `default:"0",help:"When enabled, more detailed output will be printed"`
-	CollectorURL string `default:"https://staging-infra-api.newrelic.com",help:"New Relic backend collector url"`
+	NrChartPath         string `default:"../deploy/helm/newrelic-infrastructure-k8s-e2e",help:"Path to the newrelic-infrastructure-k8s-e2e chart"`
+	IntegrationImageTag string `default:"1.0.0-beta2.3",help:"Integration image tag"`
+	Rbac                bool   `default:"false",help:"Enable rbac"`
+	ClusterName         string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
+	NrLicenseKey        string `help:"New Relic account license key"`
+	Verbose             int    `default:"0",help:"When enabled, more detailed output will be printed"`
+	CollectorURL        string `default:"https://staging-infra-api.newrelic.com",help:"New Relic backend collector url"`
 }{}
 
 const (
@@ -43,17 +45,19 @@ const (
 	nrContainer  = "newrelic-infra"
 )
 
-var scenarios = []string{
-	s(false, "v1.1.0", false),
-	s(false, "v1.1.0", true),
-	s(false, "v1.2.0", false),
-	s(false, "v1.2.0", true),
-	s(false, "v1.3.0", false),
-	s(false, "v1.3.0", true),
+func scenarios(integrationTag string, rbac bool) []string {
+	return []string{
+		s(rbac, integrationTag, "v1.1.0", false),
+		s(rbac, integrationTag, "v1.1.0", true),
+		s(rbac, integrationTag, "v1.2.0", false),
+		s(rbac, integrationTag, "v1.2.0", true),
+		s(rbac, integrationTag, "v1.3.0", false),
+		s(rbac, integrationTag, "v1.3.0", true),
+	}
 }
 
-func s(rbac bool, ksmVersion string, twoKSMInstances bool) string {
-	str := fmt.Sprintf("rbac=%v,ksm-instance-one.rbac.create=%v,ksm-instance-one.image.tag=%s", rbac, rbac, ksmVersion)
+func s(rbac bool, integrationTag string, ksmVersion string, twoKSMInstances bool) string {
+	str := fmt.Sprintf("rbac=%v,ksm-instance-one.rbac.create=%v,ksm-instance-one.image.tag=%s,daemonset.image.tag=%s", rbac, rbac, ksmVersion, integrationTag)
 	if twoKSMInstances {
 		return fmt.Sprintf("%s,ksm-instance-two.rbac.create=%v,ksm-instance-two.image.tag=%s,two-ksm-instances=true", str, rbac, ksmVersion)
 	}
@@ -205,7 +209,7 @@ func TestBasic(t *testing.T) {
 
 	// TODO
 	ctx := context.TODO()
-	for _, s := range scenarios {
+	for _, s := range scenarios(cliArgs.IntegrationImageTag, cliArgs.Rbac) {
 		fmt.Printf("Executing scenario %q\n", s)
 		err := executeScenario(ctx, config, s)
 		assert.NoError(t, err)
