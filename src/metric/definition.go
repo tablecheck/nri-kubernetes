@@ -55,12 +55,12 @@ var KSMSpecs = definition.SpecGroups{
 			{"label.*", prometheus.InheritAllLabelsFrom("deployment", "kube_deployment_labels"), sdkMetric.ATTRIBUTE},
 		},
 	},
-	// We get Pod metrics from kube-state-metrics for those pods that aren't
-	// running (ex: Pending pods). We can't get the data from kubelet because
+	// We get Pod metrics from kube-state-metrics for those pods that are in
+	// "Pending" status and are not scheduled. We can't get the data from Kubelet because
 	// they aren't running in any node and the information about them is only
 	// present in the API.
 	"pod": {
-		IDGenerator:   prometheus.FromLabelValueEntityIDGenerator("kube_pod_status_phase", "pod"),
+		IDGenerator:   prometheus.FromLabelsValueEntityIDGeneratorForPendingPods(),
 		TypeGenerator: prometheus.FromLabelValueEntityTypeGenerator("kube_pod_status_phase"),
 		Specs: []definition.Spec{
 			{"createdAt", prometheus.FromValue("kube_pod_created"), sdkMetric.GAUGE},
@@ -314,9 +314,9 @@ func toTimestamp(value definition.FetchedValue) (definition.FetchedValue, error)
 
 func toNumericBoolean(value definition.FetchedValue) (definition.FetchedValue, error) {
 	switch value {
-	case "true", true, 1:
+	case "true", "True", true, 1:
 		return 1, nil
-	case "false", false, 0:
+	case "false", "False", false, 0:
 		return 0, nil
 	default:
 		return nil, errors.New("value can not be converted to numeric boolean")

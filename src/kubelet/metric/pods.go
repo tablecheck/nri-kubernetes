@@ -190,35 +190,42 @@ func fetchContainersData(p *v1.Pod) map[string]definition.RawMetrics {
 	return specs
 }
 
+// isFakePendingPods returns true if a pod is a fake pending pod.
+// Pods that are created before having API server up are reported as Pending
+// in Kubelet /pods endpoint where in fact they are correctly running. This is a bug in Kubelet.
+// Those pods are called fake pending pods.
+func isFakePendingPod(s v1.PodStatus) bool {
+	return s.Phase == "Pending" &&
+		len(s.Conditions) == 1 &&
+		s.Conditions[0].Type == "PodScheduled" &&
+		s.Conditions[0].Status == "True"
+}
+
 // TODO handle errors and missing data
 func fetchPodData(p *v1.Pod) (definition.RawMetrics, string) {
-	var isReady, isScheduled bool
-	for _, p := range p.Status.Conditions {
-		switch p.Type {
-		case "Ready":
-			isReady = true
-		case "PodScheduled":
-			isScheduled = true
-		}
-	}
-
 	r := definition.RawMetrics{
-		"namespace":   p.GetObjectMeta().GetNamespace(),
-		"podName":     p.GetObjectMeta().GetName(),
-		"nodeName":    p.Spec.NodeName,
-		"isReady":     isReady,
-		"isScheduled": isScheduled,
+		"namespace": p.GetObjectMeta().GetNamespace(),
+		"podName":   p.GetObjectMeta().GetName(),
+		"nodeName":  p.Spec.NodeName,
+	}
+	if isFakePendingPod(p.Status) {
+		r["status"] = "Running"
+		r["isReady"] = "True"
+		r["isScheduled"] = "True"
+	} else {
+		for _, p := range p.Status.Conditions {
+			switch p.Type {
+			case "Ready":
+				r["isReady"] = string(p.Status)
+			case "PodScheduled":
+				r["isScheduled"] = string(p.Status)
+			}
+		}
+		r["status"] = string(p.Status.Phase)
 	}
 
 	if v := p.Status.HostIP; v != "" {
 		r["nodeIP"] = v
-	}
-
-	switch p.Status.Phase {
-	case v1.PodPending, v1.PodRunning:
-		r["status"] = string(v1.PodRunning)
-	default:
-		r["status"] = string(p.Status.Phase)
 	}
 
 	if t := p.GetObjectMeta().GetCreationTimestamp(); !t.IsZero() {

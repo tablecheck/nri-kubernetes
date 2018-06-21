@@ -94,6 +94,29 @@ func FromLabelValueEntityIDGenerator(key, label string) definition.EntityIDGener
 	}
 }
 
+// FromLabelsValueEntityIDGeneratorForPendingPods generates entity ID for a pod in pending status,
+// which is not scheduled. Otherwise entity ID is not generated. This is due to the fact that
+// Kubelet /pods endpoint does not have information about those pods. The rest of the pods
+// is reported from Kubelet /pods endpoint.
+func FromLabelsValueEntityIDGeneratorForPendingPods() definition.EntityIDGeneratorFunc {
+	return func(groupLabel string, rawEntityID string, g definition.RawGroups) (string, error) {
+		podName, err := FromLabelValueEntityIDGenerator("kube_pod_status_phase", "pod")(groupLabel, rawEntityID, g)
+		if err != nil {
+			return "", err
+		}
+
+		isScheduled, err := FromLabelValueEntityIDGenerator("kube_pod_status_scheduled", "condition")(groupLabel, rawEntityID, g)
+		if err != nil {
+			return "", err
+		}
+		if isScheduled != "false" {
+			return "", fmt.Errorf("ignoring pending pod, which is scheduled: reported from Kubelet endpoint")
+		}
+
+		return podName, nil
+	}
+}
+
 // GroupMetricsBySpec groups metrics coming from Prometheus by a given metric spec.
 // Example: grouping by K8s pod, container, etc.
 func GroupMetricsBySpec(specs definition.SpecGroups, families []MetricFamily) (g definition.RawGroups, errs []error) {

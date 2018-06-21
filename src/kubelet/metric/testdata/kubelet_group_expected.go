@@ -16,8 +16,8 @@ var ExpectedGroupData = definition.RawGroups{
 			"nodeName":    "minikube",
 			"startTime":   parseTime("2018-02-14T16:26:33Z"),
 			"status":      "Running",
-			"isReady":     true,
-			"isScheduled": true,
+			"isReady":     "True",
+			"isScheduled": "True",
 			"createdAt":   parseTime("2018-02-14T16:26:33Z"),
 			"labels": map[string]string{
 				"controller-revision-hash": "3887482659",
@@ -37,8 +37,8 @@ var ExpectedGroupData = definition.RawGroups{
 			"nodeName":    "minikube",
 			//"startTime":      parseTime("2018-02-14T16:27:38Z"), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
 			"status":         "Running", // Note that even the status in the payload is Pending, we set it as Running. This is due to a bug in Kubelet. See https://github.com/kubernetes/kubernetes/pull/57106
-			"isReady":        false,     // TODO investigate. See https://newrelic.atlassian.net/browse/IHOST-658
-			"isScheduled":    true,
+			"isReady":        "True",
+			"isScheduled":    "True",
 			"createdAt":      parseTime("2018-02-14T16:27:38Z"),
 			"deploymentName": "kube-state-metrics",
 			"labels": map[string]string{

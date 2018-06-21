@@ -151,6 +151,22 @@ var rawGroups = definition.RawGroups{
 					"pod":             "fluentd-elasticsearch-jnqb7",
 				},
 			},
+			"kube_pod_status_phase": Metric{
+				Value: GaugeValue(1),
+				Labels: map[string]string{
+					"namespace": "kube-system",
+					"pod":       "fluentd-elasticsearch-jnqb7",
+					"phase":     "Pending",
+				},
+			},
+			"kube_pod_status_scheduled": Metric{
+				Value: GaugeValue(1),
+				Labels: map[string]string{
+					"namespace": "kube-system",
+					"pod":       "fluentd-elasticsearch-jnqb7",
+					"condition": "false",
+				},
+			},
 		},
 		"newrelic-infra-monitoring-cglrn": definition.RawMetrics{
 			"kube_pod_start_time": Metric{
@@ -168,6 +184,24 @@ var rawGroups = definition.RawGroups{
 					"namespace":       "kube-system",
 					"node":            "minikube",
 					"pod":             "newrelic-infra-monitoring-cglrn",
+				},
+			},
+		},
+		"kubernetes-dashboard-77d8b98585-c8s22": definition.RawMetrics{
+			"kube_pod_status_phase": Metric{
+				Value: GaugeValue(1),
+				Labels: map[string]string{
+					"namespace": "kube-system",
+					"pod":       "kubernetes-dashboard-77d8b98585-c8s22",
+					"phase":     "Pending",
+				},
+			},
+			"kube_pod_status_scheduled": Metric{
+				Value: GaugeValue(1),
+				Labels: map[string]string{
+					"namespace": "kube-system",
+					"pod":       "kubernetes-dashboard-77d8b98585-c8s22",
+					"condition": "true",
 				},
 			},
 		},
@@ -518,6 +552,21 @@ func TestFromLabelValueEntityIDGenerator_NotFound(t *testing.T) {
 	fetchedValue, err := FromLabelValueEntityIDGenerator("non-existent-metric-key", "pod")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Empty(t, fetchedValue)
 	assert.Contains(t, err.Error(), "error fetching \"pod\":")
+}
+
+// --------------- FromLabelsValueEntityIDGeneratorForPendingPods ---------------
+func TestFromLabelsValueEntityIDGeneratorForPendingPods(t *testing.T) {
+	expectedFetchedValue := "fluentd-elasticsearch-jnqb7"
+
+	fetchedValue, err := FromLabelsValueEntityIDGeneratorForPendingPods()("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedFetchedValue, fetchedValue)
+}
+
+func TestFromLabelsValueEntityIDGeneratorForPendingPods_ErrorScheduledAsTrue(t *testing.T) {
+	fetchedValue, err := FromLabelsValueEntityIDGeneratorForPendingPods()("pod", "kubernetes-dashboard-77d8b98585-c8s22", rawGroups)
+	assert.Empty(t, fetchedValue)
+	assert.Contains(t, err.Error(), "ignoring pending pod")
 }
 
 // --------------- InheritSpecificLabelValuesFrom ---------------

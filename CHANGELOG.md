@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fix some of the metrics for pods in pending status
   - Adding missing metrics: `startTime`, `isReady`
   - Unifying `isScheduled` and `isReady` to be reported as `1` and `0` for `true` and `false` respectively.
+- Fix pod metrics (`status` and `isReady`): non-scheduled or pending pods were not reported correctly.
 
 ### 1.0.0-beta2.3
 
