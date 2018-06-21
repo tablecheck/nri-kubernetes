@@ -1,12 +1,17 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: alpine-pending
+  name: {{ default .Chart.Name .Values.pod.name }}
 spec:
   containers:
   - name: alpine
     image: alpine:3.7
     resources:
       limits:
-        memory: 1M
-        cpu: 1M
+        memory: 3M
+        cpu: 1m
+{{ if .Values.pod.scheduled }}
+      requests:
+        memory: 3M
+        cpu: 1m
+{{ end }}

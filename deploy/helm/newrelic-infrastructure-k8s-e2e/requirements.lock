@@ -8,5 +8,8 @@ dependencies:
 - name: alpine-pending
   repository: file://../alpine-pending
   version: 1.0.0
-digest: sha256:d3d7bd79af635f960f213a44d985a0636642a330a1ac23ea85c983ff56d71c91
-generated: 2018-06-21T11:22:43.681666375+02:00
+- name: alpine-pending
+  repository: file://../alpine-pending
+  version: 1.0.0
+digest: sha256:a97e473bf799ccbc2107a7d2bd118709ba73173ad1c1922fc21164024aabf1b4
+generated: 2018-06-21T15:35:44.673338181+02:00

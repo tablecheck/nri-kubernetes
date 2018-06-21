@@ -17,5 +17,13 @@ dependencies:
   - name: alpine-pending
     version: "1.0.0"
     repository: "file://../alpine-pending"
+    alias: alpine-pending-scheduled
     tags:
-      - with-pod-pending
+      - with-pending-pods
+
+  - name: alpine-pending
+    version: "1.0.0"
+    repository: "file://../alpine-pending"
+    alias: alpine-pending-non-scheduled
+    tags:
+      - with-pending-pods
