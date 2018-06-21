@@ -60,7 +60,7 @@ spec:
       hostNetwork: true # This option is a requirement for the Infrastructure Agent to report the proper hostname in New Relic.
       containers:
         - name: newrelic-infra
-          image: newrelic/infrastructure-k8s:1.0.0-beta2.3
+          image: newrelic/infrastructure-k8s:1.0.0-rc.1
           resources:
             limits:
               memory: 150M
