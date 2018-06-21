@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Unreleased
 
+### 1.0.0-beta2.4
+
 ### Added
 - Add `hostNetwork: true` option to daemonset file. This is a requirement for the Infrastructure Agent to report the proper hostname in New Relic.
 
