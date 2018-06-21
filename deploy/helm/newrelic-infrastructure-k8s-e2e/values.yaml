@@ -87,3 +87,4 @@ ksm-instance-two:
 tags:
   one-ksm-instance: true
   two-ksm-instances: false
+  with-pod-pending: false

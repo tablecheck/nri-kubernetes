@@ -13,3 +13,9 @@ dependencies:
     alias: ksm-instance-two
     tags:
       - two-ksm-instances
+
+  - name: alpine-pending
+    version: "1.0.0"
+    repository: "file://../alpine-pending"
+    tags:
+      - with-pod-pending

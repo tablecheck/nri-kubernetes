@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: alpine-pending
+spec:
+  containers:
+  - name: alpine
+    image: alpine:3.7
+    resources:
+      limits:
+        memory: 1M
+        cpu: 1M
