@@ -60,6 +60,7 @@ ksm-instance-one:
     persistentvolumes: false
     services: false
     statefulsets: false
+
 ksm-instance-two:
   rbac:
     create: *rbac-create
@@ -84,6 +85,18 @@ ksm-instance-two:
     persistentvolumes: false
     services: false
     statefulsets: false
+
+alpine-pending-scheduled:
+  pod:
+    scheduled: true
+    name: alpine-pending-scheduled
+
+alpine-pending-non-scheduled:
+  pod:
+    scheduled: false
+    name: alpine-pending-non-scheduled
+
 tags:
   one-ksm-instance: true
   two-ksm-instances: false
+  with-pod-pending: false
