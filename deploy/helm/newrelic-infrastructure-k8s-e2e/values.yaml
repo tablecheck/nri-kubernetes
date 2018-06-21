@@ -31,16 +31,14 @@ integration:
 ######## DO NOT MODIFY FROM HERE ########
 #########################################
 
-rbac: &rbac-create false
-ksm:
-  version: &ksm-version v1.1.0
+rbac: false
 
 ksm-instance-one:
   nameOverride: kube-state-metrics
   rbac:
-    create: *rbac-create
+    create: false
   image:
-    tag: *ksm-version
+    tag: v1.1.0
   collectors:
     deployments: true
     namespaces: true
@@ -63,9 +61,9 @@ ksm-instance-one:
 
 ksm-instance-two:
   rbac:
-    create: *rbac-create
+    create: false
   image:
-    tag: *ksm-version
+    tag: v1.1.0
   collectors:
     deployments: true
     namespaces: true

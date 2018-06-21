@@ -44,12 +44,21 @@ const (
 )
 
 var scenarios = []string{
-	"ksm.version=v1.1.0",
-	"ksm.version=v1.1.0,tags.two-ksm-instances=true",
-	"ksm.version=v1.2.0",
-	"ksm.version=v1.2.0,tags.two-ksm-instances=true",
-	"ksm.version=v1.3.0",
-	"ksm.version=v1.3.0,tags.two-ksm-instances=true",
+	s(false, "v1.1.0", false),
+	s(false, "v1.1.0", true),
+	s(false, "v1.2.0", false),
+	s(false, "v1.2.0", true),
+	s(false, "v1.3.0", false),
+	s(false, "v1.3.0", true),
+}
+
+func s(rbac bool, ksmVersion string, twoKSMInstances bool) string {
+	str := fmt.Sprintf("rbac=%v,ksm-instance-one.rbac.create=%v,ksm-instance-one.image.tag=%s", rbac, rbac, ksmVersion)
+	if twoKSMInstances {
+		return fmt.Sprintf("%s,ksm-instance-two.rbac.create=%v,ksm-instance-two.image.tag=%s,two-ksm-instances=true", str, rbac, ksmVersion)
+	}
+
+	return str
 }
 
 type integrationData struct {
