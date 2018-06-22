@@ -34,7 +34,7 @@ var cliArgs = struct {
 	Rbac                bool   `default:"false",help:"Enable rbac"`
 	ClusterName         string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
 	NrLicenseKey        string `help:"New Relic account license key"`
-	Verbose             int    `default:"0",help:"When enabled, more detailed output will be printed"`
+	Verbose             bool   `default:"false",help:"When enabled, more detailed output will be printed"`
 	CollectorURL        string `default:"https://staging-infra-api.newrelic.com",help:"New Relic backend collector url"`
 }{}
 
@@ -290,7 +290,7 @@ func executeScenario(ctx context.Context, config *rest.Config, scenario string) 
 		err := jsonschema.Match(o.stdOut, m)
 		if err != nil {
 			errStr := fmt.Sprintf("\n------ scenario: %s. %s pod %s ------\n%s", scenario, o.role, podName, err)
-			if cliArgs.Verbose == 1 {
+			if cliArgs.Verbose {
 				errStr = errStr + fmt.Sprintf("\nStdErr:\n%s\nStdOut:\n%s", string(o.stdErr), string(o.stdOut))
 			}
 
@@ -330,7 +330,7 @@ func installRelease(ctx context.Context, scenario string) (string, error) {
 	options = append(options,
 		fmt.Sprintf("integration.k8sClusterName=%s", cliArgs.ClusterName),
 		fmt.Sprintf("integration.newRelicLicenseKey=%s", cliArgs.NrLicenseKey),
-		fmt.Sprintf("integration.verbose=%d", cliArgs.Verbose),
+		`integration.verbose="1"`,
 		fmt.Sprintf("integration.collectorURL=%s", cliArgs.CollectorURL),
 	)
 

@@ -97,4 +97,4 @@ alpine-pending-non-scheduled:
 tags:
   one-ksm-instance: true
   two-ksm-instances: false
-  with-pod-pending: false
+  with-pending-pods: false
