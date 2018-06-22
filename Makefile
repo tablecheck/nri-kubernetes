@@ -61,4 +61,11 @@ test: deps
 	@echo "=== $(INTEGRATION) === [ test ]: Running unit tests..."
 	@gocov test $(GO_PKGS) | gocov-xml > coverage.xml
 
+package: compile
+ifndef $(K8S_IMAGE_NAME)
+	@echo "=== $(INTEGRATION) ===  [package]: Creating Docker image"
+	@docker build --pull -t $(K8S_IMAGE_NAME):$(K8S_IMAGE_TAG) .
+endif
+
+
 .PHONY: all build clean tools tools-update deps validate compile test
