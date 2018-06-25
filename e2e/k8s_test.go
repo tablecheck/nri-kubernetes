@@ -21,14 +21,10 @@ import (
 	"github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/remotecommand"
 
 	// This package includes the GKE auth provider automatically by import the package (init function does the job)
 	_ "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/gcp"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/k8s"
 )
 
 var cliArgs = struct {
@@ -42,10 +38,9 @@ var cliArgs = struct {
 }{}
 
 const (
-	nrLabelKey   = "name"
-	nrLabelValue = "newrelic-infra"
-	namespace    = "default"
-	nrContainer  = "newrelic-infra"
+	nrLabel     = "name=newrelic-infra"
+	namespace   = "default"
+	nrContainer = "newrelic-infra"
 )
 
 func scenarios(integrationTag string, rbac bool) []string {
@@ -90,75 +85,13 @@ func (err executionErr) Error() string {
 	return errsStr
 }
 
-func getNRPods(clientset *kubernetes.Clientset, config *rest.Config) ([]string, error) {
-	sv, err := clientset.ServerVersion()
-	if err != nil {
-		return nil, err
-	}
-	fmt.Printf("Executing our integration in %q cluster. K8s version: %s\n", config.Host, sv.String())
-	pods, err := clientset.CoreV1().Pods(namespace).List(metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", nrLabelKey, nrLabelValue),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving pod list by label %s = %s: %v", nrLabelKey, nrLabelValue, err)
-	}
-	if len(pods.Items) == 0 {
-		return nil, fmt.Errorf("pods not found by label: %s=%s", nrLabelKey, nrLabelValue)
-	}
-	podsName := make([]string, 0)
-	for i := 0; i < len(pods.Items); i++ {
-		podsName = append(podsName, pods.Items[i].Name)
-	}
-	return podsName, nil
-}
-
-type execOutput struct {
-	execOut bytes.Buffer
-	execErr bytes.Buffer
-}
-
-func podExec(clientset *kubernetes.Clientset, config *rest.Config, podName string, command ...string) (execOutput, error) {
-	execReq := clientset.CoreV1().RESTClient().Post().
-		Resource("pods").
-		Name(podName).
-		Namespace(namespace).
-		SubResource("exec").
-		Param("container", nrContainer).
-		Param("stdin", "false").
-		Param("stdout", "true").
-		Param("stderr", "true").
-		Param("tty", "false")
-
-	for _, c := range command {
-		execReq.Param("command", c)
-	}
-
-	var output execOutput
-
-	exec, err := remotecommand.NewSPDYExecutor(config, "POST", execReq.URL())
-	if err != nil {
-		return output, fmt.Errorf("failed to init executor for pod %s: %v", podName, err)
-	}
-
-	err = exec.Stream(remotecommand.StreamOptions{
-		Stdout: &output.execOut,
-		Stderr: &output.execErr,
-	})
-
-	if err != nil {
-		return output, fmt.Errorf("could not execute command inside pod %s: %v. Output:\n\n%v", podName, err, output.execErr.String())
-	}
-
-	return output, nil
-}
-
-func execIntegration(clientset *kubernetes.Clientset, config *rest.Config, podName string, dataChannel chan integrationData, wg *sync.WaitGroup) {
+func execIntegration(podName string, dataChannel chan integrationData, wg *sync.WaitGroup, c *k8s.Client) {
 	defer wg.Done()
 	d := integrationData{
 		podName: podName,
 	}
 
-	output, err := podExec(clientset, config, podName, "/var/db/newrelic-infra/newrelic-integrations/bin/nr-kubernetes", "-timeout=15000", "-verbose")
+	output, err := c.PodExec(namespace, podName, nrContainer, "/var/db/newrelic-infra/newrelic-integrations/bin/nr-kubernetes", "-timeout=15000", "-verbose")
 	if err != nil {
 		d.err = err
 		dataChannel <- d
@@ -172,7 +105,7 @@ func execIntegration(clientset *kubernetes.Clientset, config *rest.Config, podNa
 		return
 	}
 
-	matches := re.FindStringSubmatch(output.execErr.String())
+	matches := re.FindStringSubmatch(output.Stderr.String())
 	role := matches[1]
 	if role == "" {
 		d.err = fmt.Errorf("cannot find a role for pod %s", podName)
@@ -181,8 +114,8 @@ func execIntegration(clientset *kubernetes.Clientset, config *rest.Config, podNa
 	}
 
 	d.role = role
-	d.stdOut = output.execOut.Bytes()
-	d.stdErr = output.execErr.Bytes()
+	d.stdOut = output.Stdout.Bytes()
+	d.stdErr = output.Stderr.Bytes()
 
 	dataChannel <- d
 }
@@ -201,25 +134,23 @@ func TestBasic(t *testing.T) {
 		assert.FailNow(t, "license key and cluster name are required args")
 	}
 
-	config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube", "config"))
+	c, err := k8s.NewClient()
 	if err != nil {
 		assert.FailNow(t, err.Error())
 	}
 
-	if config.Timeout == 0 {
-		config.Timeout = 5 * time.Second
-	}
+	fmt.Printf("Executing tests in %q cluster. K8s version: %s\n", c.Config.Host, c.ServerVersion())
 
 	// TODO
 	ctx := context.TODO()
 	for _, s := range scenarios(cliArgs.IntegrationImageTag, cliArgs.Rbac) {
-		fmt.Printf("Executing scenario %q\n", s)
-		err := executeScenario(ctx, config, s)
+		fmt.Printf("Scenario %q\n", s)
+		err := executeScenario(ctx, s, c)
 		assert.NoError(t, err)
 	}
 }
 
-func executeScenario(ctx context.Context, config *rest.Config, scenario string) error {
+func executeScenario(ctx context.Context, scenario string, c *k8s.Client) error {
 	releaseName, err := installRelease(ctx, scenario)
 	if err != nil {
 		return err
@@ -231,30 +162,24 @@ func executeScenario(ctx context.Context, config *rest.Config, scenario string) 
 
 	defer helm.DeleteRelease(ctx, releaseName) // nolint: errcheck
 
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return err
-	}
-
-	podsName, err := getNRPods(clientset, config)
+	podsList, err := c.PodsListByLabels(namespace, []string{nrLabel})
 	if err != nil {
 		return err
 	}
 
 	output := make(map[string]integrationData)
-
 	dataChannel := make(chan integrationData)
 
 	var wg sync.WaitGroup
-	wg.Add(len(podsName))
+	wg.Add(len(podsList.Items))
 	go func() {
 		wg.Wait()
 		close(dataChannel)
 	}()
 
-	for _, pName := range podsName {
-		fmt.Printf("Scenario: %s. Executing integration inside pod: %s\n", scenario, pName)
-		go execIntegration(clientset, config, pName, dataChannel, &wg)
+	for _, p := range podsList.Items {
+		fmt.Printf("Executing integration inside pod: %s\n", p.Name)
+		go execIntegration(p.Name, dataChannel, &wg, c)
 	}
 
 	for d := range dataChannel {
@@ -305,7 +230,7 @@ func executeScenario(ctx context.Context, config *rest.Config, scenario string) 
 		}
 	}
 
-	nodes, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+	nodes, err := c.NodesList()
 	if err != nil {
 		execErr.errs = append(execErr.errs, err)
 	}

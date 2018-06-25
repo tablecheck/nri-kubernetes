@@ -1,8 +1,4 @@
 golang:
-  cloud.google.com/go/compute/metadata:
-    license: Apache-2.0
-    license_url: cloud.google.com/go/LICENSE
-    project_url: cloud.google.com/go/compute/metadata
   github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/jsonschema/schema:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
@@ -55,10 +51,22 @@ golang:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage
+  github.com/newrelic/infra-integrations-beta/vendor/cloud.google.com/go/compute/metadata:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/cloud.google.com/go/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/cloud.google.com/go/compute/metadata
   github.com/newrelic/infra-integrations-beta/vendor/github.com/davecgh/go-spew/spew:
     license: ISC
     license_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/davecgh/go-spew/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/davecgh/go-spew/spew
+  github.com/newrelic/infra-integrations-beta/vendor/github.com/docker/spdystream:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/docker/spdystream/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/docker/spdystream
+  github.com/newrelic/infra-integrations-beta/vendor/github.com/docker/spdystream/spdy:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/docker/spdystream/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/docker/spdystream/spdy
   github.com/newrelic/infra-integrations-beta/vendor/github.com/ghodss/yaml:
     license: MIT
     license_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/ghodss/yaml/LICENSE
@@ -111,6 +119,14 @@ golang:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/googleapis/gnostic/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/googleapis/gnostic/extensions
+  github.com/newrelic/infra-integrations-beta/vendor/github.com/howeyc/gopass:
+    license: ISC
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/howeyc/gopass/LICENSE.txt
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/howeyc/gopass
+  github.com/newrelic/infra-integrations-beta/vendor/github.com/imdario/mergo:
+    license: BSD-3-Clause
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/imdario/mergo/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/imdario/mergo
   github.com/newrelic/infra-integrations-beta/vendor/github.com/json-iterator/go:
     license: MIT
     license_url: github.com/newrelic/infra-integrations-beta/vendor/github.com/json-iterator/go/LICENSE
@@ -203,6 +219,10 @@ golang:
     license: BSD-3-Clause
     license_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/net/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/net/context
+  github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/net/context/ctxhttp:
+    license: BSD-3-Clause
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/net/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/net/context/ctxhttp
   github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/net/http2:
     license: BSD-3-Clause
     license_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/net/LICENSE
@@ -219,6 +239,26 @@ golang:
     license: BSD-3-Clause
     license_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/net/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/net/lex/httplex
+  github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/oauth2:
+    license: BSD-3-Clause
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/oauth2/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/oauth2
+  github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/oauth2/google:
+    license: BSD-3-Clause
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/oauth2/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/oauth2/google
+  github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/oauth2/internal:
+    license: BSD-3-Clause
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/oauth2/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/oauth2/internal
+  github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/oauth2/jws:
+    license: BSD-3-Clause
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/oauth2/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/oauth2/jws
+  github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/oauth2/jwt:
+    license: BSD-3-Clause
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/oauth2/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/oauth2/jwt
   github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/sys/unix:
     license: BSD-3-Clause
     license_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/sys/LICENSE
@@ -455,6 +495,14 @@ golang:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/pkg/util/framer
+  github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/pkg/util/httpstream:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/pkg/util/httpstream
+  github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/pkg/util/httpstream/spdy:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/pkg/util/httpstream/spdy
   github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/pkg/util/intstr:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/LICENSE
@@ -467,6 +515,10 @@ golang:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/pkg/util/net
+  github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/pkg/util/remotecommand:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/pkg/util/remotecommand
   github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/pkg/util/runtime:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/LICENSE
@@ -499,6 +551,10 @@ golang:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/pkg/watch
+  github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/third_party/forked/golang/netutil:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/third_party/forked/golang/netutil
   github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/third_party/forked/golang/reflect:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/apimachinery/LICENSE
@@ -651,10 +707,30 @@ golang:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/rest/watch
+  github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/third_party/forked/golang/template:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/third_party/forked/golang/template
+  github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/tools/auth:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/tools/auth
+  github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/tools/clientcmd:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/tools/clientcmd
   github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/tools/clientcmd/api:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/tools/clientcmd/api
+  github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/tools/clientcmd/api/latest:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/tools/clientcmd/api/latest
+  github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/tools/clientcmd/api/v1:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/tools/clientcmd/api/v1
   github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/tools/metrics:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
@@ -663,59 +739,43 @@ golang:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/tools/reference
+  github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/tools/remotecommand:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/tools/remotecommand
   github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/transport:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/transport
+  github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/transport/spdy:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/transport/spdy
   github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/util/cert:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/util/cert
+  github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/util/exec:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/util/exec
   github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/util/flowcontrol:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/util/flowcontrol
+  github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/util/homedir:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/util/homedir
   github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/util/integer:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/util/integer
+  github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/util/jsonpath:
+    license: Apache-2.0
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/client-go/util/jsonpath
   github.com/newrelic/infra-integrations-beta/vendor/k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/kubernetes/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1
-  golang.org/x/net/context:
-    license: BSD-3-Clause
-    license_url: golang.org/x/net/LICENSE
-    project_url: golang.org/x/net/context
-  golang.org/x/net/context/ctxhttp:
-    license: BSD-3-Clause
-    license_url: golang.org/x/net/LICENSE
-    project_url: golang.org/x/net/context/ctxhttp
-  golang.org/x/oauth2:
-    license: BSD-3-Clause
-    license_url: golang.org/x/oauth2/LICENSE
-    project_url: golang.org/x/oauth2
-  golang.org/x/oauth2/google:
-    license: BSD-3-Clause
-    license_url: golang.org/x/oauth2/LICENSE
-    project_url: golang.org/x/oauth2/google
-  golang.org/x/oauth2/internal:
-    license: BSD-3-Clause
-    license_url: golang.org/x/oauth2/LICENSE
-    project_url: golang.org/x/oauth2/internal
-  golang.org/x/oauth2/jws:
-    license: BSD-3-Clause
-    license_url: golang.org/x/oauth2/LICENSE
-    project_url: golang.org/x/oauth2/jws
-  golang.org/x/oauth2/jwt:
-    license: BSD-3-Clause
-    license_url: golang.org/x/oauth2/LICENSE
-    project_url: golang.org/x/oauth2/jwt
-  k8s.io/client-go/third_party/forked/golang/template:
-    license: Apache-2.0
-    license_url: k8s.io/client-go/LICENSE
-    project_url: k8s.io/client-go/third_party/forked/golang/template
-  k8s.io/client-go/util/jsonpath:
-    license: Apache-2.0
-    license_url: k8s.io/client-go/LICENSE
-    project_url: k8s.io/client-go/util/jsonpath
