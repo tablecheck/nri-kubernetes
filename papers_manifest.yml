@@ -1,4 +1,8 @@
 golang:
+  cloud.google.com/go/compute/metadata:
+    license: Apache-2.0
+    license_url: cloud.google.com/go/LICENSE
+    project_url: cloud.google.com/go/compute/metadata
   github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/jsonschema/schema:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
@@ -195,6 +199,10 @@ golang:
     license: BSD-3-Clause
     license_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/crypto/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/crypto/ssh/terminal
+  github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/net/context:
+    license: BSD-3-Clause
+    license_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/net/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/net/context
   github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/net/http2:
     license: BSD-3-Clause
     license_url: github.com/newrelic/infra-integrations-beta/vendor/golang.org/x/net/LICENSE
@@ -675,3 +683,39 @@ golang:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/kubernetes/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/vendor/k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1
+  golang.org/x/net/context:
+    license: BSD-3-Clause
+    license_url: golang.org/x/net/LICENSE
+    project_url: golang.org/x/net/context
+  golang.org/x/net/context/ctxhttp:
+    license: BSD-3-Clause
+    license_url: golang.org/x/net/LICENSE
+    project_url: golang.org/x/net/context/ctxhttp
+  golang.org/x/oauth2:
+    license: BSD-3-Clause
+    license_url: golang.org/x/oauth2/LICENSE
+    project_url: golang.org/x/oauth2
+  golang.org/x/oauth2/google:
+    license: BSD-3-Clause
+    license_url: golang.org/x/oauth2/LICENSE
+    project_url: golang.org/x/oauth2/google
+  golang.org/x/oauth2/internal:
+    license: BSD-3-Clause
+    license_url: golang.org/x/oauth2/LICENSE
+    project_url: golang.org/x/oauth2/internal
+  golang.org/x/oauth2/jws:
+    license: BSD-3-Clause
+    license_url: golang.org/x/oauth2/LICENSE
+    project_url: golang.org/x/oauth2/jws
+  golang.org/x/oauth2/jwt:
+    license: BSD-3-Clause
+    license_url: golang.org/x/oauth2/LICENSE
+    project_url: golang.org/x/oauth2/jwt
+  k8s.io/client-go/third_party/forked/golang/template:
+    license: Apache-2.0
+    license_url: k8s.io/client-go/LICENSE
+    project_url: k8s.io/client-go/third_party/forked/golang/template
+  k8s.io/client-go/util/jsonpath:
+    license: Apache-2.0
+    license_url: k8s.io/client-go/LICENSE
+    project_url: k8s.io/client-go/util/jsonpath

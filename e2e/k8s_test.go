@@ -26,6 +26,9 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/remotecommand"
+
+	// This package includes the GKE auth provider automatically by import the package (init function does the job)
+	_ "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/gcp"
 )
 
 var cliArgs = struct {
@@ -222,6 +225,10 @@ func executeScenario(ctx context.Context, config *rest.Config, scenario string) 
 		return err
 	}
 
+	// Waiting until all pods have consumed cpu, memory enough and are scheduled. Otherwise some metrics will be missing.
+	// TODO Find a better way for generating load on all the pods rather than this time sleep.
+	time.Sleep(2 * time.Minute)
+
 	defer helm.DeleteRelease(ctx, releaseName) // nolint: errcheck
 
 	clientset, err := kubernetes.NewForConfig(config)
@@ -311,7 +318,11 @@ func executeScenario(ctx context.Context, config *rest.Config, scenario string) 
 		execErr.errs = append(execErr.errs, fmt.Errorf("%d pod leaders were found, but only 1 was expected", lcount))
 	}
 
-	return execErr
+	if len(execErr.errs) > 0 {
+		return execErr
+	}
+
+	return nil
 }
 
 func installRelease(ctx context.Context, scenario string) (string, error) {
