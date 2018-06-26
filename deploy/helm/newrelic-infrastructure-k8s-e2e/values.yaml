@@ -22,8 +22,8 @@ integration:
   newRelicLicenseKey: "<YOUR_LICENSE_KEY>"
   verbose: "0"
   collectorURL: "https://staging-infra-api.newrelic.com"
-#  cadvisor:
-#    port: "4194"
+  cadvisor:
+    port: "4194"
 #  ksm:
 #    url: "http://172.17.0.3:8080"
 

@@ -44,9 +44,9 @@ spec:
             - name: "NRIA_COLLECTOR_URL"
               value: {{ .Values.integration.collectorURL }}
             {{- end }}
-            {{- if .Values.integration.cadvisor }}
+            {{- if (eq (.Capabilities.KubeVersion.Major | atoi) 1) and ((lt (.Capabilities.KubeVersion.Minor | atoi) 7) or (eq (.Capabilities.KubeVersion.Minor | atoi) 7)) and (lt ((trimPrefix (cat "v." .Capabilities.KubeVersion.Major "." .Capabilities.KubeVersion.Minor ".") .Capabilities.KubeVersion.GitVersion) | atoi) 6) and (.Values.integration.cadvisor) }}
             - name: "CADVISOR_PORT" # Enable direct connection to cAdvisor by specifying the port. Needed for Kubernetes versions prior to 1.7.6.
-              value: .Values.integration.cadvisor.port
+              value: {{ .Values.integration.cadvisor.port | quote }}
             {{- end }}
             {{- if .Values.integration.ksm }}
             - name: "KUBE_STATE_METRICS_URL" # If this value is specified then discovery process for kube-state-metrics endpoint won't be triggered.
