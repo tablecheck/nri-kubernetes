@@ -14,14 +14,18 @@ spec:
     metadata:
       labels:
         name: {{ .Values.daemonset.name }}
+      {{- if (gt (.Capabilities.KubeVersion.Minor | atoi) 5) }}
       annotations:
         # Needed for Kubernetes versions prior to 1.6.0, where tolerations were set via annotations.
         scheduler.alpha.kubernetes.io/tolerations: |
           [{"operator": "Exists", "effect": "NoSchedule"},{"operator": "Exists", "effect": "NoExecute"}]
+      {{- end }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- if (gt (.Capabilities.KubeVersion.Minor | atoi) 5) }}
       hostNetwork: true # This option is a requirement for the Infrastructure Agent to report the proper hostname in New Relic.
       dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
       containers:
         - name: {{ .Values.daemonset.name }}
           image: "{{ .Values.daemonset.image.repository }}:{{ .Values.daemonset.image.tag }}"
@@ -44,7 +48,7 @@ spec:
             - name: "NRIA_COLLECTOR_URL"
               value: {{ .Values.integration.collectorURL }}
             {{- end }}
-            {{- if (eq (.Capabilities.KubeVersion.Major | atoi) 1) and ((lt (.Capabilities.KubeVersion.Minor | atoi) 7) or (eq (.Capabilities.KubeVersion.Minor | atoi) 7)) and (lt ((trimPrefix (cat "v." .Capabilities.KubeVersion.Major "." .Capabilities.KubeVersion.Minor ".") .Capabilities.KubeVersion.GitVersion) | atoi) 6) and (.Values.integration.cadvisor) }}
+            {{- if (lt (.Capabilities.KubeVersion.Minor | atoi) 8) and (lt ((trimPrefix (cat "v." .Capabilities.KubeVersion.Major "." .Capabilities.KubeVersion.Minor ".") .Capabilities.KubeVersion.GitVersion) | atoi) 6) and (.Values.integration.cadvisor) }}
             - name: "CADVISOR_PORT" # Enable direct connection to cAdvisor by specifying the port. Needed for Kubernetes versions prior to 1.7.6.
               value: {{ .Values.integration.cadvisor.port | quote }}
             {{- end }}

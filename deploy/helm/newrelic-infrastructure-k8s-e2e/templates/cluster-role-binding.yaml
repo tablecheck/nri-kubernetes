@@ -1,5 +1,9 @@
 {{- if .Values.rbac }}
+{{- if (lt (.Capabilities.KubeVersion.Minor | atoi) 6) }}
+apiVersion: rbac.authorization.k8s.io/v1alpha1
+{{- else }}
 apiVersion: rbac.authorization.k8s.io/v1beta1
+{{- end }}
 kind: ClusterRoleBinding
 metadata:
   name: {{ .Values.clusterRole.name }}
