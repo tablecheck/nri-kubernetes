@@ -1,5 +1,6 @@
 daemonset:
   name: newrelic-infra
+  namespace: default
   image:
     repository: newrelic/infrastructure-k8s
     tag: 1.0.0-beta2.3
@@ -12,6 +13,7 @@ daemonset:
 
 serviceAccount:
   name: newrelic
+  namespace: default
   automountServiceAccountToken: true
 
 clusterRole:

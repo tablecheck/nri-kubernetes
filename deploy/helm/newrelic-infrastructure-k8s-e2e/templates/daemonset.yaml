@@ -2,6 +2,7 @@ apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   name: {{ .Values.daemonset.name }}
+  namespace: {{ .Values.daemonset.namespace }}
   labels:
     app: {{ .Values.daemonset.name }}
 spec:
