@@ -8,8 +8,10 @@ spec:
   selector:
     matchLabels:
       name: {{ .Values.daemonset.name }}
+  {{- if (gt (.Capabilities.KubeVersion.Minor | atoi) 5) }}
   updateStrategy:
       type: RollingUpdate # Only supported in Kubernetes version 1.6 or later.
+  {{- end }}
   template:
     metadata:
       labels:
@@ -75,8 +77,10 @@ spec:
         - name: host-docker-socket
           hostPath:
             path: /var/run/docker.sock
+      {{- if (gt (.Capabilities.KubeVersion.Minor | atoi) 5) }}
       tolerations:
         - operator: "Exists"
           effect: "NoSchedule"
         - operator: "Exists"
           effect: "NoExecute"
+      {{- end }}
