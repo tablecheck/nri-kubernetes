@@ -29,7 +29,7 @@ import (
 
 var cliArgs = struct {
 	NrChartPath         string `default:"../deploy/helm/newrelic-infrastructure-k8s-e2e",help:"Path to the newrelic-infrastructure-k8s-e2e chart"`
-	IntegrationImageTag string `default:"1.0.0-beta2.3",help:"Integration image tag"`
+	IntegrationImageTag string `default:"1.0.0",help:"Integration image tag"`
 	Rbac                bool   `default:"false",help:"Enable rbac"`
 	ClusterName         string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
 	NrLicenseKey        string `help:"New Relic account license key"`
