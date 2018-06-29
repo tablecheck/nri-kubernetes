@@ -7,10 +7,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Unreleased
 
-### 1.0.0
-
-No changes since the release 1.0.0-beta2.4.
-
 ### 1.0.0-beta2.4
 
 ### Added
