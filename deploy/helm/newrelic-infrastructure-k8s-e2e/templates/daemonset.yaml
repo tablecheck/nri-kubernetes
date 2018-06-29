@@ -9,7 +9,7 @@ spec:
   selector:
     matchLabels:
       name: {{ .Values.daemonset.name }}
-  {{- if (gt (.Capabilities.KubeVersion.Minor | atoi) 5) }}
+  {{- if semverCompare ">=1.6.0" .Capabilities.KubeVersion.GitVersion }}
   updateStrategy:
       type: RollingUpdate # Only supported in Kubernetes version 1.6 or later.
   {{- end }}
@@ -17,7 +17,7 @@ spec:
     metadata:
       labels:
         name: {{ .Values.daemonset.name }}
-      {{- if (gt (.Capabilities.KubeVersion.Minor | atoi) 5) }}
+      {{- if semverCompare ">=1.6.0" .Capabilities.KubeVersion.GitVersion }}
       annotations:
         # Needed for Kubernetes versions prior to 1.6.0, where tolerations were set via annotations.
         scheduler.alpha.kubernetes.io/tolerations: |
@@ -25,7 +25,7 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
-      {{- if (gt (.Capabilities.KubeVersion.Minor | atoi) 5) }}
+      {{- if semverCompare ">=1.6.0" .Capabilities.KubeVersion.GitVersion }}
       hostNetwork: true # This option is a requirement for the Infrastructure Agent to report the proper hostname in New Relic.
       dnsPolicy: ClusterFirstWithHostNet
       {{- end }}
@@ -51,7 +51,7 @@ spec:
             - name: "NRIA_COLLECTOR_URL"
               value: {{ .Values.integration.collectorURL }}
             {{- end }}
-            {{- if (lt (.Capabilities.KubeVersion.Minor | atoi) 8) and (lt ((trimPrefix (cat "v." .Capabilities.KubeVersion.Major "." .Capabilities.KubeVersion.Minor ".") .Capabilities.KubeVersion.GitVersion) | atoi) 6) and (.Values.integration.cadvisor) }}
+            {{- if (semverCompare "<1.7.6" .Capabilities.KubeVersion.GitVersion) and (.Values.integration.cadvisor) }}
             - name: "CADVISOR_PORT" # Enable direct connection to cAdvisor by specifying the port. Needed for Kubernetes versions prior to 1.7.6.
               value: {{ .Values.integration.cadvisor.port | quote }}
             {{- end }}
@@ -78,7 +78,7 @@ spec:
         - name: host-docker-socket
           hostPath:
             path: /var/run/docker.sock
-      {{- if (gt (.Capabilities.KubeVersion.Minor | atoi) 5) }}
+      {{- if semverCompare ">=1.6.0" .Capabilities.KubeVersion.GitVersion }}
       tolerations:
         - operator: "Exists"
           effect: "NoSchedule"
