@@ -9,10 +9,9 @@ import (
 	"regexp"
 	"sync"
 	"testing"
+	"time"
 
 	"bufio"
-
-	"time"
 
 	"strings"
 
@@ -139,6 +138,11 @@ func TestBasic(t *testing.T) {
 		assert.FailNow(t, err.Error())
 	}
 
+	err = initHelm(c, cliArgs.Rbac)
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
+
 	fmt.Printf("Executing tests in %q cluster. K8s version: %s\n", c.Config.Host, c.ServerVersion())
 
 	// TODO
@@ -148,6 +152,36 @@ func TestBasic(t *testing.T) {
 		err := executeScenario(ctx, s, c)
 		assert.NoError(t, err)
 	}
+}
+
+func initHelm(c *k8s.Client, rbac bool) error {
+	if !rbac {
+		return helm.Init()
+	}
+	ns := "kube-system"
+	n := "tiller"
+	sa, err := c.ServiceAccount(ns, n)
+	if err != nil {
+		sa, err = c.CreateServiceAccount(ns, n)
+		if err != nil {
+			return err
+		}
+	}
+	_, err = c.ClusterRoleBinding(n)
+	if err != nil {
+		cr, err := c.ClusterRole("cluster-admin")
+		if err != nil {
+			return err
+		}
+		_, err = c.CreateClusterRoleBinding(n, sa, cr)
+		if err != nil {
+			return err
+		}
+	}
+	return helm.Init([]string{
+		"--service-account",
+		n,
+	}...)
 }
 
 func executeScenario(ctx context.Context, scenario string, c *k8s.Client) error {
@@ -252,12 +286,6 @@ func executeScenario(ctx context.Context, scenario string, c *k8s.Client) error 
 
 func installRelease(ctx context.Context, scenario string) (string, error) {
 	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	// ensuring helm (tiller pod) is installed
-	err = helm.Init(ctx)
 	if err != nil {
 		return "", err
 	}

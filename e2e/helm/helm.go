@@ -45,13 +45,13 @@ func DeleteRelease(ctx context.Context, release string) error {
 }
 
 // Init installs Tiller (the Helm server-side component) onto your cluster
-func Init(ctx context.Context) error {
-	args := []string{
+func Init(arg ...string) error {
+	args := append([]string{
 		"init",
 		"--wait",
-	}
+	}, arg...)
 
-	c := exec.CommandContext(ctx, "helm", args...)
+	c := exec.Command("helm", args...)
 	o, err := c.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%s - %s", err, o)

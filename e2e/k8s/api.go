@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
@@ -68,6 +69,46 @@ func (c Client) ServerVersion() string {
 // NodesList list nodes.
 func (c Client) NodesList() (*v1.NodeList, error) {
 	return c.Clientset.CoreV1().Nodes().List(metav1.ListOptions{})
+}
+
+// ServiceAccount finds a serviceaccount into the namespace a service account with the given name
+func (c Client) ServiceAccount(namespace, name string) (*v1.ServiceAccount, error) {
+	return c.Clientset.CoreV1().ServiceAccounts(namespace).Get(name, metav1.GetOptions{})
+}
+
+// CreateServiceAccount creates a serviceaccount into the namespace a service account with the given name
+func (c Client) CreateServiceAccount(namespace, name string) (*v1.ServiceAccount, error) {
+	return c.Clientset.CoreV1().ServiceAccounts(namespace).Create(&v1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+	})
+}
+
+// ClusterRoleBinding finds a clusterrolebinding with the given name
+func (c Client) ClusterRoleBinding(name string) (*rbacv1.ClusterRoleBinding, error) {
+	return c.Clientset.RbacV1().ClusterRoleBindings().Get(name, metav1.GetOptions{})
+}
+
+// ClusterRole finds a clusterrole with the given name
+func (c Client) ClusterRole(name string) (*rbacv1.ClusterRole, error) {
+	return c.Clientset.RbacV1().ClusterRoles().Get(name, metav1.GetOptions{})
+}
+
+// CreateClusterRoleBinding creates a clusterrolebinding with the given name and links it with the serviceaccount
+func (c Client) CreateClusterRoleBinding(name string, sa *v1.ServiceAccount, cr *rbacv1.ClusterRole) (*rbacv1.ClusterRoleBinding, error) {
+	return c.Clientset.RbacV1().ClusterRoleBindings().Create(&rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      sa.Name,
+				Namespace: sa.Namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Name: cr.Name,
+			Kind: "ClusterRole",
+		},
+	})
 }
 
 // PodsListByLabels list pods filtered by labels.
