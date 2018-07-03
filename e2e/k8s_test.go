@@ -294,7 +294,7 @@ func installRelease(ctx context.Context, scenario string) (string, error) {
 	options = append(options,
 		fmt.Sprintf("integration.k8sClusterName=%s", cliArgs.ClusterName),
 		fmt.Sprintf("integration.newRelicLicenseKey=%s", cliArgs.NrLicenseKey),
-		`integration.verbose="1"`,
+		"integration.verbose=true",
 		fmt.Sprintf("integration.collectorURL=%s", cliArgs.CollectorURL),
 	)
 

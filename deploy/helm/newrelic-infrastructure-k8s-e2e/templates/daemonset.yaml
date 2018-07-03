@@ -46,7 +46,7 @@ spec:
             - name: "NRIA_LICENSE_KEY"
               value: {{ .Values.integration.newRelicLicenseKey | quote }}
             - name: "NRIA_VERBOSE"
-              value: {{ .Values.integration.verbose | quote }}
+              value: {{ .Values.integration.verbose | int | toString | quote }}
             {{- if .Values.integration.collectorURL }}
             - name: "NRIA_COLLECTOR_URL"
               value: {{ .Values.integration.collectorURL }}
