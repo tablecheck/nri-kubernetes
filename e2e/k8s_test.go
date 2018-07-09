@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"sync"
 	"testing"
-	"time"
 
 	"bufio"
 
@@ -22,18 +21,21 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	// This package includes the GKE auth provider automatically by import the package (init function does the job)
+	"time"
+
 	_ "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/gcp"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/k8s"
 )
 
 var cliArgs = struct {
-	NrChartPath         string `default:"../deploy/helm/newrelic-infrastructure-k8s-e2e",help:"Path to the newrelic-infrastructure-k8s-e2e chart"`
-	IntegrationImageTag string `default:"1.0.0",help:"Integration image tag"`
-	Rbac                bool   `default:"false",help:"Enable rbac"`
-	ClusterName         string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
-	NrLicenseKey        string `help:"New Relic account license key"`
-	Verbose             bool   `default:"false",help:"When enabled, more detailed output will be printed"`
-	CollectorURL        string `default:"https://staging-infra-api.newrelic.com",help:"New Relic backend collector url"`
+	NrChartPath                string `default:"../deploy/helm/newrelic-infrastructure-k8s-e2e",help:"Path to the newrelic-infrastructure-k8s-e2e chart"`
+	IntegrationImageTag        string `default:"1.0.0",help:"Integration image tag"`
+	IntegrationImageRepository string `default:"newrelic/infrastructure-k8s",help:"Integration image repository"`
+	Rbac                       bool   `default:"false",help:"Enable rbac"`
+	ClusterName                string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
+	NrLicenseKey               string `help:"New Relic account license key"`
+	Verbose                    bool   `default:"false",help:"When enabled, more detailed output will be printed"`
+	CollectorURL               string `default:"https://staging-infra-api.newrelic.com",help:"New Relic backend collector url"`
 }{}
 
 const (
@@ -42,19 +44,19 @@ const (
 	nrContainer = "newrelic-infra"
 )
 
-func scenarios(integrationTag string, rbac bool) []string {
+func scenarios(integrationImageRepository string, integrationImageTag string, rbac bool) []string {
 	return []string{
-		s(rbac, integrationTag, "v1.1.0", false),
-		s(rbac, integrationTag, "v1.1.0", true),
-		s(rbac, integrationTag, "v1.2.0", false),
-		s(rbac, integrationTag, "v1.2.0", true),
-		s(rbac, integrationTag, "v1.3.0", false),
-		s(rbac, integrationTag, "v1.3.0", true),
+		s(rbac, integrationImageRepository, integrationImageTag, "v1.1.0", false),
+		s(rbac, integrationImageRepository, integrationImageTag, "v1.1.0", true),
+		s(rbac, integrationImageRepository, integrationImageTag, "v1.2.0", false),
+		s(rbac, integrationImageRepository, integrationImageTag, "v1.2.0", true),
+		s(rbac, integrationImageRepository, integrationImageTag, "v1.3.0", false),
+		s(rbac, integrationImageRepository, integrationImageTag, "v1.3.0", true),
 	}
 }
 
-func s(rbac bool, integrationTag string, ksmVersion string, twoKSMInstances bool) string {
-	str := fmt.Sprintf("rbac=%v,ksm-instance-one.rbac.create=%v,ksm-instance-one.image.tag=%s,daemonset.image.tag=%s", rbac, rbac, ksmVersion, integrationTag)
+func s(rbac bool, integrationImageRepository, integrationImageTag, ksmVersion string, twoKSMInstances bool) string {
+	str := fmt.Sprintf("rbac=%v,ksm-instance-one.rbac.create=%v,ksm-instance-one.image.tag=%s,daemonset.image.repository=%s,daemonset.image.tag=%s", rbac, rbac, ksmVersion, integrationImageRepository, integrationImageTag)
 	if twoKSMInstances {
 		return fmt.Sprintf("%s,ksm-instance-two.rbac.create=%v,ksm-instance-two.image.tag=%s,two-ksm-instances=true", str, rbac, ksmVersion)
 	}
@@ -147,7 +149,7 @@ func TestBasic(t *testing.T) {
 
 	// TODO
 	ctx := context.TODO()
-	for _, s := range scenarios(cliArgs.IntegrationImageTag, cliArgs.Rbac) {
+	for _, s := range scenarios(cliArgs.IntegrationImageRepository, cliArgs.IntegrationImageTag, cliArgs.Rbac) {
 		fmt.Printf("Scenario %q\n", s)
 		err := executeScenario(ctx, s, c)
 		assert.NoError(t, err)
@@ -190,11 +192,11 @@ func executeScenario(ctx context.Context, scenario string, c *k8s.Client) error 
 		return err
 	}
 
+	defer helm.DeleteRelease(ctx, releaseName) // nolint: errcheck
+
 	// Waiting until all pods have consumed cpu, memory enough and are scheduled. Otherwise some metrics will be missing.
 	// TODO Find a better way for generating load on all the pods rather than this time sleep.
 	time.Sleep(2 * time.Minute)
-
-	defer helm.DeleteRelease(ctx, releaseName) // nolint: errcheck
 
 	podsList, err := c.PodsListByLabels(namespace, []string{nrLabel})
 	if err != nil {
