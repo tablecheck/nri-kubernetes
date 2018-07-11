@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## 1.0.0
+
+### Changed
+- The agent tag installed within the integration docker image is now fixed to 0.0.24.
+
 ## 1.0.0-beta2.4
 
 ### Added
