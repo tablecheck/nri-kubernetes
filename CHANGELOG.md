@@ -5,9 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-### Unreleased
+## Unreleased
 
-### 1.0.0-beta2.4
+## 1.0.0-beta2.4
 
 ### Added
 - Add `hostNetwork: true` option and the required dns policy to daemonset file. This is a requirement for the Infrastructure Agent to report the proper hostname in New Relic.
@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   - Unifying `isScheduled` and `isReady` to be reported as `1` and `0` for `true` and `false` respectively.
 - Fix pod metrics (`status` and `isReady`): non-scheduled or pending pods were not reported correctly.
 
-### 1.0.0-beta2.3
+## 1.0.0-beta2.3
 
 ### Added
 - Add configurable flag for kube-state-metrics endpoint (only HTTP).
@@ -32,12 +32,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Kubelet discovery process fetches now the nodeName directly from the spec using downward API.
 
-### 1.0.0-beta2.2
+## 1.0.0-beta2.2
 
 ### Fixed
 - Fix bug in error handling where recoverable errors made the integration to panic.
 
-### 1.0.0-beta2.1
+## 1.0.0-beta2.1
 
 ### Added
 - Allow direct connection to cAdvisor by specifying the port.
@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Call to CAdvisor was failing when Kubelet was secure.
 
-### 1.0.0-beta2.0
+## 1.0.0-beta2.0
 
 ### Added
 - nodes/metrics resource was added to the newrelic cluster role.
