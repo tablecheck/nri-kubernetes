@@ -1,14 +1,13 @@
 package helm
 
 import (
-	"context"
 	"fmt"
 	"os/exec"
 	"strings"
 )
 
 // InstallRelease installs a chart release
-func InstallRelease(ctx context.Context, path string, config ...string) ([]byte, error) {
+func InstallRelease(path, context string, config ...string) ([]byte, error) {
 	args := []string{
 		"install",
 		path,
@@ -19,7 +18,11 @@ func InstallRelease(ctx context.Context, path string, config ...string) ([]byte,
 		args = append(args, "--set", strings.Join(config, ","))
 	}
 
-	c := exec.CommandContext(ctx, "helm", args...)
+	if context != "" {
+		args = append(args, "--kube-context", context)
+	}
+
+	c := exec.Command("helm", args...)
 	o, err := c.CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("%s - %s", err, o)
@@ -29,13 +32,17 @@ func InstallRelease(ctx context.Context, path string, config ...string) ([]byte,
 }
 
 // DeleteRelease deletes a chart release
-func DeleteRelease(ctx context.Context, release string) error {
+func DeleteRelease(release, context string) error {
 	args := []string{
 		"delete",
 		release,
 	}
 
-	c := exec.CommandContext(ctx, "helm", args...)
+	if context != "" {
+		args = append(args, "--kube-context", context)
+	}
+
+	c := exec.Command("helm", args...)
 	o, err := c.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%s - %s", err, o)
@@ -45,11 +52,15 @@ func DeleteRelease(ctx context.Context, release string) error {
 }
 
 // Init installs Tiller (the Helm server-side component) onto your cluster
-func Init(arg ...string) error {
+func Init(context string, arg ...string) error {
 	args := append([]string{
 		"init",
 		"--wait",
 	}, arg...)
+
+	if context != "" {
+		args = append(args, "--kube-context", context)
+	}
 
 	c := exec.Command("helm", args...)
 	o, err := c.CombinedOutput()

@@ -36,6 +36,7 @@ var cliArgs = struct {
 	NrLicenseKey               string `help:"New Relic account license key"`
 	Verbose                    bool   `default:"false",help:"When enabled, more detailed output will be printed"`
 	CollectorURL               string `default:"https://staging-infra-api.newrelic.com",help:"New Relic backend collector url"`
+	Context                    string `default:"",help:"Kubernetes context"`
 }{}
 
 const (
@@ -135,7 +136,7 @@ func TestBasic(t *testing.T) {
 		assert.FailNow(t, "license key and cluster name are required args")
 	}
 
-	c, err := k8s.NewClient()
+	c, err := k8s.NewClient(cliArgs.Context)
 	if err != nil {
 		assert.FailNow(t, err.Error())
 	}
@@ -158,7 +159,7 @@ func TestBasic(t *testing.T) {
 
 func initHelm(c *k8s.Client, rbac bool) error {
 	if !rbac {
-		return helm.Init()
+		return helm.Init(cliArgs.Context)
 	}
 	ns := "kube-system"
 	n := "tiller"
@@ -180,10 +181,10 @@ func initHelm(c *k8s.Client, rbac bool) error {
 			return err
 		}
 	}
-	return helm.Init([]string{
-		"--service-account",
-		n,
-	}...)
+	return helm.Init(
+		cliArgs.Context,
+		[]string{"--service-account", n}...,
+	)
 }
 
 func executeScenario(ctx context.Context, scenario string, c *k8s.Client) error {
@@ -192,7 +193,7 @@ func executeScenario(ctx context.Context, scenario string, c *k8s.Client) error 
 		return err
 	}
 
-	defer helm.DeleteRelease(ctx, releaseName) // nolint: errcheck
+	defer helm.DeleteRelease(releaseName, cliArgs.Context) // nolint: errcheck
 
 	// Waiting until all pods have consumed cpu, memory enough and are scheduled. Otherwise some metrics will be missing.
 	// TODO Find a better way for generating load on all the pods rather than this time sleep.
@@ -300,7 +301,7 @@ func installRelease(ctx context.Context, scenario string) (string, error) {
 		fmt.Sprintf("integration.collectorURL=%s", cliArgs.CollectorURL),
 	)
 
-	o, err := helm.InstallRelease(ctx, filepath.Join(dir, cliArgs.NrChartPath), options...)
+	o, err := helm.InstallRelease(filepath.Join(dir, cliArgs.NrChartPath), cliArgs.Context, options...)
 	if err != nil {
 		return "", err
 	}

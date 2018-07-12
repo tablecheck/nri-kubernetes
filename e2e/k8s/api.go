@@ -28,8 +28,21 @@ type Client struct {
 }
 
 // NewClient returns a k8s api client.
-func NewClient() (*Client, error) {
-	c, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube", "Config"))
+func NewClient(context string) (*Client, error) {
+	var c *rest.Config
+	var err error
+
+	configFilepath := filepath.Join(os.Getenv("HOME"), ".kube", "config")
+	if context != "" {
+		c, err = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+			&clientcmd.ClientConfigLoadingRules{ExplicitPath: configFilepath},
+			&clientcmd.ConfigOverrides{
+				CurrentContext: context,
+			}).ClientConfig()
+	} else {
+		c, err = clientcmd.BuildConfigFromFlags("", configFilepath)
+	}
+
 	if err != nil {
 		return nil, err
 	}
