@@ -125,7 +125,7 @@ func TestDiscover_Cache_HTTPS_SecureClient(t *testing.T) {
 	// And the cached host:port of the Kubelet is returned
 	kclient := client.WrappedClient(caClient)
 	assert.Equal(t, "1.2.3.4", kclient.NodeIP())
-	assert.Equal(t, apiHost, kclient.(*kubelet).endpoint.Host)
+	assert.Equal(t, fakeDiscoveredAPIHost, kclient.(*kubelet).endpoint.Host)
 	assert.Equal(t, "https", kclient.(*kubelet).endpoint.Scheme)
 	assert.Equal(t, "/api/v1/nodes/the-node-name/proxy/", kclient.(*kubelet).endpoint.Path)
 	assert.Equal(t, "d34db33f", kclient.(*kubelet).config.BearerToken)

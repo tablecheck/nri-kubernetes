@@ -27,7 +27,6 @@ type discoverer struct {
 
 const (
 	healthzPath                = "/healthz"
-	apiHost                    = "kubernetes.default"
 	defaultInsecureKubeletPort = 10255
 	defaultSecureKubeletPort   = 10250
 )
@@ -115,7 +114,6 @@ func (sd *discoverer) Discover(timeout time.Duration) (client.HTTPClient, error)
 		return nil, err
 	}
 
-	config := sd.apiClient.Config()
 	hostURL := fmt.Sprintf("%s:%d", hostIP, port)
 
 	connectionAPIHTTPS, secErr := sd.connectionAPIHTTPS(sd.nodeName, timeout)
@@ -130,8 +128,15 @@ func (sd *discoverer) Discover(timeout time.Duration) (client.HTTPClient, error)
 		usedConnectionCases = append(usedConnectionCases, connectionHTTP(hostURL, timeout), connectionHTTPS(hostURL, timeout), connectionAPIHTTPS)
 	}
 
+	config := sd.apiClient.Config()
+	apiURL, err := apiURLFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, c := range usedConnectionCases {
-		if secErr != nil && c.url.Host == apiHost {
+
+		if secErr != nil && c.url.Host == apiURL.Host {
 			return nil, secErr
 		}
 
@@ -144,6 +149,15 @@ func (sd *discoverer) Discover(timeout time.Duration) (client.HTTPClient, error)
 		return newKubelet(hostIP, sd.nodeName, c.url, config.BearerToken, c.client, c.httpType, sd.logger), nil
 	}
 	return nil, err
+}
+
+func apiURLFromConfig(config *rest.Config) (u *url.URL, err error) {
+	u, err = url.Parse(config.Host)
+	if err != nil {
+		err = fmt.Errorf("error parsing kubernetes api url from in cluster config. %s", err)
+	}
+
+	return
 }
 
 func newKubelet(nodeIP string, nodeName string, endpoint url.URL, bearerToken string, client *http.Client, httpType int, logger *logrus.Logger) *kubelet {
@@ -191,11 +205,17 @@ func (sd *discoverer) connectionAPIHTTPS(nodeName string, timeout time.Duration)
 	if err != nil {
 		return connectionParams{}, err
 	}
+
+	apiURL, err := apiURLFromConfig(sd.apiClient.Config())
+	if err != nil {
+		return connectionParams{}, err
+	}
+
 	return connectionParams{
 		url: url.URL{
-			Host:   apiHost,
+			Host:   apiURL.Host,
 			Path:   fmt.Sprintf("/api/v1/nodes/%s/proxy/", nodeName),
-			Scheme: "https",
+			Scheme: apiURL.Scheme,
 		},
 		client:   secureClient,
 		httpType: httpSecure,
@@ -229,19 +249,17 @@ func NewDiscoverer(nodeName string, logger *logrus.Logger) (client.Discoverer, e
 		return nil, errors.New("nodeName is empty")
 	}
 
-	d := discoverer{
-		nodeName:    nodeName,
-		logger:      logger,
-		connChecker: checkCall,
-	}
-	var err error
-
-	d.apiClient, err = client.NewKubernetes()
+	c, err := client.NewKubernetes()
 	if err != nil {
 		return nil, err
 	}
 
-	return &d, nil
+	return &discoverer{
+		nodeName:    nodeName,
+		logger:      logger,
+		connChecker: checkCall,
+		apiClient:   c,
+	}, nil
 }
 
 func (sd *discoverer) getNode(nodeName string) (*v1.Node, error) {

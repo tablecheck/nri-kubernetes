@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Fixed
+- Kubernetes API url discovery failed sometimes giving errors like "error trying to connect to...". Now this should be fixed.
+
 ## 1.0.0
 
 ### Changed

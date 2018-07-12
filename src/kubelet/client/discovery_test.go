@@ -17,7 +17,11 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-const timeout = time.Second
+const (
+	timeout               = time.Second
+	fakeDiscoveredAPIHost = "111.111.11.1"
+	restConfigAPIHost     = "https://111.111.11.1"
+)
 
 var logger = logrus.StandardLogger()
 
@@ -25,7 +29,7 @@ var logger = logrus.StandardLogger()
 
 func failingClientMock() *client.MockedKubernetes {
 	c := new(client.MockedKubernetes)
-	c.On("Config").Return(nil)
+	c.On("Config").Return(&rest.Config{})
 	c.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
 	c.On("FindNode", mock.Anything).Return(nil, errors.New("FindNode should not be invoked"))
 	return c
@@ -34,7 +38,7 @@ func failingClientMock() *client.MockedKubernetes {
 // creates a mocked Kubernetes API client
 func mockedClient() *client.MockedKubernetes {
 	c := new(client.MockedKubernetes)
-	c.On("Config").Return(&rest.Config{BearerToken: "d34db33f"})
+	c.On("Config").Return(&rest.Config{BearerToken: "d34db33f", Host: restConfigAPIHost})
 	c.On("SecureHTTPClient", mock.Anything).Return(&http.Client{}, nil)
 	return c
 }
@@ -73,7 +77,7 @@ func failOnInsecureConnection(_ *http.Client, URL url.URL, _, _ string) error {
 }
 
 func onlyAPIConnectionChecker(_ *http.Client, URL url.URL, _, _ string) error {
-	if URL.Host == apiHost {
+	if URL.Host == fakeDiscoveredAPIHost {
 		return nil
 	}
 	return fmt.Errorf("the connection can't be established")
@@ -191,7 +195,7 @@ func TestDiscoverHTTPS_ApiConnection(t *testing.T) {
 	assert.Nil(t, err, "should not return error")
 	// And the discovered host:port of the Kubelet is returned
 	assert.Equal(t, "1.2.3.4", kclient.NodeIP())
-	assert.Equal(t, apiHost, kclient.(*kubelet).endpoint.Host)
+	assert.Equal(t, fakeDiscoveredAPIHost, kclient.(*kubelet).endpoint.Host)
 	assert.Equal(t, "https", kclient.(*kubelet).endpoint.Scheme)
 }
 
