@@ -34,7 +34,7 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName s
 				if generator := specs[groupLabel].IDGenerator; generator != nil {
 					generatedEntityID, err := generator(groupLabel, entityID, groups)
 					if err != nil {
-						errs = append(errs, fmt.Errorf("error generating entity ID for: %s: %s", entityID, err))
+						errs = append(errs, fmt.Errorf("error generating entity ID for %s: %s", entityID, err))
 						continue
 					}
 					msEntityID = generatedEntityID
@@ -43,7 +43,7 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName s
 				if generatorType := specs[groupLabel].TypeGenerator; generatorType != nil {
 					generatedEntityType, err := generatorType(groupLabel, entityID, groups, clusterName)
 					if err != nil {
-						errs = append(errs, fmt.Errorf("error generating entity type for: %s: %s", entityID, err))
+						errs = append(errs, fmt.Errorf("error generating entity type for %s: %s", entityID, err))
 						continue
 					}
 					msEntityType = generatedEntityType
@@ -73,7 +73,7 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName s
 				wasPopulated, populateErrs := metricSetPopulateFunc(ms, groupLabel, entityID)(groups, specs)
 				if len(populateErrs) != 0 {
 					for _, err := range populateErrs {
-						errs = append(errs, fmt.Errorf("entity id: %s: %s", entityID, err))
+						errs = append(errs, fmt.Errorf("error populating metric for entity ID %s: %s", entityID, err))
 					}
 				}
 
@@ -93,7 +93,7 @@ func metricSetPopulateFunc(ms metric.MetricSet, groupLabel, entityID string) Pop
 		for _, ex := range specs[groupLabel].Specs {
 			val, err := ex.ValueFunc(groupLabel, entityID, groups)
 			if err != nil {
-				errs = append(errs, fmt.Errorf("error fetching value for metric %s. Error: %s", ex.Name, err))
+				errs = append(errs, fmt.Errorf("cannot fetch value for metric %s, %s", ex.Name, err))
 				continue
 			}
 
@@ -101,7 +101,7 @@ func metricSetPopulateFunc(ms metric.MetricSet, groupLabel, entityID string) Pop
 				for k, v := range multiple {
 					err := ms.SetMetric(k, v, ex.Type)
 					if err != nil {
-						errs = append(errs, fmt.Errorf("error setting metric %s with value %v in metric set. Error: %s", k, v, err))
+						errs = append(errs, fmt.Errorf("cannot set metric %s with value %v in metric set, %s", k, v, err))
 						continue
 					}
 
@@ -110,7 +110,7 @@ func metricSetPopulateFunc(ms metric.MetricSet, groupLabel, entityID string) Pop
 			} else {
 				err := ms.SetMetric(ex.Name, val, ex.Type)
 				if err != nil {
-					errs = append(errs, fmt.Errorf("error setting metric %s with value %v in metric set. Error: %s", ex.Name, val, err))
+					errs = append(errs, fmt.Errorf("cannot set metric %s with value %v in metric set, %s", ex.Name, val, err))
 					continue
 				}
 

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Changed
+- Improve readability of log messages, when verbose mode is enabled.
+
 ### Fixed
 - Kubernetes API url discovery failed sometimes giving errors like "error trying to connect to...". Now this should be fixed.
 

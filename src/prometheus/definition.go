@@ -1,6 +1,7 @@
 package prometheus
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -55,16 +56,16 @@ func getLabels(groupLabel, rawEntityID, key string, groups definition.RawGroups,
 	for _, label := range labels {
 		v, err := FromLabelValue(key, label)(groupLabel, rawEntityID, groups)
 		if err != nil {
-			return s, fmt.Errorf("error fetching %s for %q: %v", label, groupLabel, err.Error())
+			return s, fmt.Errorf("cannot fetch label %s for metric %s, %s", label, key, err)
 		}
 		if v == nil {
-			return s, fmt.Errorf("%s not found for %q", label, groupLabel)
+			return s, fmt.Errorf("label %s not found for metric %s", label, key)
 
 		}
 
 		val, ok := v.(string)
 		if !ok {
-			return s, fmt.Errorf("incorrect type of %s for %q", label, groupLabel)
+			return s, fmt.Errorf("incorrect type of label %s for metric %s", label, key)
 		}
 		s = append(s, val)
 	}
@@ -78,16 +79,16 @@ func FromLabelValueEntityIDGenerator(key, label string) definition.EntityIDGener
 		v, err := FromLabelValue(key, label)(groupLabel, rawEntityID, g)
 		if err != nil {
 
-			return "", fmt.Errorf("error fetching %q: %v", label, err)
+			return "", fmt.Errorf("cannot fetch label %s for metric %s, %s", label, key, err)
 		}
 
 		if v == nil {
-			return "", fmt.Errorf("incorrect value of fetched data for %q", key)
+			return "", fmt.Errorf("incorrect value of fetched data for metric %s", key)
 		}
 
 		val, ok := v.(string)
 		if !ok {
-			return "", fmt.Errorf("incorrect type of fetched data for %q", key)
+			return "", fmt.Errorf("incorrect type of fetched data for metric %s", key)
 		}
 
 		return val, err
@@ -191,7 +192,7 @@ func FromLabelValue(key, label string) definition.FetchFunc {
 
 		l, ok := v.Labels[label]
 		if !ok {
-			return nil, fmt.Errorf("label '%v' not found in prometheus metric", label)
+			return nil, errors.New("label not found in prometheus metric")
 		}
 
 		return l, nil

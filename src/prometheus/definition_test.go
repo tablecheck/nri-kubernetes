@@ -380,7 +380,7 @@ func TestFromRawValue_RawMetricNotFound(t *testing.T) {
 
 	fetchedValue, err := FromValue("foo")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Nil(t, fetchedValue)
-	assert.EqualError(t, err, "FromRaw: metric not found. SpecGroup: pod, EntityID: fluentd-elasticsearch-jnqb7, Metric: foo")
+	assert.EqualError(t, err, "metric not found")
 }
 
 func TestFromRawValue_IncompatibleType(t *testing.T) {
@@ -403,7 +403,7 @@ func TestFromRawLabelValue_RawMetricNotFound(t *testing.T) {
 
 	fetchedValue, err := FromLabelValue("foo", "namespace")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Nil(t, fetchedValue)
-	assert.EqualError(t, err, "FromRaw: metric not found. SpecGroup: pod, EntityID: fluentd-elasticsearch-jnqb7, Metric: foo")
+	assert.EqualError(t, err, "metric not found")
 }
 
 func TestFromRawLabelValue_IncompatibleType(t *testing.T) {
@@ -417,7 +417,7 @@ func TestFromRawLabelValue_LabelNotFoundInRawMetric(t *testing.T) {
 
 	fetchedValue, err := FromLabelValue("kube_pod_start_time", "foo")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Nil(t, fetchedValue)
-	assert.EqualError(t, err, "label 'foo' not found in prometheus metric")
+	assert.EqualError(t, err, "label not found in prometheus metric")
 }
 
 // --------------- FromLabelValueEntityTypeGenerator -------------
@@ -494,7 +494,7 @@ func TestFromLabelValueEntityTypeGenerator_NotFound(t *testing.T) {
 	}
 
 	generatedValue, err := FromLabelValueEntityTypeGenerator("kube_replicaset_created")("replicaset", "kube-state-metrics-4044341274", raw, "clusterName")
-	assert.EqualError(t, err, "error fetching namespace for \"replicaset\": label 'namespace' not found in prometheus metric")
+	assert.EqualError(t, err, "cannot fetch label namespace for metric kube_replicaset_created, label not found in prometheus metric")
 	assert.Equal(t, "", generatedValue)
 }
 
@@ -551,7 +551,7 @@ func TestFromLabelValueEntityIDGenerator(t *testing.T) {
 func TestFromLabelValueEntityIDGenerator_NotFound(t *testing.T) {
 	fetchedValue, err := FromLabelValueEntityIDGenerator("non-existent-metric-key", "pod")("pod", "fluentd-elasticsearch-jnqb7", rawGroups)
 	assert.Empty(t, fetchedValue)
-	assert.Contains(t, err.Error(), "error fetching \"pod\":")
+	assert.EqualError(t, err, "cannot fetch label pod for metric non-existent-metric-key, metric not found")
 }
 
 // --------------- FromLabelsValueEntityIDGeneratorForPendingPods ---------------

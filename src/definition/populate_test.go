@@ -260,8 +260,8 @@ func TestIntegrationProtocol2PopulateFunc_MetricsSetsNotPopulated_OnlyEntity(t *
 	assert.False(t, populated)
 	assert.Len(t, errs, 2)
 
-	assert.Contains(t, errs, errors.New("entity id: entity_id_1: error fetching value for metric useless. Error: FromRaw: metric not found. SpecGroup: test, EntityID: entity_id_1, Metric: nonExistentMetric"))
-	assert.Contains(t, errs, errors.New("entity id: entity_id_2: error fetching value for metric useless. Error: FromRaw: metric not found. SpecGroup: test, EntityID: entity_id_2, Metric: nonExistentMetric"))
+	assert.Contains(t, errs, errors.New("error populating metric for entity ID entity_id_1: cannot fetch value for metric useless, metric not found"))
+	assert.Contains(t, errs, errors.New("error populating metric for entity ID entity_id_2: cannot fetch value for metric useless, metric not found"))
 	assert.Contains(t, integration.Data, &expectedEntityData1)
 	assert.Contains(t, integration.Data, &expectedEntityData2)
 }
@@ -361,8 +361,8 @@ func TestIntegrationProtocol2PopulateFunc_EntityIDGeneratorFuncWithError(t *test
 	populated, errs := IntegrationProtocol2PopulateFunc(integration, defaultNS, fromGroupMetricSetTypeGuessFunc, metricsNamingManipulator, clusterMetricsManipulator)(rawGroupsSample, specsWithGeneratorFuncError)
 	assert.False(t, populated)
 	assert.Len(t, errs, 2)
-	assert.Contains(t, errs, errors.New("error generating entity ID for: entity_id_1: error generating entity ID"))
-	assert.Contains(t, errs, errors.New("error generating entity ID for: entity_id_2: error generating entity ID"))
+	assert.Contains(t, errs, errors.New("error generating entity ID for entity_id_1: error generating entity ID"))
+	assert.Contains(t, errs, errors.New("error generating entity ID for entity_id_2: error generating entity ID"))
 	assert.Equal(t, integration.Data, []*sdk.EntityData{})
 
 }
@@ -470,8 +470,8 @@ func TestIntegrationProtocol2PopulateFunc_EntityTypeGeneratorFuncWithError(t *te
 	populated, errs := IntegrationProtocol2PopulateFunc(integration, defaultNS, fromGroupMetricSetTypeGuessFunc, metricsNamingManipulator, clusterMetricsManipulator)(rawGroupsSample, specsWithGeneratorFuncError)
 	assert.False(t, populated)
 	assert.Len(t, errs, 2)
-	assert.Contains(t, errs, errors.New("error generating entity type for: entity_id_1: error generating entity type"))
-	assert.Contains(t, errs, errors.New("error generating entity type for: entity_id_2: error generating entity type"))
+	assert.Contains(t, errs, errors.New("error generating entity type for entity_id_1: error generating entity type"))
+	assert.Contains(t, errs, errors.New("error generating entity type for entity_id_2: error generating entity type"))
 	assert.Equal(t, integration.Data, []*sdk.EntityData{})
 }
 

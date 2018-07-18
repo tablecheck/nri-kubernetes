@@ -142,15 +142,28 @@ func main() {
 		switch role {
 		case "leader":
 			kubeletErr := populate(kubeletGrouper, metric.KubeletSpecs, integration, args.ClusterName, logger)
-			if kubeletErr != nil {
+			if kubeletErr != nil && len(kubeletErr.Errs) != 0 {
 				// We don't panic as we want to try populating ksm metrics.
-				logger.Errorf("Error populating Kubelet metrics: %s", kubeletErr)
+				for _, e := range kubeletErr.Errs {
+					logger.WithFields(
+						logrus.Fields{
+							"phase":      "populate",
+							"datasource": "kubelet",
+						}).Debug(e)
+				}
+
 			}
 
 			ksmGrouper := ksm.NewGrouper(ksmClient, metric.KSMQueries, logger)
 			ksmErr := populate(ksmGrouper, metric.KSMSpecs, integration, args.ClusterName, logger)
-			if ksmErr != nil {
-				logger.Errorf("Error populating KSM metrics: %s", ksmErr)
+			if ksmErr != nil && len(ksmErr.Errs) != 0 {
+				for _, e := range ksmErr.Errs {
+					logger.WithFields(
+						logrus.Fields{
+							"phase":      "populate",
+							"datasource": "kube-state-metrics",
+						}).Debug(e)
+				}
 			}
 
 			if !ksmErr.Populated && !kubeletErr.Populated {
@@ -159,8 +172,14 @@ func main() {
 			}
 		case "follower":
 			populateErr := populate(kubeletGrouper, metric.KubeletSpecs, integration, args.ClusterName, logger)
-			if err != nil {
-				logger.Errorf("Error populating Kubelet metrics: %s", err)
+			if populateErr != nil && len(populateErr.Errs) != 0 {
+				for _, e := range populateErr.Errs {
+					logger.WithFields(
+						logrus.Fields{
+							"phase":      "populate",
+							"datasource": "kubelet",
+						}).Debug(e)
+				}
 			}
 
 			if !populateErr.Populated {

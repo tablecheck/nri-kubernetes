@@ -119,10 +119,10 @@ func TestPopulateK8s(t *testing.T) {
 
 	// Expected errs (missing data)
 	expectedErrs := []error{
-		errors.New("entity id: kube-system_newrelic-infra-rz225: error fetching value for metric deploymentName. Error: FromRaw: metric not found. SpecGroup: pod, EntityID: kube-system_newrelic-infra-rz225, Metric: deploymentName"),
-		errors.New("entity id: kube-system_newrelic-infra-rz225_newrelic-infra: error fetching value for metric deploymentName. Error: FromRaw: metric not found. SpecGroup: container, EntityID: kube-system_newrelic-infra-rz225_newrelic-infra, Metric: deploymentName"),
-		errors.New("entity id: kube-system_newrelic-infra-rz225_newrelic-infra: error fetching value for metric cpuLimitCores. Error: FromRaw: metric not found. SpecGroup: container, EntityID: kube-system_newrelic-infra-rz225_newrelic-infra, Metric: cpuLimitCores"),
-		errors.New("entity id: kube-system_newrelic-infra-rz225_newrelic-infra: error fetching value for metric reason. Error: FromRaw: metric not found. SpecGroup: container, EntityID: kube-system_newrelic-infra-rz225_newrelic-infra, Metric: reason"),
+		errors.New("error populating metric for entity ID kube-system_newrelic-infra-rz225: cannot fetch value for metric deploymentName, metric not found"),
+		errors.New("error populating metric for entity ID kube-system_newrelic-infra-rz225_newrelic-infra: cannot fetch value for metric deploymentName, metric not found"),
+		errors.New("error populating metric for entity ID kube-system_newrelic-infra-rz225_newrelic-infra: cannot fetch value for metric cpuLimitCores, metric not found"),
+		errors.New("error populating metric for entity ID kube-system_newrelic-infra-rz225_newrelic-infra: cannot fetch value for metric reason, metric not found"),
 	}
 
 	assert.ElementsMatch(t, expectedErrs, err.(*data.PopulateErr).Errs)
