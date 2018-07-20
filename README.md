@@ -19,7 +19,7 @@ Check [documentation](https://docs.newrelic.com/docs/kubernetes-integration-new-
 For installing Kubernetes Infrastructure Integration deploy provided `newrelic-infra` file. This will install required roles and `newrelic` daemon set, which deploys the Infrastructure agent and the Kubernetes Infrastructure Integration.
 Firstly check [compatibility and requirements](https://docs.newrelic.com/docs/kubernetes-monitoring-integration#compatibility) and then follow the
 [installation steps](https://docs.newrelic.com/docs/kubernetes-monitoring-integration#install).
-<!-- TODO: specify link to troubleshooting guide, once is done -->
+For troubleshooting help, see [Not seeing data](https://docs.newrelic.com/docs/integrations/host-integrations/troubleshooting/kubernetes-integration-troubleshooting-not-seeing-data), or [Error messages](https://docs.newrelic.com/docs/integrations/host-integrations/troubleshooting/kubernetes-integration-troubleshooting-error-messages).
 
 ## Usage
 
@@ -27,11 +27,10 @@ Check how to [find and use data](https://docs.newrelic.com/docs/kubernetes-monit
 
 ## Development
 
-For development process [Skaffold](https://github.com/GoogleCloudPlatform/skaffold) tool and [minikube](https://kubernetes.io/docs/getting-started-guides/minikube) are used.
-
 ### Prerequisites
-
-[Skaffold](https://github.com/GoogleCloudPlatform/skaffold#installation) correctly installed.
+For development process [Minikube](https://kubernetes.io/docs/getting-started-guides/minikube) and [Skaffold](https://github.com/GoogleCloudPlatform/skaffold) tools are used.
+* [Install Minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/).
+* [Install Skaffold](https://github.com/GoogleCloudPlatform/skaffold#installation).
 
 ### Configuration
 
@@ -80,7 +79,9 @@ kubectl exec -it $NR_POD_NAME -- /bin/bash
 /var/db/newrelic-infra/newrelic-integrations/bin/nr-kubernetes -pretty
 ```
 
-* For running test, use
+### Tests
+
+For running unit tests, use
 
 ```bash
 make test
