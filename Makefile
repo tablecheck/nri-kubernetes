@@ -64,7 +64,7 @@ test: deps
 package: compile
 ifndef $(K8S_IMAGE_NAME)
 	@echo "=== $(INTEGRATION) ===  [package]: Creating Docker image"
-	@docker build --pull -t $(K8S_IMAGE_NAME):$(K8S_IMAGE_TAG) .
+	@docker build --pull -t $(K8S_REPOSITORY)/$(K8S_IMAGE_NAME):$(K8S_IMAGE_TAG) .
 endif
 
 
