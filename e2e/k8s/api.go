@@ -17,6 +17,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/remotecommand"
 )
 
@@ -37,6 +38,7 @@ func NewClient(context string) (*Client, error) {
 		c, err = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 			&clientcmd.ClientConfigLoadingRules{ExplicitPath: configFilepath},
 			&clientcmd.ConfigOverrides{
+				ClusterInfo:    clientcmdapi.Cluster{Server: ""},
 				CurrentContext: context,
 			}).ClientConfig()
 	} else {
