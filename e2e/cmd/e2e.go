@@ -1,6 +1,7 @@
-package e2e
+package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -8,9 +9,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"sync"
-	"testing"
-
-	"bufio"
 
 	"strings"
 
@@ -18,9 +16,8 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/jsonschema"
 	"github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
-
 	// This package includes the GKE auth provider automatically by import the package (init function does the job)
+
 	"time"
 
 	_ "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/gcp"
@@ -28,7 +25,7 @@ import (
 )
 
 var cliArgs = struct {
-	NrChartPath                string `default:"../deploy/helm/newrelic-infrastructure-k8s-e2e",help:"Path to the newrelic-infrastructure-k8s-e2e chart"`
+	NrChartPath                string `default:"charts/newrelic-infrastructure-k8s-e2e",help:"Path to the newrelic-infrastructure-k8s-e2e chart"`
 	IntegrationImageTag        string `default:"1.0.0",help:"Integration image tag"`
 	IntegrationImageRepository string `default:"newrelic/infrastructure-k8s",help:"Integration image repository"`
 	Rbac                       bool   `default:"false",help:"Enable rbac"`
@@ -122,38 +119,45 @@ func execIntegration(podName string, dataChannel chan integrationData, wg *sync.
 	dataChannel <- d
 }
 
-func TestBasic(t *testing.T) {
-	if os.Getenv("RUN_TESTS") == "" {
-		t.Skip("Flag RUN_TESTS is not specified, skipping tests")
-	}
-
+func main() {
 	err := args.SetupArgs(&cliArgs)
 	if err != nil {
-		assert.FailNow(t, err.Error())
+		panic(err.Error())
 	}
 
 	if cliArgs.NrLicenseKey == "" || cliArgs.ClusterName == "" {
-		assert.FailNow(t, "license key and cluster name are required args")
+		panic("license key and cluster name are required args")
 	}
 
 	c, err := k8s.NewClient(cliArgs.Context)
 	if err != nil {
-		assert.FailNow(t, err.Error())
+		panic(err.Error())
 	}
 
 	err = initHelm(c, cliArgs.Rbac)
 	if err != nil {
-		assert.FailNow(t, err.Error())
+		panic(err.Error())
 	}
 
 	fmt.Printf("Executing tests in %q cluster. K8s version: %s\n", c.Config.Host, c.ServerVersion())
 
 	// TODO
+	var errs []error
 	ctx := context.TODO()
 	for _, s := range scenarios(cliArgs.IntegrationImageRepository, cliArgs.IntegrationImageTag, cliArgs.Rbac) {
 		fmt.Printf("Scenario %q\n", s)
 		err := executeScenario(ctx, s, c)
-		assert.NoError(t, err)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			fmt.Println(err.Error())
+		}
+	} else {
+		fmt.Println("OK")
 	}
 }
 
