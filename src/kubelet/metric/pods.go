@@ -127,6 +127,7 @@ func fetchContainersData(p *v1.Pod) map[string]definition.RawMetrics {
 			status[id]["reason"] = c.State.Waiting.Reason
 		case c.State.Terminated != nil:
 			status[id]["status"] = "Terminated"
+			status[id]["reason"] = c.State.Terminated.Reason
 			status[id]["startedAt"] = c.State.Terminated.StartedAt.Time.In(time.UTC)
 		default:
 			status[id]["status"] = "Unknown"
