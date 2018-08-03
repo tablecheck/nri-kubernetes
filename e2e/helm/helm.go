@@ -1,6 +1,8 @@
 package helm
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -49,6 +51,34 @@ func DeleteRelease(release, context string) error {
 	}
 
 	return nil
+}
+
+// DeleteAllReleases deletes all chart releases
+func DeleteAllReleases(context string) error {
+	args := []string{
+		"list",
+		"--short",
+	}
+
+	if context != "" {
+		args = append(args, "--kube-context", context)
+	}
+
+	c := exec.Command("helm", args...)
+	o, err := c.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%s - %s", err, o)
+	}
+
+	scanner := bufio.NewScanner(bytes.NewReader(o))
+	for scanner.Scan() {
+		err := DeleteRelease(scanner.Text(), context)
+		if err != nil {
+			return err
+		}
+	}
+
+	return scanner.Err()
 }
 
 // Init installs Tiller (the Helm server-side component) onto your cluster

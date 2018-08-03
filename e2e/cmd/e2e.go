@@ -34,6 +34,7 @@ var cliArgs = struct {
 	Verbose                    bool   `default:"false",help:"When enabled, more detailed output will be printed"`
 	CollectorURL               string `default:"https://staging-infra-api.newrelic.com",help:"New Relic backend collector url"`
 	Context                    string `default:"",help:"Kubernetes context"`
+	CleanBeforeRun             bool   `default:"true",help:"Clean the cluster before running the tests"`
 }{}
 
 const (
@@ -140,6 +141,14 @@ func main() {
 	}
 
 	fmt.Printf("Executing tests in %q cluster. K8s version: %s\n", c.Config.Host, c.ServerVersion())
+
+	if cliArgs.CleanBeforeRun {
+		fmt.Println("Cleaning cluster")
+		err := helm.DeleteAllReleases(cliArgs.Context)
+		if err != nil {
+			panic(err.Error())
+		}
+	}
 
 	// TODO
 	var errs []error
