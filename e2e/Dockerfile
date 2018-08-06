@@ -23,7 +23,6 @@ RUN apk add --update ca-certificates \
  && rm -f /helm-${HELM_LATEST_VERSION}-linux-amd64.tar.gz
 
 COPY --from=builder /go/src/github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/bin/nr-kubernetes-e2e nr-kubernetes-e2e
-COPY bin/nr-kubernetes-e2e nr-kubernetes-e2e
 COPY schema schema
 COPY charts charts
 

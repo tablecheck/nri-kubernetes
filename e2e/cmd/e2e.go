@@ -194,10 +194,16 @@ func initHelm(c *k8s.Client, rbac bool) error {
 			return err
 		}
 	}
-	return helm.Init(
+	err = helm.Init(
 		cliArgs.Context,
 		[]string{"--service-account", n}...,
 	)
+
+	if err != nil {
+		return err
+	}
+
+	return helm.DependencyBuild(cliArgs.Context, cliArgs.NrChartPath)
 }
 
 func executeScenario(ctx context.Context, scenario string, c *k8s.Client) error {

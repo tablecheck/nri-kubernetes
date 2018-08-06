@@ -100,3 +100,24 @@ func Init(context string, arg ...string) error {
 
 	return nil
 }
+
+// DependencyBuild builds the dependencies for the e2e chart
+func DependencyBuild(context, chart string) error {
+	args := []string{
+		"dependency",
+		"build",
+		chart,
+	}
+
+	if context != "" {
+		args = append(args, "--kube-context", context)
+	}
+
+	c := exec.Command("helm", args...)
+	o, err := c.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%s - %s", err, o)
+	}
+
+	return nil
+}
