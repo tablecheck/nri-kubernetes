@@ -61,10 +61,6 @@ test: deps
 	@echo "=== $(INTEGRATION) === [ test ]: Running unit tests..."
 	@gocov test $(GO_PKGS) | gocov-xml > coverage.xml
 
-package: guard-K8S_IMAGE_NAME guard-K8S_IMAGE_NAME guard-K8S_IMAGE_TAG compile
-	@echo "=== $(INTEGRATION) ===  [package]: Creating Docker image"
-	@docker build --pull -t $(K8S_REPOSITORY)/$(K8S_IMAGE_NAME):$(K8S_IMAGE_TAG) .
-
 guard-%:
 	@ if [ "${${*}}" = "" ]; then \
 		echo "Environment variable $* not set"; \
