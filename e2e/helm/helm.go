@@ -6,10 +6,15 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
+
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/timer"
+	"github.com/newrelic/infra-integrations-sdk/log"
 )
 
 // InstallRelease installs a chart release
-func InstallRelease(path, context string, config ...string) ([]byte, error) {
+func InstallRelease(path, context string, logger log.Logger, config ...string) ([]byte, error) {
+	defer timer.Track(time.Now(), "Helm InstallRelease", logger)
 	args := []string{
 		"install",
 		path,
@@ -34,7 +39,8 @@ func InstallRelease(path, context string, config ...string) ([]byte, error) {
 }
 
 // DeleteRelease deletes a chart release
-func DeleteRelease(release, context string) error {
+func DeleteRelease(release, context string, logger log.Logger) error {
+	defer timer.Track(time.Now(), fmt.Sprintf("Helm DeleteRelease: %s", release), logger)
 	args := []string{
 		"delete",
 		release,
@@ -54,7 +60,8 @@ func DeleteRelease(release, context string) error {
 }
 
 // DeleteAllReleases deletes all chart releases
-func DeleteAllReleases(context string) error {
+func DeleteAllReleases(context string, logger log.Logger) error {
+	defer timer.Track(time.Now(), "Helm DeleteAllReleases", logger)
 	args := []string{
 		"list",
 		"--short",
@@ -72,7 +79,7 @@ func DeleteAllReleases(context string) error {
 
 	scanner := bufio.NewScanner(bytes.NewReader(o))
 	for scanner.Scan() {
-		err := DeleteRelease(scanner.Text(), context)
+		err := DeleteRelease(scanner.Text(), context, logger)
 		if err != nil {
 			return err
 		}
@@ -82,7 +89,8 @@ func DeleteAllReleases(context string) error {
 }
 
 // Init installs Tiller (the Helm server-side component) onto your cluster
-func Init(context string, arg ...string) error {
+func Init(context string, logger log.Logger, arg ...string) error {
+	defer timer.Track(time.Now(), "Helm Init", logger)
 	args := append([]string{
 		"init",
 		"--wait",
@@ -102,7 +110,8 @@ func Init(context string, arg ...string) error {
 }
 
 // DependencyBuild builds the dependencies for the e2e chart
-func DependencyBuild(context, chart string) error {
+func DependencyBuild(context, chart string, logger log.Logger) error {
+	defer timer.Track(time.Now(), "Helm DependencyBuild", logger)
 	args := []string{
 		"dependency",
 		"build",

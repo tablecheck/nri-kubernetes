@@ -14,7 +14,9 @@ import (
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/helm"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/jsonschema"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/timer"
 	"github.com/newrelic/infra-integrations-sdk/args"
+	"github.com/newrelic/infra-integrations-sdk/log"
 	"github.com/pkg/errors"
 	// This package includes the GKE auth provider automatically by import the package (init function does the job)
 
@@ -35,6 +37,7 @@ var cliArgs = struct {
 	CollectorURL               string `default:"https://staging-infra-api.newrelic.com",help:"New Relic backend collector url"`
 	Context                    string `default:"",help:"Kubernetes context"`
 	CleanBeforeRun             bool   `default:"true",help:"Clean the cluster before running the tests"`
+	FailFast                   bool   `default:"false", help:"Fail the whole suit on the first failure"`
 }{}
 
 const (
@@ -85,7 +88,8 @@ func (err executionErr) Error() string {
 	return errsStr
 }
 
-func execIntegration(podName string, dataChannel chan integrationData, wg *sync.WaitGroup, c *k8s.Client) {
+func execIntegration(podName string, dataChannel chan integrationData, wg *sync.WaitGroup, c *k8s.Client, logger log.Logger) {
+	defer timer.Track(time.Now(), fmt.Sprintf("execIntegration func for pod %s", podName), logger)
 	defer wg.Done()
 	d := integrationData{
 		podName: podName,
@@ -129,22 +133,23 @@ func main() {
 	if cliArgs.NrLicenseKey == "" || cliArgs.ClusterName == "" {
 		panic("license key and cluster name are required args")
 	}
+	logger := log.New(cliArgs.Verbose, os.Stderr)
 
 	c, err := k8s.NewClient(cliArgs.Context)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	err = initHelm(c, cliArgs.Rbac)
+	err = initHelm(c, cliArgs.Rbac, logger)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	fmt.Printf("Executing tests in %q cluster. K8s version: %s\n", c.Config.Host, c.ServerVersion())
+	logger.Infof("Executing tests in %q cluster. K8s version: %s\n", c.Config.Host, c.ServerVersion())
 
 	if cliArgs.CleanBeforeRun {
-		fmt.Println("Cleaning cluster")
-		err := helm.DeleteAllReleases(cliArgs.Context)
+		logger.Infof("Cleaning cluster")
+		err := helm.DeleteAllReleases(cliArgs.Context, logger)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -154,25 +159,29 @@ func main() {
 	var errs []error
 	ctx := context.TODO()
 	for _, s := range scenarios(cliArgs.IntegrationImageRepository, cliArgs.IntegrationImageTag, cliArgs.Rbac) {
-		fmt.Printf("Scenario %q\n", s)
-		err := executeScenario(ctx, s, c)
+		logger.Infof("Scenario %q\n", s)
+		err := executeScenario(ctx, s, c, logger)
 		if err != nil {
+			if cliArgs.FailFast {
+				panic(err.Error())
+			}
 			errs = append(errs, err)
 		}
 	}
 
 	if len(errs) > 0 {
+		logger.Debugf("errors collected from all scenarios")
 		for _, err := range errs {
-			fmt.Println(err.Error())
+			logger.Errorf(err.Error())
 		}
 	} else {
-		fmt.Println("OK")
+		logger.Infof("OK")
 	}
 }
 
-func initHelm(c *k8s.Client, rbac bool) error {
+func initHelm(c *k8s.Client, rbac bool, logger log.Logger) error {
 	if !rbac {
-		return helm.Init(cliArgs.Context)
+		return helm.Init(cliArgs.Context, logger)
 	}
 	ns := "kube-system"
 	n := "tiller"
@@ -196,6 +205,7 @@ func initHelm(c *k8s.Client, rbac bool) error {
 	}
 	err = helm.Init(
 		cliArgs.Context,
+		logger,
 		[]string{"--service-account", n}...,
 	)
 
@@ -203,87 +213,132 @@ func initHelm(c *k8s.Client, rbac bool) error {
 		return err
 	}
 
-	return helm.DependencyBuild(cliArgs.Context, cliArgs.NrChartPath)
+	return helm.DependencyBuild(cliArgs.Context, cliArgs.NrChartPath, logger)
 }
 
-func executeScenario(ctx context.Context, scenario string, c *k8s.Client) error {
-	releaseName, err := installRelease(ctx, scenario)
+func executeScenario(ctx context.Context, scenario string, c *k8s.Client, logger log.Logger) error {
+	defer timer.Track(time.Now(), fmt.Sprintf("executeScenario func for %s", scenario), logger)
+
+	releaseName, err := installRelease(ctx, scenario, logger)
 	if err != nil {
 		return err
 	}
 
-	defer helm.DeleteRelease(releaseName, cliArgs.Context) // nolint: errcheck
+	defer helm.DeleteRelease(releaseName, cliArgs.Context, logger) // nolint: errcheck
 
-	// Waiting until all pods have consumed cpu, memory enough and are scheduled. Otherwise some metrics will be missing.
-	// TODO Find a better way for generating load on all the pods rather than this time sleep.
-	time.Sleep(2 * time.Minute)
+	// At least one of kube-state-metrics pods needs to be ready to enter to the newrelic-infra pod and execute the integration.
+	// If the kube-state-metrics pod is not ready, then metrics from replicaset, namespace and deployment will not be populate and JSON schemas will fail.
+	timeStartKSMWaiting := time.Now()
+	tickerRetry := time.NewTicker(2 * time.Second)
+	tickerTimeout := time.NewTicker(2 * time.Minute)
+KSMLoop:
+	for {
+		select {
+		case <-tickerRetry.C:
+			ksmPodList, err := c.PodsListByLabels(namespace, []string{"app=kube-state-metrics"})
+			if err != nil {
+				return err
+			}
+			if len(ksmPodList.Items) != 0 && ksmPodList.Items[0].Status.Phase == "Running" {
+				for _, con := range ksmPodList.Items[0].Status.Conditions {
+					logger.Debugf("Waiting for kube-state-metrics pod to be ready, current condition: %s - %s\n", con.Type, con.Status)
 
-	podsList, err := c.PodsListByLabels(namespace, []string{nrLabel})
-	if err != nil {
-		return err
-	}
-
-	output := make(map[string]integrationData)
-	dataChannel := make(chan integrationData)
-
-	var wg sync.WaitGroup
-	wg.Add(len(podsList.Items))
-	go func() {
-		wg.Wait()
-		close(dataChannel)
-	}()
-
-	for _, p := range podsList.Items {
-		fmt.Printf("Executing integration inside pod: %s\n", p.Name)
-		go execIntegration(p.Name, dataChannel, &wg, c)
-	}
-
-	for d := range dataChannel {
-		if d.err != nil {
-			return fmt.Errorf("scenario: %s. %s", scenario, d.err.Error())
+					if con.Type == "Ready" && con.Status == "True" {
+						break KSMLoop
+					}
+				}
+			}
+		case <-tickerTimeout.C:
+			tickerRetry.Stop()
+			tickerTimeout.Stop()
+			return errors.New("kube-state-metrics pod is not ready, reaching timeout")
 		}
-		output[d.podName] = d
 	}
-
-	leaderMap := jsonschema.EventTypeToSchemaFilepath{
-		"K8sReplicasetSample": "schema/replicaset.json",
-		"K8sNamespaceSample":  "schema/namespace.json",
-		"K8sDeploymentSample": "schema/deployment.json",
-		"K8sPodSample":        "schema/pod.json",
-		"K8sContainerSample":  "schema/container.json",
-		"K8sNodeSample":       "schema/node.json",
-	}
-
-	followerMap := jsonschema.EventTypeToSchemaFilepath{
-		"K8sPodSample":       leaderMap["K8sPodSample"],
-		"K8sContainerSample": leaderMap["K8sContainerSample"],
-		"K8sNodeSample":      leaderMap["K8sNodeSample"],
-	}
+	elapsed := time.Since(timeStartKSMWaiting)
+	logger.Debugf("Waiting for KSM to be ready took %s", elapsed)
 
 	var execErr executionErr
 	var lcount int
 	var fcount int
-
-	for podName, o := range output {
-		var m jsonschema.EventTypeToSchemaFilepath
-		switch o.role {
-		case "leader":
-			lcount++
-			m = leaderMap
-		case "follower":
-			fcount++
-			m = followerMap
+	var retriesNR int
+NRLoop:
+	for {
+		podsList, err := c.PodsListByLabels(namespace, []string{nrLabel})
+		if err != nil {
+			return err
 		}
 
-		err := jsonschema.Match(o.stdOut, m)
-		if err != nil {
-			errStr := fmt.Sprintf("\n------ scenario: %s. %s pod %s ------\n%s", scenario, o.role, podName, err)
-			if cliArgs.Verbose {
-				errStr = errStr + fmt.Sprintf("\nStdErr:\n%s\nStdOut:\n%s", string(o.stdErr), string(o.stdOut))
+		output := make(map[string]integrationData)
+		dataChannel := make(chan integrationData)
+
+		var wg sync.WaitGroup
+		wg.Add(len(podsList.Items))
+		go func() {
+			wg.Wait()
+			close(dataChannel)
+		}()
+
+		for _, p := range podsList.Items {
+			logger.Debugf("Executing integration inside pod: %s\n", p.Name)
+			go execIntegration(p.Name, dataChannel, &wg, c, logger)
+		}
+
+		for d := range dataChannel {
+			if d.err != nil {
+				return fmt.Errorf("scenario: %s. %s", scenario, d.err.Error())
+			}
+			output[d.podName] = d
+		}
+
+		lcount = 0
+		fcount = 0
+		leaderMap := jsonschema.EventTypeToSchemaFilepath{
+			"K8sReplicasetSample": "schema/replicaset.json",
+			"K8sNamespaceSample":  "schema/namespace.json",
+			"K8sDeploymentSample": "schema/deployment.json",
+			"K8sPodSample":        "schema/pod.json",
+			"K8sContainerSample":  "schema/container.json",
+			"K8sNodeSample":       "schema/node.json",
+		}
+
+		followerMap := jsonschema.EventTypeToSchemaFilepath{
+			"K8sPodSample":       leaderMap["K8sPodSample"],
+			"K8sContainerSample": leaderMap["K8sContainerSample"],
+			"K8sNodeSample":      leaderMap["K8sNodeSample"],
+		}
+		for podName, o := range output {
+			var m jsonschema.EventTypeToSchemaFilepath
+			switch o.role {
+			case "leader":
+				lcount++
+				m = leaderMap
+			case "follower":
+				fcount++
+				m = followerMap
 			}
 
-			execErr.errs = append(execErr.errs, errors.New(errStr))
+			err := jsonschema.Match(o.stdOut, m)
+			if err != nil {
+				errStr := fmt.Sprintf("received error during execution of scenario %q for pod %s with role %s:\n%s", scenario, podName, o.role, err)
+				select {
+				case <-tickerRetry.C:
+					logger.Debugf("------ Retrying due to %s ------ ", errStr)
+					retriesNR++
+					continue NRLoop
+				case <-tickerTimeout.C:
+					tickerRetry.Stop()
+					tickerTimeout.Stop()
+					if cliArgs.Verbose {
+						errStr = errStr + fmt.Sprintf("\nStdErr:\n%s\nStdOut:\n%s", string(o.stdErr), string(o.stdOut))
+					}
+					execErr.errs = append(execErr.errs, errors.New(errStr))
+				}
+			}
 		}
+		if len(execErr.errs) == 0 {
+			break
+		}
+		return fmt.Errorf("failure during JSON schema validation, retries limit reached, number of retries: %d,\nlast error: %s", retriesNR, execErr)
 	}
 
 	nodes, err := c.NodesList()
@@ -306,7 +361,7 @@ func executeScenario(ctx context.Context, scenario string, c *k8s.Client) error 
 	return nil
 }
 
-func installRelease(ctx context.Context, scenario string) (string, error) {
+func installRelease(ctx context.Context, scenario string, logger log.Logger) (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return "", err
@@ -320,7 +375,7 @@ func installRelease(ctx context.Context, scenario string) (string, error) {
 		fmt.Sprintf("integration.collectorURL=%s", cliArgs.CollectorURL),
 	)
 
-	o, err := helm.InstallRelease(filepath.Join(dir, cliArgs.NrChartPath), cliArgs.Context, options...)
+	o, err := helm.InstallRelease(filepath.Join(dir, cliArgs.NrChartPath), cliArgs.Context, logger, options...)
 	if err != nil {
 		return "", err
 	}

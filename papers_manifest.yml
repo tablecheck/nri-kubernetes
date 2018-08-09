@@ -19,6 +19,10 @@ golang:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/k8s
+  github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/timer:
+    license: Unknown
+    license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/timer
   github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/cloud.google.com/go/compute/metadata:
     license: Apache-2.0
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/cloud.google.com/go/LICENSE
@@ -119,10 +123,6 @@ golang:
     license: BSD-2-Clause
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/github.com/pkg/errors/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/github.com/pkg/errors
-  github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/github.com/sirupsen/logrus:
-    license: MIT
-    license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/github.com/sirupsen/logrus/LICENSE
-    project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/github.com/sirupsen/logrus
   github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/github.com/spf13/pflag:
     license: BSD-3-Clause
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/github.com/spf13/pflag/LICENSE

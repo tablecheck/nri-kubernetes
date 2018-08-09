@@ -1,6 +1,6 @@
 INTEGRATION  := $(shell basename $(shell pwd))
 BINARY_NAME   = nr-$(INTEGRATION)
-GO_PKGS      := $(shell go list ./... | grep -v "/vendor/")
+GO_PKGS      := $(shell go list ./src/... | grep -v "/vendor/")
 GO_FILES     := $(shell find src -type f -name "*.go")
 GOTOOLS       = github.com/kardianos/govendor \
 		gopkg.in/alecthomas/gometalinter.v2 \
@@ -35,11 +35,11 @@ validate-all: lint-all license-check
 
 lint: deps
 	@echo "=== $(INTEGRATION) === [ validate ]: Validating source code running gometalinter..."
-	@gometalinter.v2 --config=.gometalinter.json ./...
+	@gometalinter.v2 --config=.gometalinter.json ./src/...
 
 lint-all: deps
 	@echo "=== $(INTEGRATION) === [ validate ]: Validating source code running gometalinter..."
-	@gometalinter.v2 --config=.gometalinter.json --enable=interfacer --enable=gosimple ./...
+	@gometalinter.v2 --config=.gometalinter.json --enable=interfacer --enable=gosimple ./src/...
 
 license-check:
 	@echo "=== $(INTEGRATION) === [ validate ]: Validating licenses of package dependencies required by the project..."
