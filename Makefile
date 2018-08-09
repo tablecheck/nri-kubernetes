@@ -72,4 +72,8 @@ guard-%:
 		exit 1; \
 	fi
 
+e2e: deps
+	@echo "[ compile E2E binary]: Building $(E2E_BINARY_NAME)..."
+	@go build -o bin/$(E2E_BINARY_NAME) ./e2e/cmd/e2e.go
+
 .PHONY: all build clean tools tools-update deps validate compile test
