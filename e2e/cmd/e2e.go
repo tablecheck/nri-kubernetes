@@ -18,6 +18,7 @@ import (
 	"github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/newrelic/infra-integrations-sdk/log"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	// This package includes the GKE auth provider automatically by import the package (init function does the job)
 
 	"time"
@@ -88,7 +89,7 @@ func (err executionErr) Error() string {
 	return errsStr
 }
 
-func execIntegration(podName string, dataChannel chan integrationData, wg *sync.WaitGroup, c *k8s.Client, logger log.Logger) {
+func execIntegration(podName string, dataChannel chan integrationData, wg *sync.WaitGroup, c *k8s.Client, logger *logrus.Logger) {
 	defer timer.Track(time.Now(), fmt.Sprintf("execIntegration func for pod %s", podName), logger)
 	defer wg.Done()
 	d := integrationData{
@@ -133,7 +134,7 @@ func main() {
 	if cliArgs.NrLicenseKey == "" || cliArgs.ClusterName == "" {
 		panic("license key and cluster name are required args")
 	}
-	logger := log.New(cliArgs.Verbose, os.Stderr)
+	logger := log.New(cliArgs.Verbose)
 
 	c, err := k8s.NewClient(cliArgs.Context)
 	if err != nil {
@@ -179,7 +180,7 @@ func main() {
 	}
 }
 
-func initHelm(c *k8s.Client, rbac bool, logger log.Logger) error {
+func initHelm(c *k8s.Client, rbac bool, logger *logrus.Logger) error {
 	if !rbac {
 		return helm.Init(cliArgs.Context, logger)
 	}
@@ -216,7 +217,7 @@ func initHelm(c *k8s.Client, rbac bool, logger log.Logger) error {
 	return helm.DependencyBuild(cliArgs.Context, cliArgs.NrChartPath, logger)
 }
 
-func executeScenario(ctx context.Context, scenario string, c *k8s.Client, logger log.Logger) error {
+func executeScenario(ctx context.Context, scenario string, c *k8s.Client, logger *logrus.Logger) error {
 	defer timer.Track(time.Now(), fmt.Sprintf("executeScenario func for %s", scenario), logger)
 
 	releaseName, err := installRelease(ctx, scenario, logger)
@@ -361,7 +362,7 @@ NRLoop:
 	return nil
 }
 
-func installRelease(ctx context.Context, scenario string, logger log.Logger) (string, error) {
+func installRelease(ctx context.Context, scenario string, logger *logrus.Logger) (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return "", err

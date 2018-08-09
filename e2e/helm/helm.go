@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/timer"
-	"github.com/newrelic/infra-integrations-sdk/log"
+	"github.com/sirupsen/logrus"
 )
 
 // InstallRelease installs a chart release
-func InstallRelease(path, context string, logger log.Logger, config ...string) ([]byte, error) {
+func InstallRelease(path, context string, logger *logrus.Logger, config ...string) ([]byte, error) {
 	defer timer.Track(time.Now(), "Helm InstallRelease", logger)
 	args := []string{
 		"install",
@@ -39,7 +39,7 @@ func InstallRelease(path, context string, logger log.Logger, config ...string) (
 }
 
 // DeleteRelease deletes a chart release
-func DeleteRelease(release, context string, logger log.Logger) error {
+func DeleteRelease(release, context string, logger *logrus.Logger) error {
 	defer timer.Track(time.Now(), fmt.Sprintf("Helm DeleteRelease: %s", release), logger)
 	args := []string{
 		"delete",
@@ -60,7 +60,7 @@ func DeleteRelease(release, context string, logger log.Logger) error {
 }
 
 // DeleteAllReleases deletes all chart releases
-func DeleteAllReleases(context string, logger log.Logger) error {
+func DeleteAllReleases(context string, logger *logrus.Logger) error {
 	defer timer.Track(time.Now(), "Helm DeleteAllReleases", logger)
 	args := []string{
 		"list",
@@ -89,7 +89,7 @@ func DeleteAllReleases(context string, logger log.Logger) error {
 }
 
 // Init installs Tiller (the Helm server-side component) onto your cluster
-func Init(context string, logger log.Logger, arg ...string) error {
+func Init(context string, logger *logrus.Logger, arg ...string) error {
 	defer timer.Track(time.Now(), "Helm Init", logger)
 	args := append([]string{
 		"init",
@@ -110,7 +110,7 @@ func Init(context string, logger log.Logger, arg ...string) error {
 }
 
 // DependencyBuild builds the dependencies for the e2e chart
-func DependencyBuild(context, chart string, logger log.Logger) error {
+func DependencyBuild(context, chart string, logger *logrus.Logger) error {
 	defer timer.Track(time.Now(), "Helm DependencyBuild", logger)
 	args := []string{
 		"dependency",
