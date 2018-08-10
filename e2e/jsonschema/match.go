@@ -31,7 +31,7 @@ func (errMatch ErrMatch) Error() string {
 }
 
 // Match matches an input against a EventTypeToSchemaFilepath
-func Match(input []byte, m EventTypeToSchemaFilepath) error {
+func Match(input []byte, m EventTypeToSchemaFilepath, schemasDir string) error {
 	o := sdk.IntegrationProtocol2{}
 	err := json.Unmarshal(input, &o)
 	if err != nil {
@@ -51,7 +51,7 @@ func Match(input []byte, m EventTypeToSchemaFilepath) error {
 		for _, ms := range e.Metrics {
 			if t, ok := m[ms["event_type"].(string)]; ok {
 				foundTypes[ms["event_type"].(string)] = struct{}{}
-				fp, err := schemaFilepath(t)
+				fp, err := schemaFilepath(t, schemasDir)
 				if err != nil {
 					errs = append(errs, fmt.Errorf("%s schema not found", t))
 					continue
@@ -93,8 +93,9 @@ func Match(input []byte, m EventTypeToSchemaFilepath) error {
 	return nil
 }
 
-func schemaFilepath(filename string) (string, error) {
-	abs, err := filepath.Abs(filename)
+func schemaFilepath(filename string, dir string) (string, error) {
+	schemas := filepath.Join(dir, filename)
+	abs, err := filepath.Abs(schemas)
 	if err != nil {
 		return "", err
 	}

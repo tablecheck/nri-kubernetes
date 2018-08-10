@@ -28,7 +28,8 @@ import (
 )
 
 var cliArgs = struct {
-	NrChartPath                string `default:"charts/newrelic-infrastructure-k8s-e2e",help:"Path to the newrelic-infrastructure-k8s-e2e chart"`
+	NrChartPath                string `default:"e2e/charts/newrelic-infrastructure-k8s-e2e",help:"Path to the newrelic-infrastructure-k8s-e2e chart"`
+	SchemasDirectory           string `default:"e2e/schema", help:"Directory where JSON schema files are defined"`
 	IntegrationImageTag        string `default:"1.0.0",help:"Integration image tag"`
 	IntegrationImageRepository string `default:"newrelic/infrastructure-k8s",help:"Integration image repository"`
 	Rbac                       bool   `default:"false",help:"Enable rbac"`
@@ -294,12 +295,12 @@ NRLoop:
 		lcount = 0
 		fcount = 0
 		leaderMap := jsonschema.EventTypeToSchemaFilepath{
-			"K8sReplicasetSample": "schema/replicaset.json",
-			"K8sNamespaceSample":  "schema/namespace.json",
-			"K8sDeploymentSample": "schema/deployment.json",
-			"K8sPodSample":        "schema/pod.json",
-			"K8sContainerSample":  "schema/container.json",
-			"K8sNodeSample":       "schema/node.json",
+			"K8sReplicasetSample": "replicaset.json",
+			"K8sNamespaceSample":  "namespace.json",
+			"K8sDeploymentSample": "deployment.json",
+			"K8sPodSample":        "pod.json",
+			"K8sContainerSample":  "container.json",
+			"K8sNodeSample":       "node.json",
 		}
 
 		followerMap := jsonschema.EventTypeToSchemaFilepath{
@@ -318,7 +319,7 @@ NRLoop:
 				m = followerMap
 			}
 
-			err := jsonschema.Match(o.stdOut, m)
+			err := jsonschema.Match(o.stdOut, m, cliArgs.SchemasDirectory)
 			if err != nil {
 				errStr := fmt.Sprintf("received error during execution of scenario %q for pod %s with role %s:\n%s", scenario, podName, o.role, err)
 				select {

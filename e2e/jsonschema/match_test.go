@@ -11,21 +11,21 @@ import (
 )
 
 var s = EventTypeToSchemaFilepath{
-	"TestNodeSample":    "testdata/schema-testnode.json",
-	"TestServiceSample": "testdata/schema-testservice.json",
+	"TestNodeSample":    "schema-testnode.json",
+	"TestServiceSample": "schema-testservice.json",
 }
 
 func TestNoError(t *testing.T) {
 	c := readTestInput(t, "testdata/input-complete.json")
 
-	err := Match(c, s)
+	err := Match(c, s, "testdata")
 	assert.NoError(t, err)
 }
 
 func TestErrorValidatingInputWithNoData(t *testing.T) {
 	c := readTestInput(t, "testdata/input-invalid-nodata.json")
 
-	err := Match(c, s)
+	err := Match(c, s, "testdata")
 	assert.Contains(t, err.Error(), "data: Array must have at least 1 items")
 }
 
@@ -36,7 +36,7 @@ func TestErrorValidatingEventTypes(t *testing.T) {
 		"TestNodeSample":    "testdata/schema-testnode.json",
 		"TestServiceSample": "testdata/schema-testservice.json",
 		"TestPodSample":     "testdata/schema-testpod.json", // this file doesn't exist, I just want to test with 2 missing types
-	})
+	}, "testdata")
 	assert.Contains(t, err.Error(), "mandatory types were not found: ")
 	assert.Contains(t, err.Error(), "TestServiceSample, ")
 	assert.Contains(t, err.Error(), "TestPodSample, ")
@@ -45,7 +45,7 @@ func TestErrorValidatingEventTypes(t *testing.T) {
 func TestErrorValidatingTestNode(t *testing.T) {
 	c := readTestInput(t, "testdata/input-invalid-testnode.json")
 
-	err := Match(c, s)
+	err := Match(c, s, "testdata")
 	assert.Contains(t, err.Error(), "test-node:node1-dsn.compute.internal TestNodeSample")
 	assert.Contains(t, err.Error(), "capacity: capacity is required")
 	assert.Contains(t, err.Error(), "test-node:node2-dsn.compute.internal TestNodeSample")
