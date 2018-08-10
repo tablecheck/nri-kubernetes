@@ -10,7 +10,7 @@ GOTOOLS       = github.com/kardianos/govendor \
 
 all: build
 
-build: clean validate test compile
+build: clean validate test-nocov compile
 
 clean:
 	@echo "=== $(INTEGRATION) === [ clean ]: Removing binaries and coverage file..."
@@ -58,8 +58,12 @@ deploy-dev: compile-dev
 	@skaffold run
 
 test: deps
-	@echo "=== $(INTEGRATION) === [ test ]: Running unit tests..."
+	@echo "=== $(INTEGRATION) === [ test ]: Running unit tests with coverage (gocov)..."
 	@gocov test $(GO_PKGS) | gocov-xml > coverage.xml
+
+test-nocov: deps
+	@echo "=== $(INTEGRATION) === [ test ]: Running unit tests..."
+	@go test ./src/...
 
 guard-%:
 	@ if [ "${${*}}" = "" ]; then \

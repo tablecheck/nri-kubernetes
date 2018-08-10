@@ -123,6 +123,10 @@ golang:
     license: BSD-2-Clause
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/github.com/pkg/errors/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/github.com/pkg/errors
+  github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/github.com/sirupsen/logrus:
+    license: MIT
+    license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/github.com/sirupsen/logrus/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/github.com/sirupsen/logrus
   github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/github.com/spf13/pflag:
     license: BSD-3-Clause
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/vendor/github.com/spf13/pflag/LICENSE
