@@ -338,6 +338,7 @@ NRLoop:
 			}
 		}
 		if len(execErr.errs) == 0 {
+			logger.Info("output of the integration is valid with all JSON schemas")
 			break
 		}
 		return fmt.Errorf("failure during JSON schema validation, retries limit reached, number of retries: %d,\nlast error: %s", retriesNR, execErr)
