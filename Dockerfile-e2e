@@ -1,12 +1,3 @@
-FROM golang:1.10.3-alpine3.8 as builder
-
-RUN apk add --no-cache make git
-WORKDIR /go/src/github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e
-COPY . .
-RUN make compile
-
-# -----------------------------------------------------------------------------
-
 FROM alpine:3.8
 
 WORKDIR /var/db/newrelic-infra/fsi
@@ -22,8 +13,8 @@ RUN apk add --update ca-certificates \
  && rm /var/cache/apk/* \
  && rm -f /helm-${HELM_LATEST_VERSION}-linux-amd64.tar.gz
 
-COPY --from=builder /go/src/github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/bin/nr-kubernetes-e2e nr-kubernetes-e2e
-COPY schema schema
-COPY charts charts
+COPY ./bin/nr-kubernetes-e2e nr-kubernetes-e2e
+COPY e2e/schema e2e/schema
+COPY e2e/charts e2e/charts
 
 ENTRYPOINT ["/var/db/newrelic-infra/fsi/nr-kubernetes-e2e"]
