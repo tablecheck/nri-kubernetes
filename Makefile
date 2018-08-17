@@ -74,6 +74,12 @@ guard-%:
 
 e2e-compile: deps
 	@echo "[ compile E2E binary]: Building $(E2E_BINARY_NAME)..."
-	@GOOS=linux GOARCH=amd64 go build -o bin/$(E2E_BINARY_NAME) ./e2e/cmd/e2e.go
+	# CGO_ENABLED=0 is needed since the binary is compiled in a non alpine linux.
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bin/$(E2E_BINARY_NAME) ./e2e/cmd/e2e.go
+
+e2e-compile-only:
+	@echo "[ compile E2E binary]: Building $(E2E_BINARY_NAME)..."
+	# CGO_ENABLED=0 is needed since the binary is compiled in a non alpine linux.
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bin/$(E2E_BINARY_NAME) ./e2e/cmd/e2e.go
 
 .PHONY: all build clean tools tools-update deps validate compile test
