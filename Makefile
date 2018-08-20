@@ -44,7 +44,7 @@ lint-all: deps
 
 license-check:
 	@echo "=== $(INTEGRATION) === [ validate ]: Validating licenses of package dependencies required by the project..."
-	@papers-go validate -c ../../.papers_config.yml
+	papers-go validate
 
 compile: deps
 	@echo "=== $(INTEGRATION) === [ compile ]: Building $(BINARY_NAME)..."
