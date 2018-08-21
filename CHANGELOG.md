@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## 1.2.0
+
 ### Added
 - Add `reason` metric for terminated containers
 
