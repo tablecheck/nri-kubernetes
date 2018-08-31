@@ -4,7 +4,7 @@ E2E_BINARY_NAME = $(BINARY_NAME)-e2e
 GO_PKGS      := $(shell go list ./... | grep -v "/vendor/")
 GO_FILES     := $(shell find src -type f -name "*.go")
 GOTOOLS       = github.com/kardianos/govendor \
-		gopkg.in/alecthomas/gometalinter.v2 \
+		github.com/golangci/golangci-lint/cmd/golangci-lint \
 		github.com/axw/gocov/gocov \
 		github.com/AlekSi/gocov-xml \
 		go.datanerd.us/p/ohai/papers-go/... \
@@ -20,12 +20,10 @@ clean:
 tools:
 	@echo "=== $(INTEGRATION) === [ tools ]: Installing tools required by the project..."
 	@go get $(GOTOOLS)
-	@gometalinter.v2 --install
 
 tools-update:
 	@echo "=== $(INTEGRATION) === [ tools-update ]: Updating tools required by the project..."
 	@go get -u $(GOTOOLS)
-	@gometalinter.v2 --install
 
 deps: tools
 	@echo "=== $(INTEGRATION) === [ deps ]: Installing package dependencies required by the project..."
@@ -35,12 +33,12 @@ validate: lint license-check
 validate-all: lint-all license-check
 
 lint: deps
-	@echo "=== $(INTEGRATION) === [ validate ]: Validating source code running gometalinter..."
-	@gometalinter.v2 --config=.gometalinter.json ./...
+	@echo "=== $(INTEGRATION) === [ validate ]: Validating source code running golangci-lint..."
+	@golangci-lint run
 
 lint-all: deps
-	@echo "=== $(INTEGRATION) === [ validate ]: Validating source code running gometalinter..."
-	@gometalinter.v2 --config=.gometalinter.json --enable=interfacer --enable=gosimple ./...
+	@echo "=== $(INTEGRATION) === [ validate ]: Validating source code running golangci-lint..."
+	@golangci-lint run --enable=interfacer --enable=gosimple
 
 license-check:
 	@echo "=== $(INTEGRATION) === [ validate ]: Validating licenses of package dependencies required by the project..."

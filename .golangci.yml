@@ -1,0 +1,9 @@
+linters:
+  enable:
+    - deadcode
+    - errcheck
+    - gofmt
+    - golint
+    - goimports
+  enable-all: false
+  disable-all: true
