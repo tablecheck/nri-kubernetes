@@ -2,7 +2,10 @@ apiVersion: skaffold/v1alpha2
 kind: Config
 build:
   artifacts:
-  - imageName: newrelic/infrastructure-k8s-dev # Only suitable for local development since it does not really exists.
+  # When you're using minikube context, this image will be pushed to your local
+  # docker daemon. If you're using a non-minikube context, the image will be
+  # pushed to a private quay.io repository.
+  - imageName: quay.io/newrelic/infrastructure-k8s-dev
     workspace: .
   local: {}
 deploy:
