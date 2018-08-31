@@ -4,27 +4,23 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
-	"sync"
-
 	"strings"
-
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/helm"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/jsonschema"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/timer"
-	"github.com/newrelic/infra-integrations-sdk/args"
-	"github.com/newrelic/infra-integrations-sdk/log"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	// This package includes the GKE auth provider automatically by import the package (init function does the job)
-
+	"sync"
 	"time"
 
 	_ "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/gcp"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/helm"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/jsonschema"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/k8s"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/timer"
+	"github.com/newrelic/infra-integrations-sdk/args"
+	"github.com/newrelic/infra-integrations-sdk/log"
+	"github.com/sirupsen/logrus"
 )
 
 var cliArgs = struct {

@@ -187,8 +187,10 @@ func TestDiskStorage_Overwrite(t *testing.T) {
 
 	// The read operation returns the last version of the record
 	var read string
-	ds.Read("my-storage-test", &read)
+	_, err = ds.Read("my-storage-test", &read)
+
 	assert.Equal(t, "overwritten value", read)
+	assert.Nil(t, err)
 }
 
 func TestDiskStorage_NotFound(t *testing.T) {

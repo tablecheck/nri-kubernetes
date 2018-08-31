@@ -23,8 +23,8 @@ var ExpectedRawData = definition.RawGroups{
 			"createdAt":   parseTime("2018-02-14T16:26:33Z"),
 			"labels": map[string]string{
 				"controller-revision-hash": "3887482659",
-				"name": "newrelic-infra",
-				"pod-template-generation": "1",
+				"name":                     "newrelic-infra",
+				"pod-template-generation":  "1",
 			},
 		},
 		"kube-system_kube-state-metrics-57f4659995-6n2qq": {
@@ -64,8 +64,8 @@ var ExpectedRawData = definition.RawGroups{
 			"memoryLimitBytes":     int64(104857600),
 			"labels": map[string]string{
 				"controller-revision-hash": "3887482659",
-				"name": "newrelic-infra",
-				"pod-template-generation": "1",
+				"name":                     "newrelic-infra",
+				"pod-template-generation":  "1",
 			},
 		},
 		"kube-system_kube-state-metrics-57f4659995-6n2qq_kube-state-metrics": {

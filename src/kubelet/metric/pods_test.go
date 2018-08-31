@@ -41,7 +41,7 @@ func servePayload(w http.ResponseWriter, _ *http.Request) {
 
 	defer f.Close() // nolint: errcheck
 
-	io.Copy(w, f)
+	io.Copy(w, f) // nolint: errcheck
 }
 
 func TestNewPodsFetchFunc(t *testing.T) {
@@ -70,7 +70,7 @@ func TestNewPodsFetchFunc_ErrorEmptyResponse(t *testing.T) {
 		t,
 		"error reading response from kubelet /pods path. Response is empty",
 		func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(""))
+			w.Write([]byte("")) // nolint: errcheck
 		},
 	)
 }
@@ -80,7 +80,7 @@ func TestNewPodsFetchFunc_ErrorMalformedJSON(t *testing.T) {
 		t,
 		"error decoding response from kubelet /pods path. invalid character 'P' looking for beginning of value",
 		func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("P{}"))
+			w.Write([]byte("P{}")) // nolint: errcheck
 		},
 	)
 }

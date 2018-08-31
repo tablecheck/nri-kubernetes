@@ -42,7 +42,7 @@ func rawGroupsHandlerFunc(w http.ResponseWriter, r *http.Request) {
 
 		defer f.Close() // nolint: errcheck
 
-		io.Copy(w, f)
+		io.Copy(w, f) // nolint: errcheck
 	case metric.StatsSummaryPath:
 		f, err := os.Open("metric/testdata/kubelet_stats_summary_payload.json") // TODO move fetch and testdata to just kubelet package.
 		if err != nil {
@@ -51,7 +51,7 @@ func rawGroupsHandlerFunc(w http.ResponseWriter, r *http.Request) {
 
 		defer f.Close() // nolint: errcheck
 
-		io.Copy(w, f)
+		io.Copy(w, f) // nolint: errcheck
 	case metric.KubeletCAdvisorMetricsPath:
 		f, err := os.Open("metric/testdata/kubelet_metrics_cadvisor_payload_plain.txt")
 		if err != nil {

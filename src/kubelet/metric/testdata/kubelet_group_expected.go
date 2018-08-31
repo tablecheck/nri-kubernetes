@@ -21,8 +21,8 @@ var ExpectedGroupData = definition.RawGroups{
 			"createdAt":   parseTime("2018-02-14T16:26:33Z"),
 			"labels": map[string]string{
 				"controller-revision-hash": "3887482659",
-				"name": "newrelic-infra",
-				"pod-template-generation": "1",
+				"name":                     "newrelic-infra",
+				"pod-template-generation":  "1",
 			},
 			"errors":  uint64(0),
 			"rxBytes": uint64(106175985),
@@ -72,8 +72,8 @@ var ExpectedGroupData = definition.RawGroups{
 			"usageNanoCores":       uint64(17428240),
 			"labels": map[string]string{
 				"controller-revision-hash": "3887482659",
-				"name": "newrelic-infra",
-				"pod-template-generation": "1",
+				"name":                     "newrelic-infra",
+				"pod-template-generation":  "1",
 			},
 		},
 		"kube-system_kube-state-metrics-57f4659995-6n2qq_kube-state-metrics": {
