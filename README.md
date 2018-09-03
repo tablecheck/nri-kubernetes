@@ -86,3 +86,12 @@ For running unit tests, use
 ```bash
 make test
 ```
+
+For running e2e tests locally, use:
+
+```bash
+CLUSTER_NAME=<your-cluster-name> NR_LICENSE_KEY=<your-license-key>  make e2e
+```
+
+This make target is executing `go run e2e/cmd/e2e.go`. You could execute that
+command with `--help` flag to see all the available options.
