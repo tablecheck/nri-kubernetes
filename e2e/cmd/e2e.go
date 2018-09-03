@@ -178,33 +178,35 @@ func main() {
 }
 
 func initHelm(c *k8s.Client, rbac bool, logger *logrus.Logger) error {
-	if !rbac {
-		return helm.Init(cliArgs.Context, logger)
-	}
-	ns := "kube-system"
-	n := "tiller"
-	sa, err := c.ServiceAccount(ns, n)
-	if err != nil {
-		sa, err = c.CreateServiceAccount(ns, n)
+	var initArgs []string
+	if rbac {
+		ns := "kube-system"
+		n := "tiller"
+		sa, err := c.ServiceAccount(ns, n)
 		if err != nil {
-			return err
+			sa, err = c.CreateServiceAccount(ns, n)
+			if err != nil {
+				return err
+			}
 		}
-	}
-	_, err = c.ClusterRoleBinding(n)
-	if err != nil {
-		cr, err := c.ClusterRole("cluster-admin")
+		_, err = c.ClusterRoleBinding(n)
 		if err != nil {
-			return err
+			cr, err := c.ClusterRole("cluster-admin")
+			if err != nil {
+				return err
+			}
+			_, err = c.CreateClusterRoleBinding(n, sa, cr)
+			if err != nil {
+				return err
+			}
 		}
-		_, err = c.CreateClusterRoleBinding(n, sa, cr)
-		if err != nil {
-			return err
-		}
+		initArgs = []string{"--service-account", n}
 	}
-	err = helm.Init(
+
+	err := helm.Init(
 		cliArgs.Context,
 		logger,
-		[]string{"--service-account", n}...,
+		initArgs...,
 	)
 
 	if err != nil {
