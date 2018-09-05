@@ -95,3 +95,12 @@ func TestToCores(t *testing.T) {
 	assert.Equal(t, float64(1), v)
 	assert.NoError(t, err)
 }
+
+func TestComputePercentage(t *testing.T) {
+	v, err := computePercentage(3, 5)
+	assert.Equal(t, float64(60.0), v)
+	assert.NoError(t, err)
+
+	v, err = computePercentage(3, 0)
+	assert.EqualError(t, err, "division by zero")
+}

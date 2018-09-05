@@ -132,9 +132,39 @@ func fetchContainerStats(c v1.ContainerStats) (definition.RawMetrics, error) {
 	if c.Memory != nil {
 		AddUint64RawMetric(r, "usageBytes", c.Memory.UsageBytes)
 	}
+	if c.Rootfs != nil {
+		AddUint64RawMetric(r, "fsAvailableBytes", c.Rootfs.AvailableBytes)
+		AddUint64RawMetric(r, "fsCapacityBytes", c.Rootfs.CapacityBytes)
+		AddUint64RawMetric(r, "fsUsedBytes", c.Rootfs.UsedBytes)
+		AddUint64RawMetric(r, "fsInodesFree", c.Rootfs.InodesFree)
+		AddUint64RawMetric(r, "fsInodes", c.Rootfs.Inodes)
+		AddUint64RawMetric(r, "fsInodesUsed", c.Rootfs.InodesUsed)
+	}
 
 	return r, nil
 
+}
+
+func fetchVolumeStats(v v1.VolumeStats) (definition.RawMetrics, error) {
+	r := make(definition.RawMetrics)
+
+	if v.Name == "" {
+		return r, fmt.Errorf("empty volume identifier, possible data error in %s response", StatsSummaryPath)
+	}
+	r["volumeName"] = v.Name
+	if v.PVCRef != nil {
+		r["pvcName"] = v.PVCRef.Name
+		r["pvcNamespace"] = v.PVCRef.Namespace
+	}
+
+	AddUint64RawMetric(r, "fsAvailableBytes", v.FsStats.AvailableBytes)
+	AddUint64RawMetric(r, "fsCapacityBytes", v.FsStats.CapacityBytes)
+	AddUint64RawMetric(r, "fsUsedBytes", v.FsStats.UsedBytes)
+	AddUint64RawMetric(r, "fsInodesFree", v.FsStats.InodesFree)
+	AddUint64RawMetric(r, "fsInodes", v.FsStats.Inodes)
+	AddUint64RawMetric(r, "fsInodesUsed", v.FsStats.InodesUsed)
+
+	return r, nil
 }
 
 // GroupStatsSummary groups specific data for pods, containers and node
@@ -144,6 +174,7 @@ func GroupStatsSummary(statsSummary v1.Summary) (definition.RawGroups, []error) 
 	g := definition.RawGroups{
 		"pod":       {},
 		"container": {},
+		"volume":    {},
 		"node":      {},
 	}
 
@@ -167,6 +198,18 @@ PodListLoop:
 			continue PodListLoop
 		}
 		g["pod"][rawEntityID] = rawPodMetrics
+	VolumeListLoop:
+		for _, volume := range pod.VolumeStats {
+			rawVolumeMetrics, err := fetchVolumeStats(volume)
+			if err != nil {
+				errs = append(errs, err)
+				continue VolumeListLoop
+			}
+			rawVolumeMetrics["podName"] = rawPodMetrics["podName"]
+			rawVolumeMetrics["namespace"] = rawPodMetrics["namespace"]
+			rawEntityID = fmt.Sprintf("%s_%s_%s", rawPodMetrics["namespace"], rawPodMetrics["podName"], rawVolumeMetrics["volumeName"])
+			g["volume"][rawEntityID] = rawVolumeMetrics
+		}
 
 		if pod.Containers == nil {
 			// Some pods could have no containers yet or containers could be in a back-off pulling image status.

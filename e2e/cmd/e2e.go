@@ -299,12 +299,14 @@ NRLoop:
 			"K8sPodSample":        "pod.json",
 			"K8sContainerSample":  "container.json",
 			"K8sNodeSample":       "node.json",
+			"K8sVolumeSample":     "volume.json",
 		}
 
 		followerMap := jsonschema.EventTypeToSchemaFilepath{
 			"K8sPodSample":       leaderMap["K8sPodSample"],
 			"K8sContainerSample": leaderMap["K8sContainerSample"],
 			"K8sNodeSample":      leaderMap["K8sNodeSample"],
+			"K8sVolumeSample":    leaderMap["K8sVolumeSample"],
 		}
 		for podName, o := range output {
 			var m jsonschema.EventTypeToSchemaFilepath

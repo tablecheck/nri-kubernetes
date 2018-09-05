@@ -32,6 +32,7 @@ spec:
       containers:
         - name: {{ .Values.daemonset.name }}
           image: "{{ .Values.daemonset.image.repository }}:{{ .Values.daemonset.image.tag }}"
+          imagePullPolicy: Always
           resources:
 {{ toYaml .Values.daemonset.resources | indent 12 }}
           volumeMounts:

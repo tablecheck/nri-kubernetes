@@ -79,27 +79,69 @@ func TestGroupStatsSummary_CorrectValue(t *testing.T) {
 				"txBytes":   uint64(15557657),
 			},
 		},
+		"volume": {
+			"kube-system_kube-dns-910330662-pflkj_default-token-7cg8m": definition.RawMetrics{
+				"fsAvailableBytes": uint64(1048637440),
+				"fsCapacityBytes":  uint64(1048649728),
+				"fsInodes":         uint64(256018),
+				"fsInodesFree":     uint64(256009),
+				"fsInodesUsed":     uint64(9),
+				"namespace":        "kube-system",
+				"podName":          "kube-dns-910330662-pflkj",
+				"fsUsedBytes":      uint64(12288),
+				"volumeName":       "default-token-7cg8m",
+			},
+			"kube-system_newrelic-infra-monitoring-pjp0v_default-token-7cg8m": definition.RawMetrics{
+				"fsAvailableBytes": uint64(1048637440),
+				"fsCapacityBytes":  uint64(1048649728),
+				"fsInodes":         uint64(256018),
+				"fsInodesFree":     uint64(256009),
+				"fsInodesUsed":     uint64(9),
+				"namespace":        "kube-system",
+				"podName":          "newrelic-infra-monitoring-pjp0v",
+				"fsUsedBytes":      uint64(12288),
+				"volumeName":       "default-token-7cg8m",
+			},
+		},
 		"container": {
 			"kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics": definition.RawMetrics{
-				"containerName":  "kube-state-metrics",
-				"usageBytes":     uint64(22552576),
-				"usageNanoCores": uint64(184087),
-				"podName":        "newrelic-infra-monitoring-pjp0v",
-				"namespace":      "kube-system",
+				"containerName":    "kube-state-metrics",
+				"usageBytes":       uint64(22552576),
+				"usageNanoCores":   uint64(184087),
+				"podName":          "newrelic-infra-monitoring-pjp0v",
+				"namespace":        "kube-system",
+				"fsAvailableBytes": uint64(6911750144),
+				"fsCapacityBytes":  uint64(17293533184),
+				"fsInodes":         uint64(9732096),
+				"fsInodesFree":     uint64(9574871),
+				"fsInodesUsed":     uint64(24),
+				"fsUsedBytes":      uint64(35000320),
 			},
 			"kube-system_newrelic-infra-monitoring-pjp0v_newrelic-infra": definition.RawMetrics{
-				"containerName":  "newrelic-infra",
-				"usageBytes":     uint64(243638272),
-				"usageNanoCores": uint64(13046199),
-				"podName":        "newrelic-infra-monitoring-pjp0v",
-				"namespace":      "kube-system",
+				"containerName":    "newrelic-infra",
+				"usageBytes":       uint64(243638272),
+				"usageNanoCores":   uint64(13046199),
+				"podName":          "newrelic-infra-monitoring-pjp0v",
+				"namespace":        "kube-system",
+				"fsAvailableBytes": uint64(6911750144),
+				"fsCapacityBytes":  uint64(17293533184),
+				"fsInodes":         uint64(9732096),
+				"fsInodesFree":     uint64(9574871),
+				"fsInodesUsed":     uint64(52),
+				"fsUsedBytes":      uint64(1305837568),
 			},
 			"kube-system_kube-dns-910330662-pflkj_dnsmasq": definition.RawMetrics{
-				"containerName":  "dnsmasq",
-				"usageBytes":     uint64(19812352),
-				"usageNanoCores": uint64(208374),
-				"podName":        "kube-dns-910330662-pflkj",
-				"namespace":      "kube-system",
+				"containerName":    "dnsmasq",
+				"usageBytes":       uint64(19812352),
+				"usageNanoCores":   uint64(208374),
+				"podName":          "kube-dns-910330662-pflkj",
+				"namespace":        "kube-system",
+				"fsAvailableBytes": uint64(6911750144),
+				"fsCapacityBytes":  uint64(17293533184),
+				"fsInodes":         uint64(9732096),
+				"fsInodesFree":     uint64(9574871),
+				"fsInodesUsed":     uint64(20),
+				"fsUsedBytes":      uint64(42041344),
 			},
 		},
 	}
@@ -131,32 +173,80 @@ func TestGroupStatsSummary_MissingNodeData_ContainerWithTheSameName(t *testing.T
 		},
 		"container": {
 			"kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics": definition.RawMetrics{
-				"containerName":  "kube-state-metrics",
-				"usageBytes":     uint64(22552576),
-				"usageNanoCores": uint64(184087),
-				"podName":        "newrelic-infra-monitoring-pjp0v",
-				"namespace":      "kube-system",
+				"containerName":    "kube-state-metrics",
+				"usageBytes":       uint64(22552576),
+				"usageNanoCores":   uint64(184087),
+				"podName":          "newrelic-infra-monitoring-pjp0v",
+				"namespace":        "kube-system",
+				"fsAvailableBytes": uint64(6911750144),
+				"fsCapacityBytes":  uint64(17293533184),
+				"fsInodes":         uint64(9732096),
+				"fsInodesFree":     uint64(9574871),
+				"fsInodesUsed":     uint64(24),
+				"fsUsedBytes":      uint64(35000320),
 			},
 			"kube-system_kube-dns-910330662-pflkj_kube-state-metrics": definition.RawMetrics{
-				"containerName":  "kube-state-metrics",
-				"usageBytes":     uint64(22552576),
-				"usageNanoCores": uint64(184087),
-				"podName":        "kube-dns-910330662-pflkj",
-				"namespace":      "kube-system",
+				"containerName":    "kube-state-metrics",
+				"usageBytes":       uint64(22552576),
+				"usageNanoCores":   uint64(184087),
+				"podName":          "kube-dns-910330662-pflkj",
+				"namespace":        "kube-system",
+				"fsAvailableBytes": uint64(6911750144),
+				"fsCapacityBytes":  uint64(17293533184),
+				"fsInodes":         uint64(9732096),
+				"fsInodesFree":     uint64(9574871),
+				"fsInodesUsed":     uint64(24),
+				"fsUsedBytes":      uint64(35000320),
 			},
 			"kube-system_newrelic-infra-monitoring-pjp0v_newrelic-infra": definition.RawMetrics{
-				"containerName":  "newrelic-infra",
-				"usageBytes":     uint64(243638272),
-				"usageNanoCores": uint64(13046199),
-				"podName":        "newrelic-infra-monitoring-pjp0v",
-				"namespace":      "kube-system",
+				"containerName":    "newrelic-infra",
+				"usageBytes":       uint64(243638272),
+				"usageNanoCores":   uint64(13046199),
+				"podName":          "newrelic-infra-monitoring-pjp0v",
+				"namespace":        "kube-system",
+				"fsAvailableBytes": uint64(6911750144),
+				"fsCapacityBytes":  uint64(17293533184),
+				"fsInodes":         uint64(9732096),
+				"fsInodesFree":     uint64(9574871),
+				"fsInodesUsed":     uint64(52),
+				"fsUsedBytes":      uint64(1305837568),
 			},
 			"kube-system_kube-dns-910330662-pflkj_dnsmasq": definition.RawMetrics{
-				"containerName":  "dnsmasq",
-				"usageBytes":     uint64(19812352),
-				"usageNanoCores": uint64(208374),
-				"podName":        "kube-dns-910330662-pflkj",
-				"namespace":      "kube-system",
+				"containerName":    "dnsmasq",
+				"usageBytes":       uint64(19812352),
+				"usageNanoCores":   uint64(208374),
+				"podName":          "kube-dns-910330662-pflkj",
+				"namespace":        "kube-system",
+				"fsAvailableBytes": uint64(6911750144),
+				"fsCapacityBytes":  uint64(17293533184),
+				"fsInodes":         uint64(9732096),
+				"fsInodesFree":     uint64(9574871),
+				"fsInodesUsed":     uint64(20),
+				"fsUsedBytes":      uint64(42041344),
+			},
+		},
+		"volume": {
+			"kube-system_kube-dns-910330662-pflkj_default-token-7cg8m": definition.RawMetrics{
+				"fsAvailableBytes": uint64(1048637440),
+				"fsCapacityBytes":  uint64(1048649728),
+				"fsInodes":         uint64(256018),
+				"fsInodesFree":     uint64(256009),
+				"fsInodesUsed":     uint64(9),
+				"namespace":        "kube-system",
+				"podName":          "kube-dns-910330662-pflkj",
+				"fsUsedBytes":      uint64(12288),
+				"volumeName":       "default-token-7cg8m",
+			},
+			"kube-system_newrelic-infra-monitoring-pjp0v_default-token-7cg8m": definition.RawMetrics{
+				"fsAvailableBytes": uint64(1048637440),
+				"fsCapacityBytes":  uint64(1048649728),
+				"fsInodes":         uint64(256018),
+				"fsInodesFree":     uint64(256009),
+				"fsInodesUsed":     uint64(9),
+				"namespace":        "kube-system",
+				"podName":          "newrelic-infra-monitoring-pjp0v",
+				"fsUsedBytes":      uint64(12288),
+				"volumeName":       "default-token-7cg8m",
 			},
 		},
 		"node": {},
@@ -180,6 +270,7 @@ func TestGroupStatsSummary_IncompleteStatsSummaryMessage_MissingNodeData_Missing
 				"errors":    uint64(0),
 			},
 		},
+		"volume":    {},
 		"container": {},
 		"node":      {},
 	}
@@ -196,6 +287,7 @@ func TestGroupStatsSummary_IncompleteStatsSummaryMessage_MissingNodeData_Missing
 	expectedRawData := definition.RawGroups{
 		"pod":       {},
 		"container": {},
+		"volume":    {},
 		"node":      {},
 	}
 
@@ -204,11 +296,12 @@ func TestGroupStatsSummary_IncompleteStatsSummaryMessage_MissingNodeData_Missing
 
 	rawData, errs := GroupStatsSummary(summary)
 	assert.Len(t, errs, 2, "Not expected length of errors")
-	assert.Len(t, rawData, 3, "Not expected length of rawData for pods and containers")
+	assert.Len(t, rawData, 4, "Not expected length of rawData for pods and containers")
 	assert.Equal(t, expectedRawData, rawData)
 	assert.Empty(t, rawData["pod"])
 	assert.Empty(t, rawData["container"])
 	assert.Empty(t, rawData["node"])
+	assert.Empty(t, rawData["volume"])
 }
 
 func TestGroupStatsSummary_IncompleteStatsSummaryMessage_MissingNodeData_NoRxBytesForPod_ReportedAsZero(t *testing.T) {
@@ -230,7 +323,8 @@ func TestGroupStatsSummary_IncompleteStatsSummaryMessage_MissingNodeData_NoRxByt
 				"namespace":      "kube-system",
 			},
 		},
-		"node": {},
+		"volume": {},
+		"node":   {},
 	}
 
 	summary, err := toSummary(responseMissingRxBytesForPod)
@@ -247,10 +341,11 @@ func TestGroupStatsSummary_EmptyStatsSummaryMessage(t *testing.T) {
 	rawData, errs := GroupStatsSummary(*summary)
 
 	assert.Len(t, errs, 2, "Not expected length of errors")
-	assert.Len(t, rawData, 3, "Not expected length of rawData for pods and containers")
+	assert.Len(t, rawData, 4, "Not expected length of rawData for pods and containers")
 	assert.Empty(t, rawData["pod"])
 	assert.Empty(t, rawData["container"])
 	assert.Empty(t, rawData["node"])
+	assert.Empty(t, rawData["volume"])
 }
 
 func TestAddUint64RawMetric(t *testing.T) {

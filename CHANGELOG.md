@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Added
+- Add container filesystem metrics.
+
 ## 1.2.0
 
 ### Added

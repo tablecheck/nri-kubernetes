@@ -2,6 +2,7 @@ package metric
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
@@ -227,6 +228,13 @@ var KubeletSpecs = definition.SpecGroups{
 			// /stats/summary endpoint
 			{"memoryUsedBytes", definition.FromRaw("usageBytes"), sdkMetric.GAUGE},
 			{"cpuUsedCores", definition.Transform(definition.FromRaw("usageNanoCores"), fromNano), sdkMetric.GAUGE},
+			{"fsAvailableBytes", definition.FromRaw("fsAvailableBytes"), sdkMetric.GAUGE},
+			{"fsCapacityBytes", definition.FromRaw("fsCapacityBytes"), sdkMetric.GAUGE},
+			{"fsUsedBytes", definition.FromRaw("fsUsedBytes"), sdkMetric.GAUGE},
+			{"fsUsedPercent", toPercentage("fsUsedBytes", "fsAvailableBytes"), sdkMetric.GAUGE},
+			{"fsInodesFree", definition.FromRaw("fsInodesFree"), sdkMetric.GAUGE},
+			{"fsInodes", definition.FromRaw("fsInodes"), sdkMetric.GAUGE},
+			{"fsInodesUsed", definition.FromRaw("fsInodesUsed"), sdkMetric.GAUGE},
 
 			// /metrics/cadvisor endpoint
 			{"containerID", definition.FromRaw("containerID"), sdkMetric.ATTRIBUTE},
@@ -282,6 +290,48 @@ var KubeletSpecs = definition.SpecGroups{
 			{"runtimeInodesUsed", definition.FromRaw("runtimeInodesUsed"), sdkMetric.GAUGE},
 		},
 	},
+	"volume": {
+		TypeGenerator: kubeletMetric.FromRawGroupsEntityTypeGenerator,
+		Specs: []definition.Spec{
+			{"volumeName", definition.FromRaw("volumeName"), sdkMetric.ATTRIBUTE},
+			{"podName", definition.FromRaw("podName"), sdkMetric.ATTRIBUTE},
+			{"namespace", definition.FromRaw("namespace"), sdkMetric.ATTRIBUTE},
+			{"pvcName", definition.FromRaw("pvcName"), sdkMetric.ATTRIBUTE},
+			{"pvcNamespace", definition.FromRaw("pvcNamespace"), sdkMetric.ATTRIBUTE},
+			{"fsAvailableBytes", definition.FromRaw("fsAvailableBytes"), sdkMetric.GAUGE},
+			{"fsCapacityBytes", definition.FromRaw("fsCapacityBytes"), sdkMetric.GAUGE},
+			{"fsUsedBytes", definition.FromRaw("fsUsedBytes"), sdkMetric.GAUGE},
+			{"fsUsedPercent", toPercentage("fsAvailableBytes", "fsUsedBytes"), sdkMetric.GAUGE},
+			{"fsInodesFree", definition.FromRaw("fsInodesFree"), sdkMetric.GAUGE},
+			{"fsInodes", definition.FromRaw("fsInodes"), sdkMetric.GAUGE},
+			{"fsInodesUsed", definition.FromRaw("fsInodesUsed"), sdkMetric.GAUGE},
+		},
+	},
+}
+
+func computePercentage(current, all uint64) (definition.FetchedValue, error) {
+	if all == uint64(0) {
+		return nil, errors.New("division by zero")
+	}
+	return ((float64(current) / float64(all)) * 100), nil
+}
+
+func toPercentage(metricCurrent, metricAll string) definition.FetchFunc {
+	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
+		all, err := definition.FromRaw(metricAll)(groupLabel, entityID, groups)
+		if err != nil {
+			return nil, err
+		}
+		current, err := definition.FromRaw(metricCurrent)(groupLabel, entityID, groups)
+		if err != nil {
+			return nil, err
+		}
+		v, err := computePercentage(current.(uint64), all.(uint64))
+		if err != nil {
+			return nil, fmt.Errorf("error computing percentage for %s & %s: %s", metricCurrent, metricAll, err)
+		}
+		return v, nil
+	}
 }
 
 // Used to transform from usageNanoCores to cpuUsedCores
