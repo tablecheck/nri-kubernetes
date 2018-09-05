@@ -143,7 +143,7 @@ func main() {
 		panic(err.Error())
 	}
 
-	logger.Infof("Executing tests in %q cluster. K8s version: %s\n", c.Config.Host, c.ServerVersion())
+	logger.Infof("Executing tests in %q cluster. K8s version: %s", c.Config.Host, c.ServerVersion())
 
 	if cliArgs.CleanBeforeRun {
 		logger.Infof("Cleaning cluster")
@@ -157,7 +157,7 @@ func main() {
 	var errs []error
 	ctx := context.TODO()
 	for _, s := range scenarios(cliArgs.IntegrationImageRepository, cliArgs.IntegrationImageTag, cliArgs.Rbac) {
-		logger.Infof("Scenario %q\n", s)
+		logger.Infof("Scenario: %q", s)
 		err := executeScenario(ctx, s, c, logger)
 		if err != nil {
 			if cliArgs.FailFast {
@@ -241,7 +241,7 @@ KSMLoop:
 			}
 			if len(ksmPodList.Items) != 0 && ksmPodList.Items[0].Status.Phase == "Running" {
 				for _, con := range ksmPodList.Items[0].Status.Conditions {
-					logger.Debugf("Waiting for kube-state-metrics pod to be ready, current condition: %s - %s\n", con.Type, con.Status)
+					logger.Debugf("Waiting for kube-state-metrics pod to be ready, current condition: %s - %s", con.Type, con.Status)
 
 					if con.Type == "Ready" && con.Status == "True" {
 						break KSMLoop
@@ -279,7 +279,7 @@ NRLoop:
 		}()
 
 		for _, p := range podsList.Items {
-			logger.Debugf("Executing integration inside pod: %s\n", p.Name)
+			logger.Debugf("Executing integration inside pod: %s", p.Name)
 			go execIntegration(p.Name, dataChannel, &wg, c, logger)
 		}
 
