@@ -296,6 +296,7 @@ var KubeletSpecs = definition.SpecGroups{
 			{"volumeName", definition.FromRaw("volumeName"), sdkMetric.ATTRIBUTE},
 			{"podName", definition.FromRaw("podName"), sdkMetric.ATTRIBUTE},
 			{"namespace", definition.FromRaw("namespace"), sdkMetric.ATTRIBUTE},
+			{"persistent", isPersistentVolume(), sdkMetric.ATTRIBUTE},
 			{"pvcName", definition.FromRaw("pvcName"), sdkMetric.ATTRIBUTE},
 			{"pvcNamespace", definition.FromRaw("pvcNamespace"), sdkMetric.ATTRIBUTE},
 			{"fsAvailableBytes", definition.FromRaw("fsAvailableBytes"), sdkMetric.GAUGE},
@@ -307,6 +308,16 @@ var KubeletSpecs = definition.SpecGroups{
 			{"fsInodesUsed", definition.FromRaw("fsInodesUsed"), sdkMetric.GAUGE},
 		},
 	},
+}
+
+func isPersistentVolume() definition.FetchFunc {
+	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
+		name, err := definition.FromRaw("pvcName")(groupLabel, entityID, groups)
+		if err == nil && name != "" {
+			return "true", nil
+		}
+		return "false", nil
+	}
 }
 
 func computePercentage(current, all uint64) (definition.FetchedValue, error) {
