@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var s = EventTypeToSchemaFilepath{
+var s = EventTypeToSchemaFilename{
 	"TestNodeSample":    "schema-testnode.json",
 	"TestServiceSample": "schema-testservice.json",
 }
@@ -32,7 +32,7 @@ func TestErrorValidatingInputWithNoData(t *testing.T) {
 func TestErrorValidatingEventTypes(t *testing.T) {
 	c := readTestInput(t, "testdata/input-missing-event-type.json")
 
-	err := Match(c, EventTypeToSchemaFilepath{
+	err := Match(c, EventTypeToSchemaFilename{
 		"TestNodeSample":    "testdata/schema-testnode.json",
 		"TestServiceSample": "testdata/schema-testservice.json",
 		"TestPodSample":     "testdata/schema-testpod.json", // this file doesn't exist, I just want to test with 2 missing types

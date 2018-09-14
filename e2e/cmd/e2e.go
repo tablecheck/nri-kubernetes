@@ -293,7 +293,7 @@ NRLoop:
 
 		lcount = 0
 		fcount = 0
-		leaderMap := jsonschema.EventTypeToSchemaFilepath{
+		leaderMap := jsonschema.EventTypeToSchemaFilename{
 			"K8sReplicasetSample": "replicaset.json",
 			"K8sNamespaceSample":  "namespace.json",
 			"K8sDeploymentSample": "deployment.json",
@@ -303,7 +303,7 @@ NRLoop:
 			"K8sVolumeSample":     "volume.json",
 		}
 
-		followerMap := jsonschema.EventTypeToSchemaFilepath{
+		followerMap := jsonschema.EventTypeToSchemaFilename{
 			"K8sPodSample":       leaderMap["K8sPodSample"],
 			"K8sContainerSample": leaderMap["K8sContainerSample"],
 			"K8sNodeSample":      leaderMap["K8sNodeSample"],
@@ -311,7 +311,7 @@ NRLoop:
 		}
 	OutputLoop:
 		for podName, o := range output {
-			var m jsonschema.EventTypeToSchemaFilepath
+			var m jsonschema.EventTypeToSchemaFilename
 			switch o.role {
 			case "leader":
 				lcount++
