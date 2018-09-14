@@ -301,7 +301,7 @@ var KubeletSpecs = definition.SpecGroups{
 			{"fsAvailableBytes", definition.FromRaw("fsAvailableBytes"), sdkMetric.GAUGE},
 			{"fsCapacityBytes", definition.FromRaw("fsCapacityBytes"), sdkMetric.GAUGE},
 			{"fsUsedBytes", definition.FromRaw("fsUsedBytes"), sdkMetric.GAUGE},
-			{"fsUsedPercent", toPercentage("fsAvailableBytes", "fsUsedBytes"), sdkMetric.GAUGE},
+			{"fsUsedPercent", toPercentage("fsUsedBytes", "fsAvailableBytes"), sdkMetric.GAUGE},
 			{"fsInodesFree", definition.FromRaw("fsInodesFree"), sdkMetric.GAUGE},
 			{"fsInodes", definition.FromRaw("fsInodes"), sdkMetric.GAUGE},
 			{"fsInodesUsed", definition.FromRaw("fsInodesUsed"), sdkMetric.GAUGE},
