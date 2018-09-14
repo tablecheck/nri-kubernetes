@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Added
+- Add metrics for volumes (persistent and non-persistent volumes).
 - Add container filesystem metrics.
 
 ## 1.2.0
