@@ -1,5 +1,5 @@
 {
-  "$id": "http://newrelic.com/k8s-integration-node.json",
+  "$id": "http://newrelic.com/k8s-integration-volume.json",
   "type": "object",
   "required": [
     "clusterName",
@@ -15,7 +15,8 @@
     "fsUsedPercent",
     "namespace",
     "podName",
-    "volumeName"
+    "volumeName",
+    "persistent"
   ],
   "properties": {
     "clusterName": {
@@ -75,6 +76,12 @@
       "$id": "#/properties/podName",
       "type": "string",
       "minLength": 1
+    },
+    "persistent": {
+      "$id": "#/properties/persistent",
+      "type": "string",
+      "minLength": 1,
+      "enum": ["false", "true"]
     },
     "volumeName": {
       "$id": "#/properties/volumeName",
