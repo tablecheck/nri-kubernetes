@@ -80,7 +80,8 @@
     "persistent": {
       "$id": "#/properties/persistent",
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "enum": ["false", "true"]
     },
     "volumeName": {
       "$id": "#/properties/volumeName",
