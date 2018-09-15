@@ -217,19 +217,8 @@ func initHelm(c *k8s.Client, rbac bool, logger *logrus.Logger) error {
 	return helm.DependencyBuild(cliArgs.Context, cliArgs.NrChartPath, logger)
 }
 
-func executeScenario(ctx context.Context, scenario string, c *k8s.Client, logger *logrus.Logger) error {
-	defer timer.Track(time.Now(), fmt.Sprintf("executeScenario func for %s", scenario), logger)
-
-	releaseName, err := installRelease(ctx, scenario, logger)
-	if err != nil {
-		return err
-	}
-
-	defer helm.DeleteRelease(releaseName, cliArgs.Context, logger) // nolint: errcheck
-
-	// At least one of kube-state-metrics pods needs to be ready to enter to the newrelic-infra pod and execute the integration.
-	// If the kube-state-metrics pod is not ready, then metrics from replicaset, namespace and deployment will not be populate and JSON schemas will fail.
-	timeStartKSMWaiting := time.Now()
+func waitForKSM(c *k8s.Client, logger *logrus.Logger) error {
+	defer timer.Track(time.Now(), "waitForKSM", logger)
 	tickerRetry := time.NewTicker(2 * time.Second)
 	tickerTimeout := time.NewTicker(2 * time.Minute)
 KSMLoop:
@@ -255,9 +244,27 @@ KSMLoop:
 			return errors.New("kube-state-metrics pod is not ready, reaching timeout")
 		}
 	}
-	elapsed := time.Since(timeStartKSMWaiting)
-	logger.Debugf("Waiting for KSM to be ready took %s", elapsed)
+	return nil
+}
 
+func executeScenario(ctx context.Context, scenario string, c *k8s.Client, logger *logrus.Logger) error {
+	defer timer.Track(time.Now(), fmt.Sprintf("executeScenario func for %s", scenario), logger)
+
+	releaseName, err := installRelease(ctx, scenario, logger)
+	if err != nil {
+		return err
+	}
+
+	defer helm.DeleteRelease(releaseName, cliArgs.Context, logger) // nolint: errcheck
+
+	tickerRetry := time.NewTicker(2 * time.Second)
+	tickerTimeout := time.NewTicker(2 * time.Minute)
+	// At least one of kube-state-metrics pods needs to be ready to enter to the newrelic-infra pod and execute the integration.
+	// If the kube-state-metrics pod is not ready, then metrics from replicaset, namespace and deployment will not be populate and JSON schemas will fail.
+	err = waitForKSM(c, logger)
+	if err != nil {
+		return err
+	}
 	var execErr executionErr
 	var lcount int
 	var fcount int
