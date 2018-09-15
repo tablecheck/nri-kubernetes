@@ -42,6 +42,7 @@ const (
 	nrLabel     = "name=newrelic-infra"
 	namespace   = "default"
 	nrContainer = "newrelic-infra"
+	ksmLabel    = "app=kube-state-metrics"
 )
 
 func scenarios(integrationImageRepository string, integrationImageTag string, rbac bool) []string {
@@ -225,7 +226,7 @@ KSMLoop:
 	for {
 		select {
 		case <-tickerRetry.C:
-			ksmPodList, err := c.PodsListByLabels(namespace, []string{"app=kube-state-metrics"})
+			ksmPodList, err := c.PodsListByLabels(namespace, []string{ksmLabel})
 			if err != nil {
 				return err
 			}
