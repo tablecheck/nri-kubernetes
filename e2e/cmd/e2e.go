@@ -138,13 +138,12 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+	logger.Infof("Executing tests in %q cluster. K8s version: %s", c.Config.Host, c.ServerVersion())
 
 	err = initHelm(c, cliArgs.Rbac, logger)
 	if err != nil {
 		panic(err.Error())
 	}
-
-	logger.Infof("Executing tests in %q cluster. K8s version: %s", c.Config.Host, c.ServerVersion())
 
 	if cliArgs.CleanBeforeRun {
 		logger.Infof("Cleaning cluster")
