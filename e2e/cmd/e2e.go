@@ -269,13 +269,12 @@ func executeScenario(ctx context.Context, scenario string, c *k8s.Client, logger
 	var lcount int
 	var fcount int
 	var retriesNR int
+	podsList, err := c.PodsListByLabels(namespace, []string{nrLabel})
+	if err != nil {
+		return err
+	}
 NRLoop:
 	for {
-		podsList, err := c.PodsListByLabels(namespace, []string{nrLabel})
-		if err != nil {
-			return err
-		}
-
 		output := make(map[string]integrationData)
 		dataChannel := make(chan integrationData)
 
