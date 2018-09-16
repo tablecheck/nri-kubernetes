@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -258,8 +257,6 @@ func executeScenario(ctx context.Context, scenario string, c *k8s.Client, logger
 
 	defer helm.DeleteRelease(releaseName, cliArgs.Context, logger) // nolint: errcheck
 
-	tickerRetry := time.NewTicker(2 * time.Second)
-	tickerTimeout := time.NewTicker(2 * time.Minute)
 	// At least one of kube-state-metrics pods needs to be ready to enter to the newrelic-infra pod and execute the integration.
 	// If the kube-state-metrics pod is not ready, then metrics from replicaset, namespace and deployment will not be populate and JSON schemas will fail.
 	err = waitForKSM(c, logger)
@@ -271,7 +268,6 @@ func executeScenario(ctx context.Context, scenario string, c *k8s.Client, logger
 
 func executeTests(c *k8s.Client, scenario string, logger *logrus.Logger) error {
 	var execErr executionErr
-	var retriesNR int
 	podsList, err := c.PodsListByLabels(namespace, []string{nrLabel})
 	if err != nil {
 		return err
@@ -281,73 +277,39 @@ func executeTests(c *k8s.Client, scenario string, logger *logrus.Logger) error {
 		return fmt.Errorf("error getting the list of nodes in the cluster: %s", err)
 	}
 
-NRLoop:
-	for {
-		output, err := executeAllIntegrations(c, podsList, logger)
-		if err != nil {
-			return err
-		}
-		logger.Info("checking if the integrations are executed with the proper roles")
-		err = testRoles(len(nodes.Items), output)
-		if err != nil {
-			execErr.errs = append(execErr.errs, err)
-		}
-
-		leaderMap := jsonschema.EventTypeToSchemaFilename{
-			"K8sReplicasetSample": "replicaset.json",
-			"K8sNamespaceSample":  "namespace.json",
-			"K8sDeploymentSample": "deployment.json",
-			"K8sPodSample":        "pod.json",
-			"K8sContainerSample":  "container.json",
-			"K8sNodeSample":       "node.json",
-			"K8sVolumeSample":     "volume.json",
-		}
-
-		followerMap := jsonschema.EventTypeToSchemaFilename{
-			"K8sPodSample":       leaderMap["K8sPodSample"],
-			"K8sContainerSample": leaderMap["K8sContainerSample"],
-			"K8sNodeSample":      leaderMap["K8sNodeSample"],
-			"K8sVolumeSample":    leaderMap["K8sVolumeSample"],
-		}
-	OutputLoop:
-		for podName, o := range output {
-			var m jsonschema.EventTypeToSchemaFilename
-			switch o.role {
-			case "leader":
-				m = leaderMap
-			case "follower":
-				m = followerMap
-			}
-			err := jsonschema.Match(o.stdOut, m, cliArgs.SchemasDirectory)
-			if err != nil {
-				errStr := fmt.Sprintf("received error during execution of scenario %q for pod %s with role %s:\n%s", scenario, podName, o.role, err)
-				select {
-				case <-tickerRetry.C:
-					logger.Debugf("------ Retrying due to %s ------ ", errStr)
-					retriesNR++
-					continue NRLoop
-				case <-tickerTimeout.C:
-					tickerRetry.Stop()
-					tickerTimeout.Stop()
-					if cliArgs.Verbose {
-						errStr = errStr + fmt.Sprintf("\nStdErr:\n%s\nStdOut:\n%s", string(o.stdErr), string(o.stdOut))
-					}
-					execErr.errs = append(execErr.errs, errors.New(errStr))
-					break OutputLoop
-				}
-			}
-		}
-		if len(execErr.errs) == 0 {
-			logger.Info("output of the integration is valid with all JSON schemas")
-			break
-		}
-		return fmt.Errorf("failure during JSON schema validation, retries limit reached, number of retries: %d,\nlast error: %s", retriesNR, execErr)
+	output, err := executeAllIntegrations(c, podsList, logger)
+	if err != nil {
+		return err
 	}
-
+	logger.Info("checking if the integrations are executed with the proper roles")
+	err = testRoles(len(nodes.Items), output)
+	if err != nil {
+		execErr.errs = append(execErr.errs, err)
+	}
+	logger.Info("checking if the metric sets in all integrations match our JSON schemas")
+	err = retry.Do(
+		func() error {
+			err := testEventTypes(output)
+			if err != nil {
+				var otherErr error
+				output, otherErr = executeAllIntegrations(c, podsList, logger)
+				if otherErr != nil {
+					return otherErr
+				}
+				return err
+			}
+			return nil
+		},
+		retry.OnRetry(func(err error) {
+			logger.Debugf("Retrying due to: %s", err)
+		}),
+	)
+	if err != nil {
+		execErr.errs = append(execErr.errs, fmt.Errorf("failure during JSON schema validation, %s", err))
+	}
 	if len(execErr.errs) > 0 {
 		return execErr
 	}
-
 	return nil
 }
 
@@ -396,6 +358,33 @@ func testRoles(nodesCount int, output map[string]integrationData) error {
 	}
 	if len(execErr.errs) > 0 {
 		return execErr
+	}
+	return nil
+}
+
+func testEventTypes(output map[string]integrationData) error {
+	eventTypeSchemas := map[string]jsonschema.EventTypeToSchemaFilename{
+		"leader": jsonschema.EventTypeToSchemaFilename{
+			"K8sReplicasetSample": "replicaset.json",
+			"K8sNamespaceSample":  "namespace.json",
+			"K8sDeploymentSample": "deployment.json",
+			"K8sPodSample":        "pod.json",
+			"K8sContainerSample":  "container.json",
+			"K8sNodeSample":       "node.json",
+			"K8sVolumeSample":     "volume.json",
+		},
+	}
+	eventTypeSchemas["follower"] = jsonschema.EventTypeToSchemaFilename{
+		"K8sPodSample":       eventTypeSchemas["leader"]["K8sPodSample"],
+		"K8sContainerSample": eventTypeSchemas["leader"]["K8sContainerSample"],
+		"K8sNodeSample":      eventTypeSchemas["leader"]["K8sNodeSample"],
+		"K8sVolumeSample":    eventTypeSchemas["leader"]["K8sVolumeSample"],
+	}
+	for podName, o := range output {
+		err := jsonschema.Match(o.stdOut, eventTypeSchemas[o.role], cliArgs.SchemasDirectory)
+		if err != nil {
+			return fmt.Errorf("pod %s failed with: %s", podName, err)
+		}
 	}
 	return nil
 }
