@@ -22,6 +22,7 @@ import (
 	"github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/newrelic/infra-integrations-sdk/log"
 	"github.com/sirupsen/logrus"
+	"k8s.io/api/core/v1"
 )
 
 var cliArgs = struct {
@@ -282,28 +283,10 @@ func executeTests(c *k8s.Client, scenario string, logger *logrus.Logger) error {
 
 NRLoop:
 	for {
-		output := make(map[string]integrationData)
-		dataChannel := make(chan integrationData)
-
-		var wg sync.WaitGroup
-		wg.Add(len(podsList.Items))
-		go func() {
-			wg.Wait()
-			close(dataChannel)
-		}()
-
-		for _, p := range podsList.Items {
-			logger.Debugf("Executing integration inside pod: %s", p.Name)
-			go execIntegration(p.Name, dataChannel, &wg, c, logger)
+		output, err := executeAllIntegrations(c, podsList, logger)
+		if err != nil {
+			return err
 		}
-
-		for d := range dataChannel {
-			if d.err != nil {
-				return fmt.Errorf("scenario: %s. %s", scenario, d.err.Error())
-			}
-			output[d.podName] = d
-		}
-
 		err = testRoles(len(nodes.Items), output, logger)
 		if err != nil {
 			execErr.errs = append(execErr.errs, err)
@@ -367,6 +350,30 @@ NRLoop:
 	return nil
 }
 
+func executeAllIntegrations(c *k8s.Client, nrPods *v1.PodList, logger *logrus.Logger) (map[string]integrationData, error) {
+	output := make(map[string]integrationData)
+	dataChannel := make(chan integrationData)
+
+	var wg sync.WaitGroup
+	wg.Add(len(nrPods.Items))
+	go func() {
+		wg.Wait()
+		close(dataChannel)
+	}()
+
+	for _, p := range nrPods.Items {
+		logger.Debugf("Executing integration inside pod: %s", p.Name)
+		go execIntegration(p.Name, dataChannel, &wg, c, logger)
+	}
+
+	for d := range dataChannel {
+		if d.err != nil {
+			return output, fmt.Errorf("pod: %s. %s", d.podName, d.err.Error())
+		}
+		output[d.podName] = d
+	}
+	return output, nil
+}
 func testRoles(nodesCount int, output map[string]integrationData, logger *logrus.Logger) error {
 	logger.Info("checking if the integrations are executed with the proper roles")
 	var execErr executionErr
