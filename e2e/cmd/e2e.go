@@ -287,7 +287,8 @@ NRLoop:
 		if err != nil {
 			return err
 		}
-		err = testRoles(len(nodes.Items), output, logger)
+		logger.Info("checking if the integrations are executed with the proper roles")
+		err = testRoles(len(nodes.Items), output)
 		if err != nil {
 			execErr.errs = append(execErr.errs, err)
 		}
@@ -374,8 +375,8 @@ func executeAllIntegrations(c *k8s.Client, nrPods *v1.PodList, logger *logrus.Lo
 	}
 	return output, nil
 }
-func testRoles(nodesCount int, output map[string]integrationData, logger *logrus.Logger) error {
-	logger.Info("checking if the integrations are executed with the proper roles")
+
+func testRoles(nodesCount int, output map[string]integrationData) error {
 	var execErr executionErr
 	var lcount, fcount int
 
