@@ -19,6 +19,10 @@ golang:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
     project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/k8s
+  github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/retry:
+    license: Unknown
+    license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE
+    project_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/retry
   github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/timer:
     license: Unknown
     license_url: github.com/newrelic/infra-integrations-beta/integrations/kubernetes/LICENSE

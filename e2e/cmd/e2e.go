@@ -17,6 +17,7 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/helm"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/jsonschema"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/k8s"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/retry"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/timer"
 	"github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/newrelic/infra-integrations-sdk/log"
@@ -219,12 +220,8 @@ func initHelm(c *k8s.Client, rbac bool, logger *logrus.Logger) error {
 
 func waitForKSM(c *k8s.Client, logger *logrus.Logger) error {
 	defer timer.Track(time.Now(), "waitForKSM", logger)
-	tickerRetry := time.NewTicker(2 * time.Second)
-	tickerTimeout := time.NewTicker(2 * time.Minute)
-KSMLoop:
-	for {
-		select {
-		case <-tickerRetry.C:
+	err := retry.Do(
+		func() error {
 			ksmPodList, err := c.PodsListByLabels(namespace, []string{ksmLabel})
 			if err != nil {
 				return err
@@ -234,15 +231,18 @@ KSMLoop:
 					logger.Debugf("Waiting for kube-state-metrics pod to be ready, current condition: %s - %s", con.Type, con.Status)
 
 					if con.Type == "Ready" && con.Status == "True" {
-						break KSMLoop
+						return nil
 					}
 				}
 			}
-		case <-tickerTimeout.C:
-			tickerRetry.Stop()
-			tickerTimeout.Stop()
-			return errors.New("kube-state-metrics pod is not ready, reaching timeout")
-		}
+			return fmt.Errorf("kube-state-metrics is not ready yet")
+		},
+		retry.OnRetry(func(err error) {
+			logger.Debugf("Retrying due to: %s", err)
+		}),
+	)
+	if err != nil {
+		return fmt.Errorf("kube-state-metrics pod is not ready: %s", err)
 	}
 	return nil
 }
