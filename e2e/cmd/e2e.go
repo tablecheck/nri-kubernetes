@@ -270,13 +270,16 @@ func executeScenario(ctx context.Context, scenario string, c *k8s.Client, logger
 
 func executeTests(c *k8s.Client, scenario string, logger *logrus.Logger) error {
 	var execErr executionErr
-	var lcount int
-	var fcount int
 	var retriesNR int
 	podsList, err := c.PodsListByLabels(namespace, []string{nrLabel})
 	if err != nil {
 		return err
 	}
+	nodes, err := c.NodesList()
+	if err != nil {
+		return fmt.Errorf("error getting the list of nodes in the cluster: %s", err)
+	}
+
 NRLoop:
 	for {
 		output := make(map[string]integrationData)
@@ -301,8 +304,11 @@ NRLoop:
 			output[d.podName] = d
 		}
 
-		lcount = 0
-		fcount = 0
+		err = testRoles(len(nodes.Items), output, logger)
+		if err != nil {
+			execErr.errs = append(execErr.errs, err)
+		}
+
 		leaderMap := jsonschema.EventTypeToSchemaFilename{
 			"K8sReplicasetSample": "replicaset.json",
 			"K8sNamespaceSample":  "namespace.json",
@@ -324,10 +330,8 @@ NRLoop:
 			var m jsonschema.EventTypeToSchemaFilename
 			switch o.role {
 			case "leader":
-				lcount++
 				m = leaderMap
 			case "follower":
-				fcount++
 				m = followerMap
 			}
 			err := jsonschema.Match(o.stdOut, m, cliArgs.SchemasDirectory)
@@ -356,23 +360,35 @@ NRLoop:
 		return fmt.Errorf("failure during JSON schema validation, retries limit reached, number of retries: %d,\nlast error: %s", retriesNR, execErr)
 	}
 
-	nodes, err := c.NodesList()
-	if err != nil {
-		execErr.errs = append(execErr.errs, err)
-	}
-
-	if lcount+fcount != len(nodes.Items) {
-		execErr.errs = append(execErr.errs, fmt.Errorf("%d nodes were found, but got: %d", lcount+fcount, len(nodes.Items)))
-	}
-
-	if lcount != 1 {
-		execErr.errs = append(execErr.errs, fmt.Errorf("%d pod leaders were found, but only 1 was expected", lcount))
-	}
-
 	if len(execErr.errs) > 0 {
 		return execErr
 	}
 
+	return nil
+}
+
+func testRoles(nodesCount int, output map[string]integrationData, logger *logrus.Logger) error {
+	logger.Info("checking if the integrations are executed with the proper roles")
+	var execErr executionErr
+	var lcount, fcount int
+
+	for _, o := range output {
+		switch o.role {
+		case "leader":
+			lcount++
+		case "follower":
+			fcount++
+		}
+	}
+	if lcount+fcount != nodesCount {
+		execErr.errs = append(execErr.errs, fmt.Errorf("there are %d nodes in the cluster but only %d integrations were executed", nodesCount, lcount+fcount))
+	}
+	if lcount != 1 {
+		execErr.errs = append(execErr.errs, fmt.Errorf("%d pod leaders were found, but only 1 is expected", lcount))
+	}
+	if len(execErr.errs) > 0 {
+		return execErr
+	}
 	return nil
 }
 
