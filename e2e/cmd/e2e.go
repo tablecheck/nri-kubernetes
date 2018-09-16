@@ -265,6 +265,10 @@ func executeScenario(ctx context.Context, scenario string, c *k8s.Client, logger
 	if err != nil {
 		return err
 	}
+	return executeTests(c, scenario, logger)
+}
+
+func executeTests(c *k8s.Client, scenario string, logger *logrus.Logger) error {
 	var execErr executionErr
 	var lcount int
 	var fcount int
