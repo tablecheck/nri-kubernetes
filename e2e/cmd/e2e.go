@@ -24,18 +24,18 @@ import (
 )
 
 var cliArgs = struct {
-	NrChartPath                string `default:"e2e/charts/newrelic-infrastructure-k8s-e2e",help:"Path to the newrelic-infrastructure-k8s-e2e chart"`
-	SchemasDirectory           string `default:"e2e/schema", help:"Directory where JSON schema files are defined"`
-	IntegrationImageTag        string `default:"1.0.0",help:"Integration image tag"`
-	IntegrationImageRepository string `default:"newrelic/infrastructure-k8s",help:"Integration image repository"`
-	Rbac                       bool   `default:"false",help:"Enable rbac"`
+	NrChartPath                string `default:"e2e/charts/newrelic-infrastructure-k8s-e2e" help:"Path to the newrelic-infrastructure-k8s-e2e chart"`
+	SchemasDirectory           string `default:"e2e/schema" help:"Directory where JSON schema files are defined"`
+	IntegrationImageTag        string `default:"1.0.0" help:"Integration image tag"`
+	IntegrationImageRepository string `default:"newrelic/infrastructure-k8s" help:"Integration image repository"`
+	Rbac                       bool   `default:"false" help:"Enable rbac"`
 	ClusterName                string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
 	NrLicenseKey               string `help:"New Relic account license key"`
-	Verbose                    bool   `default:"false",help:"When enabled, more detailed output will be printed"`
-	CollectorURL               string `default:"https://staging-infra-api.newrelic.com",help:"New Relic backend collector url"`
-	Context                    string `default:"",help:"Kubernetes context"`
-	CleanBeforeRun             bool   `default:"true",help:"Clean the cluster before running the tests"`
-	FailFast                   bool   `default:"false", help:"Fail the whole suit on the first failure"`
+	Verbose                    bool   `default:"false" help:"When enabled, more detailed output will be printed"`
+	CollectorURL               string `default:"https://staging-infra-api.newrelic.com" help:"New Relic backend collector url"`
+	Context                    string `default:"" help:"Kubernetes context"`
+	CleanBeforeRun             bool   `default:"true" help:"Clean the cluster before running the tests"`
+	FailFast                   bool   `default:"false" help:"Fail the whole suit on the first failure"`
 }{}
 
 const (
