@@ -364,7 +364,7 @@ func testRoles(nodesCount int, output map[string]integrationData) error {
 
 func testEventTypes(output map[string]integrationData) error {
 	eventTypeSchemas := map[string]jsonschema.EventTypeToSchemaFilename{
-		"leader": jsonschema.EventTypeToSchemaFilename{
+		"leader": {
 			"K8sReplicasetSample": "replicaset.json",
 			"K8sNamespaceSample":  "namespace.json",
 			"K8sDeploymentSample": "deployment.json",
