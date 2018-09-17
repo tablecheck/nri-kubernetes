@@ -38,7 +38,7 @@ func Match(input []byte, m EventTypeToSchemaFilepath, schemasDir string) error {
 		panic(err)
 	}
 
-	err = validate(gojsonschema.NewStringLoader(schema.IntegrationSchema), gojsonschema.NewGoLoader(o))
+	err = validate(gojsonschema.NewStringLoader(schema.IntegrationSchema), gojsonschema.NewGoLoader(&o))
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func Match(input []byte, m EventTypeToSchemaFilepath, schemasDir string) error {
 	}
 
 	if len(errs) > 0 {
-		return ErrMatch{errs}
+		return ErrMatch{errs: errs}
 	}
 
 	return nil
