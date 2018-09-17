@@ -161,7 +161,8 @@ func main() {
 		err := executeScenario(ctx, s, c, logger)
 		if err != nil {
 			if cliArgs.FailFast {
-				panic(err.Error())
+				logger.Info("Finishing execution because 'FailFast' is true")
+				logger.Fatal(err.Error())
 			}
 			errs = append(errs, err)
 		}
