@@ -308,6 +308,7 @@ NRLoop:
 			"K8sNodeSample":      leaderMap["K8sNodeSample"],
 			"K8sVolumeSample":    leaderMap["K8sVolumeSample"],
 		}
+	OutputLoop:
 		for podName, o := range output {
 			var m jsonschema.EventTypeToSchemaFilepath
 			switch o.role {
@@ -318,7 +319,6 @@ NRLoop:
 				fcount++
 				m = followerMap
 			}
-
 			err := jsonschema.Match(o.stdOut, m, cliArgs.SchemasDirectory)
 			if err != nil {
 				errStr := fmt.Sprintf("received error during execution of scenario %q for pod %s with role %s:\n%s", scenario, podName, o.role, err)
@@ -334,6 +334,7 @@ NRLoop:
 						errStr = errStr + fmt.Sprintf("\nStdErr:\n%s\nStdOut:\n%s", string(o.stdErr), string(o.stdOut))
 					}
 					execErr.errs = append(execErr.errs, errors.New(errStr))
+					break OutputLoop
 				}
 			}
 		}
