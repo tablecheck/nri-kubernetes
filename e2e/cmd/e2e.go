@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -20,6 +21,7 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/timer"
 	"github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/newrelic/infra-integrations-sdk/log"
+	"github.com/newrelic/infra-integrations-sdk/sdk"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 )
@@ -263,10 +265,10 @@ func executeScenario(ctx context.Context, scenario string, c *k8s.Client, logger
 	if err != nil {
 		return err
 	}
-	return executeTests(c, scenario, logger)
+	return executeTests(c, releaseName, scenario, logger)
 }
 
-func executeTests(c *k8s.Client, scenario string, logger *logrus.Logger) error {
+func executeTests(c *k8s.Client, releaseName string, scenario string, logger *logrus.Logger) error {
 	// We're fetching the list of NR pods here just to fetch it once. If for
 	// some reason this list or the contents of it could change during the
 	// execution of these tests, we could move it to `test*` functions.
@@ -285,6 +287,27 @@ func executeTests(c *k8s.Client, scenario string, logger *logrus.Logger) error {
 	var execErr executionErr
 	logger.Info("checking if the integrations are executed with the proper roles")
 	err = testRoles(len(nodes.Items), output)
+	if err != nil {
+		execErr.errs = append(execErr.errs, err)
+	}
+	logger.Info("checking if specific entities match our JSON schemas")
+	err = retry.Do(
+		func() error {
+			err := testEntities(output, releaseName)
+			if err != nil {
+				var otherErr error
+				output, otherErr = executeIntegrationForAllPods(c, podsList, logger)
+				if otherErr != nil {
+					return otherErr
+				}
+				return err
+			}
+			return nil
+		},
+		retry.OnRetry(func(err error) {
+			logger.Debugf("Retrying due to: %s", err)
+		}),
+	)
 	if err != nil {
 		execErr.errs = append(execErr.errs, err)
 	}
@@ -340,6 +363,50 @@ func executeIntegrationForAllPods(c *k8s.Client, nrPods *v1.PodList, logger *log
 	return output, nil
 }
 
+func entityFromID(id string) sdk.Entity {
+	s := strings.Split(id, ":")
+	return sdk.Entity{
+		Type: strings.Join(s[:len(s)-1], ":"),
+		Name: s[len(s)-1],
+	}
+}
+
+func testEntities(output map[string]integrationData, releaseName string) error {
+	entitySchemas := map[string]jsonschema.EventTypeToSchemaFilename{
+		fmt.Sprintf("k8s:%s:%s:volume:%s", cliArgs.ClusterName, namespace, fmt.Sprintf("default_busybox-%s_busybox-persistent-storage", releaseName)): {
+			"K8sVolumeSample": "persistentvolume.json",
+		},
+	}
+	foundEntities := make(map[string]error)
+	for _, o := range output {
+		i := sdk.IntegrationProtocol2{}
+		err := json.Unmarshal(o.stdOut, &i)
+		if err != nil {
+			return err
+		}
+		for eid, s := range entitySchemas {
+			e := entityFromId(eid)
+			entityData, err := i.Entity(e.Name, e.Type)
+			if err != nil {
+				return err
+			}
+			if len(entityData.Metrics) > 0 {
+				foundEntities[eid] = jsonschema.MatchEntities([]*sdk.EntityData{entityData}, s, cliArgs.SchemasDirectory)
+			}
+		}
+	}
+	var execErr executionErr
+	for eid := range entitySchemas {
+		if _, ok := foundEntities[eid]; !ok {
+			execErr.errs = append(execErr.errs, fmt.Errorf("expected entity %s not found", eid))
+		}
+	}
+	if len(execErr.errs) > 0 {
+		return execErr
+	}
+	return nil
+}
+
 func testRoles(nodesCount int, output map[string]integrationData) error {
 	var execErr executionErr
 	var lcount, fcount int
@@ -383,7 +450,16 @@ func testEventTypes(output map[string]integrationData) error {
 		"K8sVolumeSample":    eventTypeSchemas["leader"]["K8sVolumeSample"],
 	}
 	for podName, o := range output {
-		err := jsonschema.Match(o.stdOut, eventTypeSchemas[o.role], cliArgs.SchemasDirectory)
+		i := sdk.IntegrationProtocol2{}
+		err := json.Unmarshal(o.stdOut, &i)
+		if err != nil {
+			return err
+		}
+		err = jsonschema.MatchIntegration(&i)
+		if err != nil {
+			return fmt.Errorf("pod %s failed with: %s", podName, err)
+		}
+		err = jsonschema.MatchEntities(i.Data, eventTypeSchemas[o.role], cliArgs.SchemasDirectory)
 		if err != nil {
 			return fmt.Errorf("pod %s failed with: %s", podName, err)
 		}

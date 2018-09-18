@@ -1,8 +1,6 @@
 package jsonschema
 
 import (
-	"encoding/json"
-
 	"fmt"
 
 	"path/filepath"
@@ -30,24 +28,19 @@ func (errMatch ErrMatch) Error() string {
 	return out
 }
 
-// Match matches an input against a EventTypeToSchemaFilename
-func Match(input []byte, m EventTypeToSchemaFilename, schemasDir string) error {
-	o := sdk.IntegrationProtocol2{}
-	err := json.Unmarshal(input, &o)
-	if err != nil {
-		panic(err)
-	}
+// MatchIntegration matches an integration against a JSON schema defined for an
+// Infrastructure Integration.
+func MatchIntegration(o *sdk.IntegrationProtocol2) error {
+	return validate(gojsonschema.NewStringLoader(schema.IntegrationSchema), gojsonschema.NewGoLoader(o))
+}
 
-	err = validate(gojsonschema.NewStringLoader(schema.IntegrationSchema), gojsonschema.NewGoLoader(&o))
-	if err != nil {
-		return err
-	}
-
-	// Then we validate each metric set
+// MatchEntities matches metric sets of entities against a set of JSON schema
+// for each event type.
+func MatchEntities(d []*sdk.EntityData, m EventTypeToSchemaFilename, schemasDir string) error {
 	var errs []error
 	missingSchemas := make(map[string]struct{})
 	foundTypes := make(map[string]struct{})
-	for _, e := range o.Data {
+	for _, e := range d {
 		for _, ms := range e.Metrics {
 			if t, ok := m[ms["event_type"].(string)]; ok {
 				foundTypes[ms["event_type"].(string)] = struct{}{}
