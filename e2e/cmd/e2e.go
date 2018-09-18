@@ -42,10 +42,11 @@ var cliArgs = struct {
 }{}
 
 const (
-	nrLabel     = "name=newrelic-infra"
-	namespace   = "default"
-	nrContainer = "newrelic-infra"
-	ksmLabel    = "app=kube-state-metrics"
+	nrLabel      = "name=newrelic-infra"
+	namespace    = "default"
+	nrContainer  = "newrelic-infra"
+	ksmLabel     = "app=kube-state-metrics"
+	minikubeHost = "https://192.168.99.100:8443"
 )
 
 func scenarios(integrationImageRepository string, integrationImageTag string, rbac bool) []string {
@@ -290,26 +291,30 @@ func executeTests(c *k8s.Client, releaseName string, scenario string, logger *lo
 	if err != nil {
 		execErr.errs = append(execErr.errs, err)
 	}
-	logger.Info("checking if specific entities match our JSON schemas")
-	err = retry.Do(
-		func() error {
-			err := testEntities(output, releaseName)
-			if err != nil {
-				var otherErr error
-				output, otherErr = executeIntegrationForAllPods(c, podsList, logger)
-				if otherErr != nil {
-					return otherErr
+	if c.Config.Host == minikubeHost {
+		logger.Info("Skipping `testEntities` because you're running them in Minikube (persistent volumes don't work well in Minikube)")
+	} else {
+		logger.Info("checking if specific entities match our JSON schemas")
+		err = retry.Do(
+			func() error {
+				err := testEntities(output, releaseName)
+				if err != nil {
+					var otherErr error
+					output, otherErr = executeIntegrationForAllPods(c, podsList, logger)
+					if otherErr != nil {
+						return otherErr
+					}
+					return err
 				}
-				return err
-			}
-			return nil
-		},
-		retry.OnRetry(func(err error) {
-			logger.Debugf("Retrying due to: %s", err)
-		}),
-	)
-	if err != nil {
-		execErr.errs = append(execErr.errs, err)
+				return nil
+			},
+			retry.OnRetry(func(err error) {
+				logger.Debugf("Retrying due to: %s", err)
+			}),
+		)
+		if err != nil {
+			execErr.errs = append(execErr.errs, err)
+		}
 	}
 	logger.Info("checking if the metric sets in all integrations match our JSON schemas")
 	err = retry.Do(
@@ -385,7 +390,7 @@ func testEntities(output map[string]integrationData, releaseName string) error {
 			return err
 		}
 		for eid, s := range entitySchemas {
-			e := entityFromId(eid)
+			e := entityFromID(eid)
 			entityData, err := i.Entity(e.Name, e.Type)
 			if err != nil {
 				return err
