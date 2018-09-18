@@ -267,7 +267,9 @@ func executeScenario(ctx context.Context, scenario string, c *k8s.Client, logger
 }
 
 func executeTests(c *k8s.Client, scenario string, logger *logrus.Logger) error {
-	var execErr executionErr
+	// We're fetching the list of NR pods here just to fetch it once. If for
+	// some reason this list or the contents of it could change during the
+	// execution of these tests, we could move it to `test*` functions.
 	podsList, err := c.PodsListByLabels(namespace, []string{nrLabel})
 	if err != nil {
 		return err
@@ -276,11 +278,11 @@ func executeTests(c *k8s.Client, scenario string, logger *logrus.Logger) error {
 	if err != nil {
 		return fmt.Errorf("error getting the list of nodes in the cluster: %s", err)
 	}
-
 	output, err := executeIntegrationForAllPods(c, podsList, logger)
 	if err != nil {
 		return err
 	}
+	var execErr executionErr
 	logger.Info("checking if the integrations are executed with the proper roles")
 	err = testRoles(len(nodes.Items), output)
 	if err != nil {
