@@ -277,7 +277,7 @@ func executeTests(c *k8s.Client, scenario string, logger *logrus.Logger) error {
 		return fmt.Errorf("error getting the list of nodes in the cluster: %s", err)
 	}
 
-	output, err := executeAllIntegrations(c, podsList, logger)
+	output, err := executeIntegrationForAllPods(c, podsList, logger)
 	if err != nil {
 		return err
 	}
@@ -292,7 +292,7 @@ func executeTests(c *k8s.Client, scenario string, logger *logrus.Logger) error {
 			err := testEventTypes(output)
 			if err != nil {
 				var otherErr error
-				output, otherErr = executeAllIntegrations(c, podsList, logger)
+				output, otherErr = executeIntegrationForAllPods(c, podsList, logger)
 				if otherErr != nil {
 					return otherErr
 				}
@@ -313,7 +313,7 @@ func executeTests(c *k8s.Client, scenario string, logger *logrus.Logger) error {
 	return nil
 }
 
-func executeAllIntegrations(c *k8s.Client, nrPods *v1.PodList, logger *logrus.Logger) (map[string]integrationData, error) {
+func executeIntegrationForAllPods(c *k8s.Client, nrPods *v1.PodList, logger *logrus.Logger) (map[string]integrationData, error) {
 	output := make(map[string]integrationData)
 	dataChannel := make(chan integrationData)
 
