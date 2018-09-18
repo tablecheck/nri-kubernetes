@@ -67,4 +67,5 @@ exceptions:
   - "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/jsonschema" #e2e tests
   - "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/k8s" #e2e tests
   - "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/timer" #e2e tests
+  - "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/retry" #e2e tests
 

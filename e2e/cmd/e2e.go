@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -17,10 +16,12 @@ import (
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/helm"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/jsonschema"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/k8s"
+	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/retry"
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/timer"
 	"github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/newrelic/infra-integrations-sdk/log"
 	"github.com/sirupsen/logrus"
+	"k8s.io/api/core/v1"
 )
 
 var cliArgs = struct {
@@ -42,6 +43,7 @@ const (
 	nrLabel     = "name=newrelic-infra"
 	namespace   = "default"
 	nrContainer = "newrelic-infra"
+	ksmLabel    = "app=kube-state-metrics"
 )
 
 func scenarios(integrationImageRepository string, integrationImageTag string, rbac bool) []string {
@@ -137,13 +139,12 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+	logger.Infof("Executing tests in %q cluster. K8s version: %s", c.Config.Host, c.ServerVersion())
 
 	err = initHelm(c, cliArgs.Rbac, logger)
 	if err != nil {
 		panic(err.Error())
 	}
-
-	logger.Infof("Executing tests in %q cluster. K8s version: %s", c.Config.Host, c.ServerVersion())
 
 	if cliArgs.CleanBeforeRun {
 		logger.Infof("Cleaning cluster")
@@ -217,6 +218,35 @@ func initHelm(c *k8s.Client, rbac bool, logger *logrus.Logger) error {
 	return helm.DependencyBuild(cliArgs.Context, cliArgs.NrChartPath, logger)
 }
 
+func waitForKSM(c *k8s.Client, logger *logrus.Logger) error {
+	defer timer.Track(time.Now(), "waitForKSM", logger)
+	err := retry.Do(
+		func() error {
+			ksmPodList, err := c.PodsListByLabels(namespace, []string{ksmLabel})
+			if err != nil {
+				return err
+			}
+			if len(ksmPodList.Items) != 0 && ksmPodList.Items[0].Status.Phase == "Running" {
+				for _, con := range ksmPodList.Items[0].Status.Conditions {
+					logger.Debugf("Waiting for kube-state-metrics pod to be ready, current condition: %s - %s", con.Type, con.Status)
+
+					if con.Type == "Ready" && con.Status == "True" {
+						return nil
+					}
+				}
+			}
+			return fmt.Errorf("kube-state-metrics is not ready yet")
+		},
+		retry.OnRetry(func(err error) {
+			logger.Debugf("Retrying due to: %s", err)
+		}),
+	)
+	if err != nil {
+		return fmt.Errorf("kube-state-metrics pod is not ready: %s", err)
+	}
+	return nil
+}
+
 func executeScenario(ctx context.Context, scenario string, c *k8s.Client, logger *logrus.Logger) error {
 	defer timer.Track(time.Now(), fmt.Sprintf("executeScenario func for %s", scenario), logger)
 
@@ -229,71 +259,114 @@ func executeScenario(ctx context.Context, scenario string, c *k8s.Client, logger
 
 	// At least one of kube-state-metrics pods needs to be ready to enter to the newrelic-infra pod and execute the integration.
 	// If the kube-state-metrics pod is not ready, then metrics from replicaset, namespace and deployment will not be populate and JSON schemas will fail.
-	timeStartKSMWaiting := time.Now()
-	tickerRetry := time.NewTicker(2 * time.Second)
-	tickerTimeout := time.NewTicker(2 * time.Minute)
-KSMLoop:
-	for {
-		select {
-		case <-tickerRetry.C:
-			ksmPodList, err := c.PodsListByLabels(namespace, []string{"app=kube-state-metrics"})
+	err = waitForKSM(c, logger)
+	if err != nil {
+		return err
+	}
+	return executeTests(c, scenario, logger)
+}
+
+func executeTests(c *k8s.Client, scenario string, logger *logrus.Logger) error {
+	// We're fetching the list of NR pods here just to fetch it once. If for
+	// some reason this list or the contents of it could change during the
+	// execution of these tests, we could move it to `test*` functions.
+	podsList, err := c.PodsListByLabels(namespace, []string{nrLabel})
+	if err != nil {
+		return err
+	}
+	nodes, err := c.NodesList()
+	if err != nil {
+		return fmt.Errorf("error getting the list of nodes in the cluster: %s", err)
+	}
+	output, err := executeIntegrationForAllPods(c, podsList, logger)
+	if err != nil {
+		return err
+	}
+	var execErr executionErr
+	logger.Info("checking if the integrations are executed with the proper roles")
+	err = testRoles(len(nodes.Items), output)
+	if err != nil {
+		execErr.errs = append(execErr.errs, err)
+	}
+	logger.Info("checking if the metric sets in all integrations match our JSON schemas")
+	err = retry.Do(
+		func() error {
+			err := testEventTypes(output)
 			if err != nil {
+				var otherErr error
+				output, otherErr = executeIntegrationForAllPods(c, podsList, logger)
+				if otherErr != nil {
+					return otherErr
+				}
 				return err
 			}
-			if len(ksmPodList.Items) != 0 && ksmPodList.Items[0].Status.Phase == "Running" {
-				for _, con := range ksmPodList.Items[0].Status.Conditions {
-					logger.Debugf("Waiting for kube-state-metrics pod to be ready, current condition: %s - %s", con.Type, con.Status)
+			return nil
+		},
+		retry.OnRetry(func(err error) {
+			logger.Debugf("Retrying due to: %s", err)
+		}),
+	)
+	if err != nil {
+		execErr.errs = append(execErr.errs, fmt.Errorf("failure during JSON schema validation, %s", err))
+	}
+	if len(execErr.errs) > 0 {
+		return execErr
+	}
+	return nil
+}
 
-					if con.Type == "Ready" && con.Status == "True" {
-						break KSMLoop
-					}
-				}
-			}
-		case <-tickerTimeout.C:
-			tickerRetry.Stop()
-			tickerTimeout.Stop()
-			return errors.New("kube-state-metrics pod is not ready, reaching timeout")
+func executeIntegrationForAllPods(c *k8s.Client, nrPods *v1.PodList, logger *logrus.Logger) (map[string]integrationData, error) {
+	output := make(map[string]integrationData)
+	dataChannel := make(chan integrationData)
+
+	var wg sync.WaitGroup
+	wg.Add(len(nrPods.Items))
+	go func() {
+		wg.Wait()
+		close(dataChannel)
+	}()
+
+	for _, p := range nrPods.Items {
+		logger.Debugf("Executing integration inside pod: %s", p.Name)
+		go execIntegration(p.Name, dataChannel, &wg, c, logger)
+	}
+
+	for d := range dataChannel {
+		if d.err != nil {
+			return output, fmt.Errorf("pod: %s. %s", d.podName, d.err.Error())
+		}
+		output[d.podName] = d
+	}
+	return output, nil
+}
+
+func testRoles(nodesCount int, output map[string]integrationData) error {
+	var execErr executionErr
+	var lcount, fcount int
+
+	for _, o := range output {
+		switch o.role {
+		case "leader":
+			lcount++
+		case "follower":
+			fcount++
 		}
 	}
-	elapsed := time.Since(timeStartKSMWaiting)
-	logger.Debugf("Waiting for KSM to be ready took %s", elapsed)
+	if lcount+fcount != nodesCount {
+		execErr.errs = append(execErr.errs, fmt.Errorf("there are %d nodes in the cluster but only %d integrations were executed", nodesCount, lcount+fcount))
+	}
+	if lcount != 1 {
+		execErr.errs = append(execErr.errs, fmt.Errorf("%d pod leaders were found, but only 1 is expected", lcount))
+	}
+	if len(execErr.errs) > 0 {
+		return execErr
+	}
+	return nil
+}
 
-	var execErr executionErr
-	var lcount int
-	var fcount int
-	var retriesNR int
-NRLoop:
-	for {
-		podsList, err := c.PodsListByLabels(namespace, []string{nrLabel})
-		if err != nil {
-			return err
-		}
-
-		output := make(map[string]integrationData)
-		dataChannel := make(chan integrationData)
-
-		var wg sync.WaitGroup
-		wg.Add(len(podsList.Items))
-		go func() {
-			wg.Wait()
-			close(dataChannel)
-		}()
-
-		for _, p := range podsList.Items {
-			logger.Debugf("Executing integration inside pod: %s", p.Name)
-			go execIntegration(p.Name, dataChannel, &wg, c, logger)
-		}
-
-		for d := range dataChannel {
-			if d.err != nil {
-				return fmt.Errorf("scenario: %s. %s", scenario, d.err.Error())
-			}
-			output[d.podName] = d
-		}
-
-		lcount = 0
-		fcount = 0
-		leaderMap := jsonschema.EventTypeToSchemaFilepath{
+func testEventTypes(output map[string]integrationData) error {
+	eventTypeSchemas := map[string]jsonschema.EventTypeToSchemaFilename{
+		"leader": {
 			"K8sReplicasetSample": "replicaset.json",
 			"K8sNamespaceSample":  "namespace.json",
 			"K8sDeploymentSample": "deployment.json",
@@ -301,68 +374,20 @@ NRLoop:
 			"K8sContainerSample":  "container.json",
 			"K8sNodeSample":       "node.json",
 			"K8sVolumeSample":     "volume.json",
+		},
+	}
+	eventTypeSchemas["follower"] = jsonschema.EventTypeToSchemaFilename{
+		"K8sPodSample":       eventTypeSchemas["leader"]["K8sPodSample"],
+		"K8sContainerSample": eventTypeSchemas["leader"]["K8sContainerSample"],
+		"K8sNodeSample":      eventTypeSchemas["leader"]["K8sNodeSample"],
+		"K8sVolumeSample":    eventTypeSchemas["leader"]["K8sVolumeSample"],
+	}
+	for podName, o := range output {
+		err := jsonschema.Match(o.stdOut, eventTypeSchemas[o.role], cliArgs.SchemasDirectory)
+		if err != nil {
+			return fmt.Errorf("pod %s failed with: %s", podName, err)
 		}
-
-		followerMap := jsonschema.EventTypeToSchemaFilepath{
-			"K8sPodSample":       leaderMap["K8sPodSample"],
-			"K8sContainerSample": leaderMap["K8sContainerSample"],
-			"K8sNodeSample":      leaderMap["K8sNodeSample"],
-			"K8sVolumeSample":    leaderMap["K8sVolumeSample"],
-		}
-	OutputLoop:
-		for podName, o := range output {
-			var m jsonschema.EventTypeToSchemaFilepath
-			switch o.role {
-			case "leader":
-				lcount++
-				m = leaderMap
-			case "follower":
-				fcount++
-				m = followerMap
-			}
-			err := jsonschema.Match(o.stdOut, m, cliArgs.SchemasDirectory)
-			if err != nil {
-				errStr := fmt.Sprintf("received error during execution of scenario %q for pod %s with role %s:\n%s", scenario, podName, o.role, err)
-				select {
-				case <-tickerRetry.C:
-					logger.Debugf("------ Retrying due to %s ------ ", errStr)
-					retriesNR++
-					continue NRLoop
-				case <-tickerTimeout.C:
-					tickerRetry.Stop()
-					tickerTimeout.Stop()
-					if cliArgs.Verbose {
-						errStr = errStr + fmt.Sprintf("\nStdErr:\n%s\nStdOut:\n%s", string(o.stdErr), string(o.stdOut))
-					}
-					execErr.errs = append(execErr.errs, errors.New(errStr))
-					break OutputLoop
-				}
-			}
-		}
-		if len(execErr.errs) == 0 {
-			logger.Info("output of the integration is valid with all JSON schemas")
-			break
-		}
-		return fmt.Errorf("failure during JSON schema validation, retries limit reached, number of retries: %d,\nlast error: %s", retriesNR, execErr)
 	}
-
-	nodes, err := c.NodesList()
-	if err != nil {
-		execErr.errs = append(execErr.errs, err)
-	}
-
-	if lcount+fcount != len(nodes.Items) {
-		execErr.errs = append(execErr.errs, fmt.Errorf("%d nodes were found, but got: %d", lcount+fcount, len(nodes.Items)))
-	}
-
-	if lcount != 1 {
-		execErr.errs = append(execErr.errs, fmt.Errorf("%d pod leaders were found, but only 1 was expected", lcount))
-	}
-
-	if len(execErr.errs) > 0 {
-		return execErr
-	}
-
 	return nil
 }
 

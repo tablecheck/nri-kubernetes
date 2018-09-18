@@ -13,8 +13,8 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
-// EventTypeToSchemaFilepath maps event types with their json schema.
-type EventTypeToSchemaFilepath map[string]string
+// EventTypeToSchemaFilename maps event types with their json schema.
+type EventTypeToSchemaFilename map[string]string
 
 // ErrMatch is the error that Match function returns
 type ErrMatch struct {
@@ -30,8 +30,8 @@ func (errMatch ErrMatch) Error() string {
 	return out
 }
 
-// Match matches an input against a EventTypeToSchemaFilepath
-func Match(input []byte, m EventTypeToSchemaFilepath, schemasDir string) error {
+// Match matches an input against a EventTypeToSchemaFilename
+func Match(input []byte, m EventTypeToSchemaFilename, schemasDir string) error {
 	o := sdk.IntegrationProtocol2{}
 	err := json.Unmarshal(input, &o)
 	if err != nil {
