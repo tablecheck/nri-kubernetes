@@ -37,7 +37,7 @@ func (f *fakeStorage) Read(key string, valuePtr interface{}) (int64, error) {
 	if !ok {
 		return 0, fmt.Errorf("key not found: %s", key)
 	}
-	*(valuePtr.(*MockedKubernetes)) = *valPtr
+	*(valuePtr.(*MockedKubernetes)) = *valPtr //nolint: govet
 	return int64(1234567), nil
 }
 
