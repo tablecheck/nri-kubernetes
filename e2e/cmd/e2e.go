@@ -49,6 +49,22 @@ const (
 	minikubeHost = "https://192.168.99.100:8443"
 )
 
+type entityID string
+
+func (e entityID) Name() string {
+	s := e.split()
+	return s[len(s)-1]
+}
+
+func (e entityID) Type() string {
+	s := e.split()
+	return strings.Join(s[:len(s)-1], ":")
+}
+
+func (e entityID) split() []string {
+	return strings.Split(string(e), ":")
+}
+
 func scenarios(integrationImageRepository string, integrationImageTag string, rbac bool) []string {
 	return []string{
 		s(rbac, integrationImageRepository, integrationImageTag, "v1.1.0", false),
@@ -368,21 +384,13 @@ func executeIntegrationForAllPods(c *k8s.Client, nrPods *v1.PodList, logger *log
 	return output, nil
 }
 
-func entityFromID(id string) sdk.Entity {
-	s := strings.Split(id, ":")
-	return sdk.Entity{
-		Type: strings.Join(s[:len(s)-1], ":"),
-		Name: s[len(s)-1],
-	}
-}
-
 func testSpecificEntities(output map[string]integrationData, releaseName string) error {
-	entitySchemas := map[string]jsonschema.EventTypeToSchemaFilename{
-		fmt.Sprintf("k8s:%s:%s:volume:%s", cliArgs.ClusterName, namespace, fmt.Sprintf("default_busybox-%s_busybox-persistent-storage", releaseName)): {
+	entitySchemas := map[entityID]jsonschema.EventTypeToSchemaFilename{
+		entityID(fmt.Sprintf("k8s:%s:%s:volume:%s", cliArgs.ClusterName, namespace, fmt.Sprintf("default_busybox-%s_busybox-persistent-storage", releaseName))): {
 			"K8sVolumeSample": "persistentvolume.json",
 		},
 	}
-	foundEntities := make(map[string]error)
+	foundEntities := make(map[entityID]error)
 	for _, o := range output {
 		i := sdk.IntegrationProtocol2{}
 		err := json.Unmarshal(o.stdOut, &i)
@@ -390,8 +398,7 @@ func testSpecificEntities(output map[string]integrationData, releaseName string)
 			return err
 		}
 		for eid, s := range entitySchemas {
-			e := entityFromID(eid)
-			entityData, err := i.Entity(e.Name, e.Type)
+			entityData, err := i.Entity(eid.Name(), eid.Type())
 			if err != nil {
 				return err
 			}
