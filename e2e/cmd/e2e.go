@@ -292,12 +292,12 @@ func executeTests(c *k8s.Client, releaseName string, scenario string, logger *lo
 		execErr.errs = append(execErr.errs, err)
 	}
 	if c.Config.Host == minikubeHost {
-		logger.Info("Skipping `testEntities` because you're running them in Minikube (persistent volumes don't work well in Minikube)")
+		logger.Info("Skipping `testSpecificEntities` because you're running them in Minikube (persistent volumes don't work well in Minikube)")
 	} else {
 		logger.Info("checking if specific entities match our JSON schemas")
 		err = retry.Do(
 			func() error {
-				err := testEntities(output, releaseName)
+				err := testSpecificEntities(output, releaseName)
 				if err != nil {
 					var otherErr error
 					output, otherErr = executeIntegrationForAllPods(c, podsList, logger)
@@ -376,7 +376,7 @@ func entityFromID(id string) sdk.Entity {
 	}
 }
 
-func testEntities(output map[string]integrationData, releaseName string) error {
+func testSpecificEntities(output map[string]integrationData, releaseName string) error {
 	entitySchemas := map[string]jsonschema.EventTypeToSchemaFilename{
 		fmt.Sprintf("k8s:%s:%s:volume:%s", cliArgs.ClusterName, namespace, fmt.Sprintf("default_busybox-%s_busybox-persistent-storage", releaseName)): {
 			"K8sVolumeSample": "persistentvolume.json",
