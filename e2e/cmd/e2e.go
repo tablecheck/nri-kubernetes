@@ -392,7 +392,7 @@ func testSpecificEntities(output map[string]integrationData, releaseName string)
 	}
 	foundEntities := make(map[entityID]error)
 	for _, o := range output {
-		i := sdk.IntegrationProtocol2{}
+		var i sdk.IntegrationProtocol2
 		err := json.Unmarshal(o.stdOut, &i)
 		if err != nil {
 			return err
