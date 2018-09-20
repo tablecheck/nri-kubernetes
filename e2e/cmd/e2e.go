@@ -49,6 +49,9 @@ const (
 	minikubeHost = "https://192.168.99.100:8443"
 )
 
+type groupedEventTypeSchemas map[entityID]jsonschema.EventTypeToSchemaFilename
+type eventTypeSchemasPerEntity groupedEventTypeSchemas
+
 type entityID string
 
 func (e entityID) Name() string {
@@ -385,7 +388,7 @@ func executeIntegrationForAllPods(c *k8s.Client, nrPods *v1.PodList, logger *log
 }
 
 func testSpecificEntities(output map[string]integrationData, releaseName string) error {
-	entitySchemas := map[entityID]jsonschema.EventTypeToSchemaFilename{
+	entitySchemas := eventTypeSchemasPerEntity{
 		entityID(fmt.Sprintf("k8s:%s:%s:volume:%s", cliArgs.ClusterName, namespace, fmt.Sprintf("default_busybox-%s_busybox-persistent-storage", releaseName))): {
 			"K8sVolumeSample": "persistentvolume.json",
 		},
