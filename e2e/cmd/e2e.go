@@ -49,8 +49,7 @@ const (
 	minikubeHost = "https://192.168.99.100:8443"
 )
 
-type groupedEventTypeSchemas map[entityID]jsonschema.EventTypeToSchemaFilename
-type eventTypeSchemasPerEntity groupedEventTypeSchemas
+type eventTypeSchemasPerEntity map[entityID]jsonschema.EventTypeToSchemaFilename
 
 type entityID string
 
