@@ -35,7 +35,7 @@ type argumentList struct {
 
 const (
 	integrationName    = "com.newrelic.kubernetes"
-	integrationVersion = "1.2.0"
+	integrationVersion = "1.3.0"
 	nodeNameEnvVar     = "NRK8S_NODE_NAME"
 )
 
