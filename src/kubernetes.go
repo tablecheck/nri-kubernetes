@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
@@ -112,7 +113,12 @@ func main() {
 		logger.Debugf("Kubelet Node = %s", kubeletNodeIP)
 
 		var innerKSMDiscoverer client.Discoverer
+
 		if args.KubeStateMetricsURL != "" {
+			// checking to see if KubeStateMetricsURL contains the /metrics path already.
+			if strings.Contains(args.KubeStateMetricsURL, "/metrics") {
+				args.KubeStateMetricsURL = strings.Trim(args.KubeStateMetricsURL, "/metrics")
+			}
 			innerKSMDiscoverer, err = clientKsm.NewDiscovererForNodeIP(args.KubeStateMetricsURL, logger)
 		} else {
 			innerKSMDiscoverer, err = clientKsm.NewDiscoverer(logger)
