@@ -231,7 +231,7 @@ var KubeletSpecs = definition.SpecGroups{
 			{Name: "fsAvailableBytes", ValueFunc: definition.FromRaw("fsAvailableBytes"), Type: sdkMetric.GAUGE},
 			{Name: "fsCapacityBytes", ValueFunc: definition.FromRaw("fsCapacityBytes"), Type: sdkMetric.GAUGE},
 			{Name: "fsUsedBytes", ValueFunc: definition.FromRaw("fsUsedBytes"), Type: sdkMetric.GAUGE},
-			{Name: "fsUsedPercent", ValueFunc: toPercentage("fsUsedBytes", "fsAvailableBytes"), Type: sdkMetric.GAUGE},
+			{Name: "fsUsedPercent", ValueFunc: toComplementPercentage("fsUsedBytes", "fsAvailableBytes"), Type: sdkMetric.GAUGE},
 			{Name: "fsInodesFree", ValueFunc: definition.FromRaw("fsInodesFree"), Type: sdkMetric.GAUGE},
 			{Name: "fsInodes", ValueFunc: definition.FromRaw("fsInodes"), Type: sdkMetric.GAUGE},
 			{Name: "fsInodesUsed", ValueFunc: definition.FromRaw("fsInodesUsed"), Type: sdkMetric.GAUGE},
@@ -302,7 +302,7 @@ var KubeletSpecs = definition.SpecGroups{
 			{Name: "fsAvailableBytes", ValueFunc: definition.FromRaw("fsAvailableBytes"), Type: sdkMetric.GAUGE},
 			{Name: "fsCapacityBytes", ValueFunc: definition.FromRaw("fsCapacityBytes"), Type: sdkMetric.GAUGE},
 			{Name: "fsUsedBytes", ValueFunc: definition.FromRaw("fsUsedBytes"), Type: sdkMetric.GAUGE},
-			{Name: "fsUsedPercent", ValueFunc: toPercentage("fsUsedBytes", "fsAvailableBytes"), Type: sdkMetric.GAUGE},
+			{Name: "fsUsedPercent", ValueFunc: toComplementPercentage("fsUsedBytes", "fsAvailableBytes"), Type: sdkMetric.GAUGE},
 			{Name: "fsInodesFree", ValueFunc: definition.FromRaw("fsInodesFree"), Type: sdkMetric.GAUGE},
 			{Name: "fsInodes", ValueFunc: definition.FromRaw("fsInodes"), Type: sdkMetric.GAUGE},
 			{Name: "fsInodesUsed", ValueFunc: definition.FromRaw("fsInodesUsed"), Type: sdkMetric.GAUGE},
@@ -338,6 +338,24 @@ func toPercentage(metricCurrent, metricAll string) definition.FetchFunc {
 			return nil, err
 		}
 		v, err := computePercentage(current.(uint64), all.(uint64))
+		if err != nil {
+			return nil, fmt.Errorf("error computing percentage for %s & %s: %s", metricCurrent, metricAll, err)
+		}
+		return v, nil
+	}
+}
+
+func toComplementPercentage(metricCurrent, metricAll string) definition.FetchFunc {
+	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
+		all, err := definition.FromRaw(metricAll)(groupLabel, entityID, groups)
+		if err != nil {
+			return nil, err
+		}
+		current, err := definition.FromRaw(metricCurrent)(groupLabel, entityID, groups)
+		if err != nil {
+			return nil, err
+		}
+		v, err := computePercentage(current.(uint64), all.(uint64)+current.(uint64))
 		if err != nil {
 			return nil, fmt.Errorf("error computing percentage for %s & %s: %s", metricCurrent, metricAll, err)
 		}

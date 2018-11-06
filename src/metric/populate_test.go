@@ -67,7 +67,7 @@ var expectedMetrics = []*sdk.EntityData{
 				"cpuUsedCores":         0.01742824,
 				"fsAvailableBytes":     uint64(14924988416),
 				"fsUsedBytes":          uint64(126976),
-				"fsUsedPercent":        float64(0.000850761129327767),
+				"fsUsedPercent":        float64(0.0008507538914443524),
 				"fsCapacityBytes":      uint64(17293533184),
 				"fsInodesFree":         uint64(9713372),
 				"fsInodes":             uint64(9732096),
@@ -133,5 +133,5 @@ func TestPopulateK8s(t *testing.T) {
 	}
 
 	assert.ElementsMatch(t, expectedErrs, err.(*data.PopulateErr).Errs)
-	assert.ElementsMatch(t, expectedMetrics, i.Data)
+	assert.Equal(t, expectedMetrics, i.Data)
 }
