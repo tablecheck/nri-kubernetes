@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.3.1
+
+### Added
+- Add clusterName custom attribute to manifest file. This helps users correlate Kubernetes integration data with agent data.
+
+### Changed
+- `KUBE_STATE_METRICS_URL` environment variable can be specified containing only host & port
+  or it can be the complete URL including also the `/metrics` path (ex:
+  `http://my-service.my-ns.svc.cluster.local:8080/metrics`).
+
+### Fixed
+- Fix how the usage percentage is calculated for container filesystem metrics.
+- Fix how the usage percentage is calculated for volumes.
+
 ## 1.3.0
 
 ### Added
