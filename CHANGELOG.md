@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## 1.3.1
 
 ### Added
-- Add clusterName custom attribute to manifest file. This helps users correlate Kubernetes integration data with agent data.
+- Add clusterName custom attribute to manifest file. This helps users correlate
+  Kubernetes integration data with Infrastructure agent data.
 
 ### Changed
 - `KUBE_STATE_METRICS_URL` environment variable can be specified containing only host & port
