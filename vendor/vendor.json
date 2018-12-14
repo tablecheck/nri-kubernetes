@@ -1969,5 +1969,5 @@
 			"versionExact": "v1.9.3"
 		}
 	],
-	"rootPath": "github.com/newrelic/infra-integrations-beta/integrations/kubernetes"
+	"rootPath": "github.com/newrelic/nri-kubernetes"
 }

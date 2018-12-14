@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
+	"github.com/newrelic/nri-kubernetes/src/client"
+	"github.com/newrelic/nri-kubernetes/src/storage"
 	"k8s.io/api/core/v1"
 
 	"github.com/stretchr/testify/assert"

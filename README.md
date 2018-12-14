@@ -1,6 +1,6 @@
 # New Relic Kubernetes Infrastructure Integration
 
-New Relic Kubernetes Infrastructure Integration instruments the container orchestration layer by reporting metrics from Kubernetes objects. It gives you visibility about Kubernetes namespaces, deployments, replica sets, nodes, pods, and containers. Metrics are collected from different sources. 
+New Relic Kubernetes Infrastructure Integration instruments the container orchestration layer by reporting metrics from Kubernetes objects. It gives you visibility about Kubernetes namespaces, deployments, replica sets, nodes, pods, and containers. Metrics are collected from different sources.
 * [kube-state-metrics service](https://github.com/kubernetes/kube-state-metrics) provides information about state of Kubernetes objects like namespace, replicaset, deployments and pods (when they are not in running state)
 * `/stats/summary` kubelet endpoint gives information about network, errors, memory and CPU usage
 * `/pods` kubelet endpoint provides information about state of running pods and containers
@@ -48,7 +48,7 @@ For development process [Minikube](https://kubernetes.io/docs/getting-started-gu
 
  ```yaml
  env:
- - name: "CLUSTER_NAME"	
+ - name: "CLUSTER_NAME"
    value: "<YOUR_CLUSTER_NAME>"
  - name: "NRIA_LICENSE_KEY"
    value: "<YOUR_LICENSE_KEY>"
@@ -56,7 +56,7 @@ For development process [Minikube](https://kubernetes.io/docs/getting-started-gu
 
 ### Run
 
-Run `make deploy-dev`. This will compile your integration binary with compatibility for the container OS architecture, build a temporary docker image and finally deploy it to your Minikube. 
+Run `make deploy-dev`. This will compile your integration binary with compatibility for the container OS architecture, build a temporary docker image and finally deploy it to your Minikube.
 
 Then you can [view your data](#usage) or run the integration standalone. To do so follow the steps:
 
@@ -76,7 +76,7 @@ kubectl exec -it $NR_POD_NAME -- /bin/bash
 * Execute the Kubernetes integration
 
 ```bash
-/var/db/newrelic-infra/newrelic-integrations/bin/nr-kubernetes -pretty
+/var/db/newrelic-infra/newrelic-integrations/bin/nri-kubernetes -pretty
 ```
 
 ### Tests

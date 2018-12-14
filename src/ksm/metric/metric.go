@@ -6,8 +6,8 @@ import (
 
 	"strings"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
+	"github.com/newrelic/nri-kubernetes/src/definition"
+	"github.com/newrelic/nri-kubernetes/src/prometheus"
 )
 
 // PrometheusMetricsPath is the KSM prometheus metrics endpoint.

@@ -8,9 +8,9 @@ import (
 
 	"strings"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric/testdata"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
+	"github.com/newrelic/nri-kubernetes/src/data"
+	"github.com/newrelic/nri-kubernetes/src/kubelet/metric/testdata"
+	"github.com/newrelic/nri-kubernetes/src/prometheus"
 	"github.com/stretchr/testify/assert"
 )
 

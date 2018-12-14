@@ -10,8 +10,8 @@ import (
 
 	"io"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric/testdata"
+	"github.com/newrelic/nri-kubernetes/src/definition"
+	"github.com/newrelic/nri-kubernetes/src/kubelet/metric/testdata"
 	"github.com/stretchr/testify/assert"
 )
 

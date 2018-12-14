@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/storage"
+	"github.com/newrelic/nri-kubernetes/src/storage"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

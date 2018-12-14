@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
+	"github.com/newrelic/nri-kubernetes/src/definition"
+	"github.com/newrelic/nri-kubernetes/src/prometheus"
 	"github.com/stretchr/testify/assert"
 )
 

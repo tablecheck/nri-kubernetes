@@ -1,7 +1,7 @@
 package testdata
 
 import (
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
+	"github.com/newrelic/nri-kubernetes/src/definition"
 )
 
 // ExpectedGroupData is the expectation for main group_test tests.

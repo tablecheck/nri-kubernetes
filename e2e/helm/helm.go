@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/e2e/timer"
+	"github.com/newrelic/nri-kubernetes/e2e/timer"
 	"github.com/sirupsen/logrus"
 )
 

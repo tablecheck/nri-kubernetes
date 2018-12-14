@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
-	ksmMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/ksm/metric"
-	kubeletMetric "github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
+	"github.com/newrelic/nri-kubernetes/src/definition"
+	ksmMetric "github.com/newrelic/nri-kubernetes/src/ksm/metric"
+	kubeletMetric "github.com/newrelic/nri-kubernetes/src/kubelet/metric"
+	"github.com/newrelic/nri-kubernetes/src/prometheus"
 	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
 )
 

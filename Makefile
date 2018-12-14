@@ -1,4 +1,4 @@
-INTEGRATION  := $(shell basename $(shell pwd))
+INTEGRATION  := kubernetes
 BINARY_NAME   = nr-$(INTEGRATION)
 E2E_BINARY_NAME = $(BINARY_NAME)-e2e
 GO_PKGS      := $(shell go list ./... | grep -v "/vendor/")

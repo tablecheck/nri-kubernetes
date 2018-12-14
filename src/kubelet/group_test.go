@@ -7,9 +7,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric/testdata"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
+	"github.com/newrelic/nri-kubernetes/src/kubelet/metric"
+	"github.com/newrelic/nri-kubernetes/src/kubelet/metric/testdata"
+	"github.com/newrelic/nri-kubernetes/src/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )

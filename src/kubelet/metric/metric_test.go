@@ -7,7 +7,7 @@ import (
 
 	v1 "k8s.io/kubernetes/pkg/kubelet/apis/stats/v1alpha1"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
+	"github.com/newrelic/nri-kubernetes/src/definition"
 	"github.com/stretchr/testify/assert"
 )
 

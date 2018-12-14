@@ -11,8 +11,8 @@ import (
 
 	"strings"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
+	"github.com/newrelic/nri-kubernetes/src/client"
+	"github.com/newrelic/nri-kubernetes/src/prometheus"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )

@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/matttproud/golang_protobuf_extensions/pbutil"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
+	"github.com/newrelic/nri-kubernetes/src/client"
 	model "github.com/prometheus/client_model/go"
 )
 

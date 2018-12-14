@@ -13,9 +13,9 @@ import (
 
 	"time"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
+	"github.com/newrelic/nri-kubernetes/src/client"
+	"github.com/newrelic/nri-kubernetes/src/data"
+	"github.com/newrelic/nri-kubernetes/src/definition"
 	"k8s.io/api/core/v1"
 )
 

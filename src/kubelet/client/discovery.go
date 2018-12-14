@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/client"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/prometheus"
+	"github.com/newrelic/nri-kubernetes/src/client"
+	"github.com/newrelic/nri-kubernetes/src/kubelet/metric"
+	"github.com/newrelic/nri-kubernetes/src/prometheus"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"

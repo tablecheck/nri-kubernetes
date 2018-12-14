@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
+	"github.com/newrelic/nri-kubernetes/src/definition"
 )
 
 // FromLabelValueEntityTypeGenerator generates the entity type using the cluster name and group label.

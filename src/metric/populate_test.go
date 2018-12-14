@@ -6,9 +6,9 @@ import (
 
 	"time"
 
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/data"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/definition"
-	"github.com/newrelic/infra-integrations-beta/integrations/kubernetes/src/kubelet/metric/testdata"
+	"github.com/newrelic/nri-kubernetes/src/data"
+	"github.com/newrelic/nri-kubernetes/src/definition"
+	"github.com/newrelic/nri-kubernetes/src/kubelet/metric/testdata"
 	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
 	"github.com/stretchr/testify/assert"
