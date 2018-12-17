@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/newrelic/nri-kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
+	"github.com/newrelic/nri-kubernetes/src/definition"
 )
 
 // Grouper groups raw data by any desired label such object (pod, container...).

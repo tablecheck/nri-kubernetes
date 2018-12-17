@@ -14,14 +14,14 @@ import (
 	"github.com/newrelic/nri-kubernetes/src/ksm"
 	"github.com/newrelic/nri-kubernetes/src/kubelet"
 
+	sdkArgs "github.com/newrelic/infra-integrations-sdk/args"
+	"github.com/newrelic/infra-integrations-sdk/log"
+	"github.com/newrelic/infra-integrations-sdk/sdk"
 	clientKsm "github.com/newrelic/nri-kubernetes/src/ksm/client"
 	clientKubelet "github.com/newrelic/nri-kubernetes/src/kubelet/client"
 	metric2 "github.com/newrelic/nri-kubernetes/src/kubelet/metric"
 	"github.com/newrelic/nri-kubernetes/src/metric"
 	"github.com/newrelic/nri-kubernetes/src/storage"
-	sdkArgs "github.com/newrelic/infra-integrations-sdk/args"
-	"github.com/newrelic/infra-integrations-sdk/log"
-	"github.com/newrelic/infra-integrations-sdk/sdk"
 	"github.com/sirupsen/logrus"
 )
 

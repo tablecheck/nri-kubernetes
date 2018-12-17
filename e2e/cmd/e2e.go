@@ -13,15 +13,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/newrelic/infra-integrations-sdk/args"
+	"github.com/newrelic/infra-integrations-sdk/log"
+	"github.com/newrelic/infra-integrations-sdk/sdk"
 	_ "github.com/newrelic/nri-kubernetes/e2e/gcp"
 	"github.com/newrelic/nri-kubernetes/e2e/helm"
 	"github.com/newrelic/nri-kubernetes/e2e/jsonschema"
 	"github.com/newrelic/nri-kubernetes/e2e/k8s"
 	"github.com/newrelic/nri-kubernetes/e2e/retry"
 	"github.com/newrelic/nri-kubernetes/e2e/timer"
-	"github.com/newrelic/infra-integrations-sdk/args"
-	"github.com/newrelic/infra-integrations-sdk/log"
-	"github.com/newrelic/infra-integrations-sdk/sdk"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 )

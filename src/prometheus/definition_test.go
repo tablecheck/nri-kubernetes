@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/newrelic/nri-kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-sdk/metric"
+	"github.com/newrelic/nri-kubernetes/src/definition"
 	"github.com/stretchr/testify/assert"
 )
 

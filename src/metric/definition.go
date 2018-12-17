@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
 	"github.com/newrelic/nri-kubernetes/src/definition"
 	ksmMetric "github.com/newrelic/nri-kubernetes/src/ksm/metric"
 	kubeletMetric "github.com/newrelic/nri-kubernetes/src/kubelet/metric"
 	"github.com/newrelic/nri-kubernetes/src/prometheus"
-	sdkMetric "github.com/newrelic/infra-integrations-sdk/metric"
 )
 
 // KSMSpecs are the metric specifications we want to collect from KSM.

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/newrelic/nri-kubernetes/src/definition"
 	"github.com/newrelic/infra-integrations-sdk/metric"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
+	"github.com/newrelic/nri-kubernetes/src/definition"
 )
 
 // K8sMetricSetTypeGuesser is the metric set type guesser for k8s integrations.

@@ -5,9 +5,9 @@ import (
 
 	"fmt"
 
+	"github.com/newrelic/infra-integrations-sdk/sdk"
 	"github.com/newrelic/nri-kubernetes/src/data"
 	"github.com/newrelic/nri-kubernetes/src/definition"
-	"github.com/newrelic/infra-integrations-sdk/sdk"
 )
 
 type k8sPopulator struct {
