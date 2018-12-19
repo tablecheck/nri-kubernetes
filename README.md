@@ -76,7 +76,7 @@ kubectl exec -it $NR_POD_NAME -- /bin/bash
 * Execute the Kubernetes integration
 
 ```bash
-/var/db/newrelic-infra/newrelic-integrations/bin/nri-kubernetes -pretty
+/var/db/newrelic-infra/newrelic-integrations/bin/nr-kubernetes -pretty
 ```
 
 ### Tests

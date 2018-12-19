@@ -6,6 +6,6 @@ os: linux
 commands:
   metrics:
     command:
-      - ./bin/nri-kubernetes
+      - ./bin/nr-kubernetes
       - --metrics
     interval: 15
