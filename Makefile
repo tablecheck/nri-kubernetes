@@ -32,11 +32,11 @@ deps: tools
 validate: lint license-check
 validate-all: lint-all license-check
 
-lint: deps
+lint:
 	@echo "=== $(INTEGRATION) === [ validate ]: Validating source code running golangci-lint..."
 	@golangci-lint run
 
-lint-all: deps
+lint-all:
 	@echo "=== $(INTEGRATION) === [ validate ]: Validating source code running golangci-lint..."
 	@golangci-lint run --enable=interfacer --enable=gosimple
 
@@ -56,11 +56,11 @@ deploy-dev: compile-dev
 	@echo "=== $(INTEGRATION) === [ deploy-dev ]: Deploying dev container image containing $(BINARY_NAME) in Kubernetes..."
 	@skaffold run
 
-test: deps
+test:
 	@echo "=== $(INTEGRATION) === [ test ]: Running unit tests with coverage (gocov)..."
 	@gocov test $(GO_PKGS) | gocov-xml > coverage.xml
 
-test-nocov: deps
+test-nocov:
 	@echo "=== $(INTEGRATION) === [ test ]: Running unit tests..."
 	@go test ./...
 

@@ -42,7 +42,7 @@ pipeline {
         }
         stage('Unit Tests') {
           steps {
-            sh 'make test'
+            sh 'make test-nocov'
           }
         }
       }
