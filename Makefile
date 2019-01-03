@@ -1,68 +1,85 @@
-INTEGRATION  := kubernetes
-BINARY_NAME   = nr-$(INTEGRATION)
-E2E_BINARY_NAME = $(BINARY_NAME)-e2e
-GO_PKGS      := $(shell go list ./... | grep -v "/vendor/")
-GO_FILES     := $(shell find src -type f -name "*.go")
-GOTOOLS       = github.com/kardianos/govendor \
-		github.com/golangci/golangci-lint/cmd/golangci-lint \
-		github.com/axw/gocov/gocov \
-		github.com/AlekSi/gocov-xml \
-		go.datanerd.us/p/ohai/papers-go/... \
+OSFLAG := $(shell uname -s | tr A-Z a-z)
+OSFLAG := $(OSFLAG)_amd64
+BIN_DIR = ./bin
+TOOLS_DIR := $(BIN_DIR)/dev-tools
+BINARY_NAME = nr-kubernetes
+E2E_BINARY_NAME := $(BINARY_NAME)-e2e
 
+GOVENDOR_VERSION = 1.0.8
+GOLANGCILINT_VERSION = 1.12
+
+.PHONY: all
 all: build
 
-build: clean validate test-nocov compile
+.PHONY: build
+build: clean lint license-check test compile
 
+.PHONY: clean
 clean:
-	@echo "=== $(INTEGRATION) === [ clean ]: Removing binaries and coverage file..."
-	@rm -rfv bin coverage.xml
+	@echo "[clean] Removing integration binaries"
+	@rm -rf $(BIN_DIR)/$(BINARY_NAME) $(BIN_DIR)/$(E2E_BINARY_NAME)
 
-tools:
-	@echo "=== $(INTEGRATION) === [ tools ]: Installing tools required by the project..."
-	@go get $(GOTOOLS)
+$(TOOLS_DIR):
+	@mkdir -p $@
 
-tools-update:
-	@echo "=== $(INTEGRATION) === [ tools-update ]: Updating tools required by the project..."
-	@go get -u $(GOTOOLS)
+$(TOOLS_DIR)/golangci-lint: $(TOOLS_DIR)
+	@echo "[tools] Downloading 'golangci-lint'"
+	@wget -O - -q https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | BINDIR=$(@D) sh -s v$(GOLANGCILINT_VERSION) &> /dev/null
 
-deps: tools
-	@echo "=== $(INTEGRATION) === [ deps ]: Installing package dependencies required by the project..."
-	@govendor sync
+$(TOOLS_DIR)/govendor: $(TOOLS_DIR)
+	@echo "[tools] Downloading 'govendor'"
+	@wget -O $(@D)/govendor -q --no-use-server-timestamps https://github.com/kardianos/govendor/releases/download/v$(GOVENDOR_VERSION)/govendor_$(OSFLAG); chmod +x $(@D)/govendor
 
+$(TOOLS_DIR)/papers-go: $(TOOLS_DIR)
+	@echo "[tools] Downloading 'papers-go'"
+	@go get go.datanerd.us/p/ohai/papers-go/...
+	@cp $(GOPATH)/bin/papers-go $(TOOLS_DIR)/papers-go
+
+.PHONY: deps
+deps: $(TOOLS_DIR)/govendor
+	@echo "[deps] Installing package dependencies required by the project"
+	@$(TOOLS_DIR)/govendor sync
+
+.PHONY: lint
+lint: $(TOOLS_DIR)/golangci-lint
+	@echo "[validate] Validating source code running golangci-lint"
+	@$(TOOLS_DIR)/golangci-lint run
+
+.PHONY: lint-all
+lint-all: $(TOOLS_DIR)/golangci-lint
+	@echo "[validate] Validating source code running golangci-lint"
+	@$(TOOLS_DIR)/golangci-lint run --enable=interfacer --enable=gosimple
+
+# to be remove after updating jenkins jobs
 validate: lint license-check
-validate-all: lint-all license-check
 
-lint:
-	@echo "=== $(INTEGRATION) === [ validate ]: Validating source code running golangci-lint..."
-	@golangci-lint run
+.PHONY: license-check
+license-check: $(TOOLS_DIR)/papers-go
+	@echo "[validate] Validating licenses of package dependencies required by the project"
+	@$(TOOLS_DIR)/papers-go validate
 
-lint-all:
-	@echo "=== $(INTEGRATION) === [ validate ]: Validating source code running golangci-lint..."
-	@golangci-lint run --enable=interfacer --enable=gosimple
-
-license-check:
-	@echo "=== $(INTEGRATION) === [ validate ]: Validating licenses of package dependencies required by the project..."
-	papers-go validate
-
+.PHONY: compile
 compile: deps
-	@echo "=== $(INTEGRATION) === [ compile ]: Building $(BINARY_NAME)..."
-	@go build -o bin/$(BINARY_NAME) ./src
+	@echo "[compile] Building $(BINARY_NAME)"
+	@go build -o $(BIN_DIR)/$(BINARY_NAME) ./src
 
+.PHONY: compile-dev
 compile-dev: deps
-	@echo "=== $(INTEGRATION) === [ compile-dev ]: Building $(BINARY_NAME) for development environment..."
-	@GOOS=linux GOARCH=amd64 go build -o bin/$(BINARY_NAME) ./src
+	@echo "[compile-dev] Building $(BINARY_NAME) for development environment"
+	@GOOS=linux GOARCH=amd64 go build -o $(BIN_DIR)/$(BINARY_NAME) ./src
 
+.PHONY: deploy-dev
 deploy-dev: compile-dev
-	@echo "=== $(INTEGRATION) === [ deploy-dev ]: Deploying dev container image containing $(BINARY_NAME) in Kubernetes..."
+	@echo "[deploy-dev] Deploying dev container image containing $(BINARY_NAME) in Kubernetes"
 	@skaffold run
 
-test:
-	@echo "=== $(INTEGRATION) === [ test ]: Running unit tests with coverage (gocov)..."
-	@gocov test $(GO_PKGS) | gocov-xml > coverage.xml
-
-test-nocov:
-	@echo "=== $(INTEGRATION) === [ test ]: Running unit tests..."
+.PHONY: test
+test: deps
+	@echo "[test] Running unit tests"
 	@go test ./...
+
+# to be removed after updating jenkins jobs
+test-nocov: test
 
 guard-%:
 	@ if [ "${${*}}" = "" ]; then \
@@ -70,17 +87,18 @@ guard-%:
 		exit 1; \
 	fi
 
+.PHONY: e2e
 e2e: guard-CLUSTER_NAME guard-NR_LICENSE_KEY
 	@go run e2e/cmd/e2e.go
 
+.PHONY: e2e-compile
 e2e-compile: deps
-	@echo "[ compile E2E binary]: Building $(E2E_BINARY_NAME)..."
+	@echo "[compile E2E binary] Building $(E2E_BINARY_NAME)"
 	# CGO_ENABLED=0 is needed since the binary is compiled in a non alpine linux.
-	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bin/$(E2E_BINARY_NAME) ./e2e/cmd/e2e.go
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o $(BIN_DIR)/$(E2E_BINARY_NAME) ./e2e/cmd/e2e.go
 
+.PHONY: e2e-compile-only
 e2e-compile-only:
-	@echo "[ compile E2E binary]: Building $(E2E_BINARY_NAME)..."
+	@echo "[compile E2E binary] Building $(E2E_BINARY_NAME)"
 	# CGO_ENABLED=0 is needed since the binary is compiled in a non alpine linux.
-	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bin/$(E2E_BINARY_NAME) ./e2e/cmd/e2e.go
-
-.PHONY: all build clean tools tools-update deps validate compile test e2e
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o $(BIN_DIR)/$(E2E_BINARY_NAME) ./e2e/cmd/e2e.go
