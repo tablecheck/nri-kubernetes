@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Changed
+- Update base image in the dockerfile to use latest newrelic/infrastructure
+  version: 0.0.62 (Infrastructure agent v1.1.14, released at: 2018-12-20)
+
 ## 1.3.1
 
 ### Added
