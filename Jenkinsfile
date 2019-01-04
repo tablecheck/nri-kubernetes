@@ -37,12 +37,13 @@ pipeline {
       parallel {
         stage('Linting and Validation') {
           steps {
-            sh 'make validate'
+            sh 'make lint'
+            sh 'make license-check'
           }
         }
         stage('Unit Tests') {
           steps {
-            sh 'make test-nocov'
+            sh 'make test'
           }
         }
       }

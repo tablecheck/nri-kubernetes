@@ -50,9 +50,6 @@ lint-all: $(TOOLS_DIR)/golangci-lint
 	@echo "[validate] Validating source code running golangci-lint"
 	@$(TOOLS_DIR)/golangci-lint run --enable=interfacer --enable=gosimple
 
-# to be remove after updating jenkins jobs
-validate: lint license-check
-
 .PHONY: license-check
 license-check: $(TOOLS_DIR)/papers-go
 	@echo "[validate] Validating licenses of package dependencies required by the project"
@@ -77,9 +74,6 @@ deploy-dev: compile-dev
 test: deps
 	@echo "[test] Running unit tests"
 	@go test ./...
-
-# to be removed after updating jenkins jobs
-test-nocov: test
 
 guard-%:
 	@ if [ "${${*}}" = "" ]; then \
