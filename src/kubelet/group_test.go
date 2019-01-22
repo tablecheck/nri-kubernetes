@@ -81,7 +81,7 @@ func TestGroup(t *testing.T) {
 		},
 	}
 
-	grouper := NewGrouper(&c, logrus.StandardLogger(), metric.PodsFetchFunc(&c), metric.CadvisorFetchFunc(&c, queries))
+	grouper := NewGrouper(&c, logrus.StandardLogger(), metric.PodsFetchFunc(logrus.StandardLogger(), &c), metric.CadvisorFetchFunc(&c, queries))
 	r, errGroup := grouper.Group(nil)
 	assert.Nil(t, errGroup)
 

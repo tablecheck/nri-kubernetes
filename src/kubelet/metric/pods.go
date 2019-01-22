@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sirupsen/logrus"
+
 	"fmt"
 
 	"encoding/json"
@@ -23,7 +25,7 @@ import (
 const KubeletPodsPath = "/pods"
 
 // PodsFetchFunc creates a FetchFunc that fetches data from the kubelet pods path.
-func PodsFetchFunc(c client.HTTPClient) data.FetchFunc {
+func PodsFetchFunc(logger *logrus.Logger, c client.HTTPClient) data.FetchFunc {
 	return func() (definition.RawGroups, error) {
 		r, err := c.Do(http.MethodGet, KubeletPodsPath)
 		if err != nil {
@@ -66,11 +68,11 @@ func PodsFetchFunc(c client.HTTPClient) data.FetchFunc {
 		var nodeIP string
 
 		for _, p := range pods.Items {
-			podData, id := fetchPodData(&p)
-			raw["pod"][id] = podData
+			id := podID(&p)
+			raw["pod"][id] = fetchPodData(logger, &p)
 
-			if _, ok := podData["nodeIP"]; ok && nodeIP == "" {
-				nodeIP = podData["nodeIP"].(string)
+			if _, ok := raw["pod"][id]["nodeIP"]; ok && nodeIP == "" {
+				nodeIP = raw["pod"][id]["nodeIP"].(string)
 			}
 
 			if nodeIP == "" {
@@ -79,7 +81,7 @@ func PodsFetchFunc(c client.HTTPClient) data.FetchFunc {
 				raw["pod"][id]["nodeIP"] = nodeIP
 			}
 
-			containers := fetchContainersData(&p)
+			containers := fetchContainersData(logger, &p)
 			for id, c := range containers {
 				raw["container"][id] = c
 
@@ -107,88 +109,106 @@ func PodsFetchFunc(c client.HTTPClient) data.FetchFunc {
 	}
 }
 
-// TODO handle errors and missing data
-func fetchContainersData(p *v1.Pod) map[string]definition.RawMetrics {
-	// ContainerStatuses is sometimes missing.
-	status := make(map[string]definition.RawMetrics)
-	for _, c := range p.Status.ContainerStatuses {
-		id := fmt.Sprintf("%v_%v_%v", p.GetObjectMeta().GetNamespace(), p.GetObjectMeta().GetName(), c.Name)
-
-		status[id] = make(definition.RawMetrics)
-
-		switch {
-		case c.State.Running != nil:
-			status[id]["status"] = "Running"
-			status[id]["startedAt"] = c.State.Running.StartedAt.Time.In(time.UTC)
-			status[id]["restartCount"] = c.RestartCount
-			status[id]["isReady"] = c.Ready
-		case c.State.Waiting != nil:
-			status[id]["status"] = "Waiting"
-			status[id]["reason"] = c.State.Waiting.Reason
-		case c.State.Terminated != nil:
-			status[id]["status"] = "Terminated"
-			status[id]["reason"] = c.State.Terminated.Reason
-			status[id]["startedAt"] = c.State.Terminated.StartedAt.Time.In(time.UTC)
-		default:
-			status[id]["status"] = "Unknown"
-		}
+func fetchContainersData(logger *logrus.Logger, pod *v1.Pod) map[string]definition.RawMetrics {
+	statuses := make(map[string]definition.RawMetrics)
+	if !isStaticPod(pod) {
+		fillContainerStatuses(pod, statuses)
+	} else {
+		logger.Debugf("static pod found. Skip fetching containers status for pod %q", podID(pod))
 	}
 
-	specs := make(map[string]definition.RawMetrics)
-	for _, c := range p.Spec.Containers {
-		id := fmt.Sprintf("%v_%v_%v", p.GetObjectMeta().GetNamespace(), p.GetObjectMeta().GetName(), c.Name)
+	metrics := make(map[string]definition.RawMetrics)
 
-		specs[id] = definition.RawMetrics{
+	for _, c := range pod.Spec.Containers {
+		id := containerID(pod, c.Name)
+		metrics[id] = definition.RawMetrics{
 			"containerName":  c.Name,
 			"containerImage": c.Image,
-			"namespace":      p.GetObjectMeta().GetNamespace(),
-			"podName":        p.GetObjectMeta().GetName(),
-			"nodeName":       p.Spec.NodeName,
+			"namespace":      pod.GetObjectMeta().GetNamespace(),
+			"podName":        pod.GetObjectMeta().GetName(),
+			"nodeName":       pod.Spec.NodeName,
 		}
 
-		if v := p.Status.HostIP; v != "" {
-			specs[id]["nodeIP"] = v
+		if v := pod.Status.HostIP; v != "" {
+			metrics[id]["nodeIP"] = v
 		}
 
 		if v, ok := c.Resources.Requests[v1.ResourceCPU]; ok {
-			specs[id]["cpuRequestedCores"] = v.MilliValue()
+			metrics[id]["cpuRequestedCores"] = v.MilliValue()
 		}
 
 		if v, ok := c.Resources.Limits[v1.ResourceCPU]; ok {
-			specs[id]["cpuLimitCores"] = v.MilliValue()
+			metrics[id]["cpuLimitCores"] = v.MilliValue()
 		}
 
 		if v, ok := c.Resources.Requests[v1.ResourceMemory]; ok {
-			specs[id]["memoryRequestedBytes"] = v.Value()
+			metrics[id]["memoryRequestedBytes"] = v.Value()
 		}
 
 		if v, ok := c.Resources.Limits[v1.ResourceMemory]; ok {
-			specs[id]["memoryLimitBytes"] = v.Value()
+			metrics[id]["memoryLimitBytes"] = v.Value()
 		}
 
-		if ref := p.GetOwnerReferences(); len(ref) > 0 {
+		if ref := pod.GetOwnerReferences(); len(ref) > 0 {
 			if d := deploymentNameBasedOnCreator(ref[0].Kind, ref[0].Name); d != "" {
-				specs[id]["deploymentName"] = d
+				metrics[id]["deploymentName"] = d
 			}
 		}
 
-		// Assuming that the container is running. See https://github.com/kubernetes/kubernetes/pull/57106
-		if _, ok := status[id]; !ok {
-			specs[id]["status"] = "Running"
-		}
-
 		// merging status data
-		for k, v := range status[id] {
-			specs[id][k] = v
+		for k, v := range statuses[id] {
+			metrics[id][k] = v
 		}
 
-		labels := podLabels(p)
+		labels := podLabels(pod)
 		if len(labels) > 0 {
-			specs[id]["labels"] = labels
+			metrics[id]["labels"] = labels
 		}
 	}
 
-	return specs
+	return metrics
+}
+
+func fillContainerStatuses(pod *v1.Pod, dest map[string]definition.RawMetrics) {
+	for _, c := range pod.Status.ContainerStatuses {
+		name := c.Name
+		id := containerID(pod, name)
+
+		dest[id] = make(definition.RawMetrics)
+
+		switch {
+		case c.State.Running != nil:
+			dest[id]["status"] = "Running"
+			dest[id]["startedAt"] = c.State.Running.StartedAt.Time.In(time.UTC) // TODO WE DO NOT REPORT THAT METRIC
+			dest[id]["restartCount"] = c.RestartCount
+			dest[id]["isReady"] = c.Ready
+		case c.State.Waiting != nil:
+			dest[id]["status"] = "Waiting"
+			dest[id]["reason"] = c.State.Waiting.Reason
+		case c.State.Terminated != nil:
+			dest[id]["status"] = "Terminated"
+			dest[id]["reason"] = c.State.Terminated.Reason
+			dest[id]["startedAt"] = c.State.Terminated.StartedAt.Time.In(time.UTC) // TODO WE DO NOT REPORT THAT METRIC
+		default:
+			dest[id]["status"] = "Unknown"
+		}
+	}
+}
+
+// Static pods are created by Kubelet on start time reading from static yaml files.
+// They contain the annotation: `"kubernetes.io/config.source": "file"`
+// Kubelet creates Mirror Pods in the K8s API that represents each static pod. They have a different pod ID than their Kubelet internal ones.
+//
+// For some reason, when the status of a static pod changes, Kubelet does not update the internal Pod status but the Mirror Pod.
+// Static Kubelet internal Pods statuses ‌are never updated, no matters the transition (Pending->Running->Succeeded…).
+//
+// This is a known bug in Kubelet. See https://github.com/kubernetes/kubernetes/issues/61717
+func isStaticPod(p *v1.Pod) bool {
+	if source, ok := p.GetAnnotations()["kubernetes.io/config.source"]; ok && source == "file" {
+		return true
+	}
+
+	return false
 }
 
 // isFakePendingPods returns true if a pod is a fake pending pod.
@@ -203,56 +223,69 @@ func isFakePendingPod(s v1.PodStatus) bool {
 }
 
 // TODO handle errors and missing data
-func fetchPodData(p *v1.Pod) (definition.RawMetrics, string) {
-	r := definition.RawMetrics{
-		"namespace": p.GetObjectMeta().GetNamespace(),
-		"podName":   p.GetObjectMeta().GetName(),
-		"nodeName":  p.Spec.NodeName,
+func fetchPodData(logger *logrus.Logger, pod *v1.Pod) definition.RawMetrics {
+	metrics := definition.RawMetrics{
+		"namespace": pod.GetObjectMeta().GetNamespace(),
+		"podName":   pod.GetObjectMeta().GetName(),
+		"nodeName":  pod.Spec.NodeName,
 	}
-	if isFakePendingPod(p.Status) {
+
+	if !isStaticPod(pod) {
+		fillPodStatus(logger, metrics, pod)
+	} else {
+		logger.Debugf("Static pod found. Skip fetching pod status for pod %q", podID(pod))
+	}
+
+	if v := pod.Status.HostIP; v != "" {
+		metrics["nodeIP"] = v
+	}
+
+	if pod.Status.StartTime != nil {
+		metrics["startTime"] = pod.Status.StartTime.Time.In(time.UTC)
+	}
+
+	if t := pod.GetObjectMeta().GetCreationTimestamp(); !t.IsZero() {
+		metrics["createdAt"] = t.In(time.UTC)
+	}
+
+	if ref := pod.GetOwnerReferences(); len(ref) > 0 {
+		metrics["createdKind"] = ref[0].Kind
+		metrics["createdBy"] = ref[0].Name
+		if d := deploymentNameBasedOnCreator(ref[0].Kind, ref[0].Name); d != "" {
+			metrics["deploymentName"] = d
+		}
+	}
+
+	labels := podLabels(pod)
+	if len(labels) > 0 {
+		metrics["labels"] = labels
+	}
+
+	return metrics
+}
+
+func fillPodStatus(logger *logrus.Logger, r definition.RawMetrics, pod *v1.Pod) {
+	// TODO Review if those Fake Pending Pods are still an issue
+	if isFakePendingPod(pod.Status) {
 		r["status"] = "Running"
 		r["isReady"] = "True"
 		r["isScheduled"] = "True"
-	} else {
-		for _, p := range p.Status.Conditions {
-			switch p.Type {
-			case "Ready":
-				r["isReady"] = string(p.Status)
-			case "PodScheduled":
-				r["isScheduled"] = string(p.Status)
-			}
-		}
-		r["status"] = string(p.Status.Phase)
+
+		logger.Debugf("Fake Pending Pod marked as Running")
+
+		return
 	}
 
-	if v := p.Status.HostIP; v != "" {
-		r["nodeIP"] = v
-	}
-
-	if t := p.GetObjectMeta().GetCreationTimestamp(); !t.IsZero() {
-		r["createdAt"] = t.In(time.UTC)
-	}
-
-	if ref := p.GetOwnerReferences(); len(ref) > 0 {
-		r["createdKind"] = ref[0].Kind
-		r["createdBy"] = ref[0].Name
-		if d := deploymentNameBasedOnCreator(ref[0].Kind, ref[0].Name); d != "" {
-			r["deploymentName"] = d
+	for _, c := range pod.Status.Conditions {
+		switch c.Type {
+		case "Ready":
+			r["isReady"] = string(c.Status)
+		case "PodScheduled":
+			r["isScheduled"] = string(c.Status)
 		}
 	}
 
-	if p.Status.StartTime != nil {
-		r["startTime"] = p.Status.StartTime.Time.In(time.UTC)
-	}
-
-	labels := podLabels(p)
-	if len(labels) > 0 {
-		r["labels"] = labels
-	}
-
-	rawEntityID := fmt.Sprintf("%v_%v", p.GetObjectMeta().GetNamespace(), p.GetObjectMeta().GetName())
-
-	return r, rawEntityID
+	r["status"] = string(pod.Status.Phase)
 }
 
 func podLabels(p *v1.Pod) map[string]string {
@@ -292,4 +325,12 @@ func OneMetricPerLabel(rawLabels definition.FetchedValue) (definition.FetchedVal
 	}
 
 	return modified, nil
+}
+
+func podID(pod *v1.Pod) string {
+	return fmt.Sprintf("%v_%v", pod.GetObjectMeta().GetNamespace(), pod.GetObjectMeta().GetName())
+}
+
+func containerID(pod *v1.Pod, containerName string) string {
+	return fmt.Sprintf("%v_%v", podID(pod), containerName)
 }

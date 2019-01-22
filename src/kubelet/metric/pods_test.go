@@ -12,6 +12,7 @@ import (
 
 	"github.com/newrelic/nri-kubernetes/src/definition"
 	"github.com/newrelic/nri-kubernetes/src/kubelet/metric/testdata"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -49,7 +50,7 @@ func TestNewPodsFetchFunc(t *testing.T) {
 		handler: servePayload,
 	}
 
-	g, err := PodsFetchFunc(&c)()
+	g, err := PodsFetchFunc(logrus.StandardLogger(), &c)()
 
 	assert.NoError(t, err)
 	assert.Equal(t, testdata.ExpectedRawData, g)
@@ -108,7 +109,7 @@ func assertError(t *testing.T, errorMessage string, handler http.HandlerFunc) {
 		handler: handler,
 	}
 
-	g, err := PodsFetchFunc(&c)()
+	g, err := PodsFetchFunc(logrus.StandardLogger(), &c)()
 
 	assert.EqualError(t, err, errorMessage)
 	assert.Empty(t, g)

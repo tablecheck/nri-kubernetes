@@ -23,19 +23,18 @@ var ExpectedRawData = definition.RawGroups{
 			"createdAt":   parseTime("2018-02-14T16:26:33Z"),
 			"labels": map[string]string{
 				"controller-revision-hash": "3887482659",
-				"name":                     "newrelic-infra",
-				"pod-template-generation":  "1",
+				"name": "newrelic-infra",
+				"pod-template-generation": "1",
 			},
 		},
 		"kube-system_kube-state-metrics-57f4659995-6n2qq": {
-			"createdKind": "ReplicaSet",
-			"createdBy":   "kube-state-metrics-57f4659995",
-			"nodeIP":      "192.168.99.100",
-			"namespace":   "kube-system",
-			"podName":     "kube-state-metrics-57f4659995-6n2qq",
-			"nodeName":    "minikube",
-			//"startTime":      parseTime("2018-02-14T16:27:38Z"), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
-			"status":         "Running", // Note that even the status in the payload is Pending, we set it as Running. This is due to a bug in Kubelet. See https://github.com/kubernetes/kubernetes/pull/57106
+			"createdKind":    "ReplicaSet",
+			"createdBy":      "kube-state-metrics-57f4659995",
+			"nodeIP":         "192.168.99.100",
+			"namespace":      "kube-system",
+			"podName":        "kube-state-metrics-57f4659995-6n2qq",
+			"nodeName":       "minikube",
+			"status":         "Running", // Running because is fake pending pod.
 			"isReady":        "True",
 			"isScheduled":    "True",
 			"createdAt":      parseTime("2018-02-14T16:27:38Z"),
@@ -64,8 +63,8 @@ var ExpectedRawData = definition.RawGroups{
 			"memoryLimitBytes":     int64(104857600),
 			"labels": map[string]string{
 				"controller-revision-hash": "3887482659",
-				"name":                     "newrelic-infra",
-				"pod-template-generation":  "1",
+				"name": "newrelic-infra",
+				"pod-template-generation": "1",
 			},
 		},
 		"kube-system_kube-state-metrics-57f4659995-6n2qq_kube-state-metrics": {
@@ -75,11 +74,11 @@ var ExpectedRawData = definition.RawGroups{
 			"podName":        "kube-state-metrics-57f4659995-6n2qq",
 			"nodeName":       "minikube",
 			"nodeIP":         "192.168.99.100",
-			//"restartCount": int32(7), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
-			//"isReady":              false, // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106 // TODO investigate. See https://newrelic.atlassian.net/browse/IHOST-658
-			"status":         "Running", // The value does not exist but we force it to "Running" because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			//"restartCount": int32(7), // No restartCount since there is no restartCount in status field in the pod.
+			//"isReady":              false, // No isReady since there is no isReady in status field in the pod.
+			//"status":         "Running", // No Status since there is no ContainerStatuses field in the pod.
 			"deploymentName": "kube-state-metrics",
-			//"startedAt":            parseTime("2018-02-27T15:21:37Z"), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			//"startedAt":            parseTime("2018-02-27T15:21:37Z"), // No startedAt since there is no startedAt in status field in the pod.
 			"cpuRequestedCores":    int64(101),
 			"cpuLimitCores":        int64(101),
 			"memoryRequestedBytes": int64(106954752),
@@ -96,12 +95,12 @@ var ExpectedRawData = definition.RawGroups{
 			"podName":        "kube-state-metrics-57f4659995-6n2qq",
 			"nodeName":       "minikube",
 			"nodeIP":         "192.168.99.100",
-			//"restartCount": int32(7), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
-			//"isReady":        false, // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106 // TODO investigate. See https://newrelic.atlassian.net/browse/IHOST-658
-			"status":         "Running", // The value does not exist but we force it to "Running" because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			//"restartCount": int32(7), // No restartCount since there is no restartCount in status field in the pod.
+			//"isReady":        false, // No isReady since there is no isReady in status field in the pod.
+			//"status":         "Running", // No Status since there is no ContainerStatuses field in the pod.
 			"deploymentName": "kube-state-metrics",
 			//"reason": "", // TODO
-			//"startedAt":            parseTime("2018-02-27T15:21:38Z"), // Missing because Kubelet "Wrong Pending status" bug. See https://github.com/kubernetes/kubernetes/pull/57106
+			//"startedAt":            parseTime("2018-02-27T15:21:38Z"), // No startedAt since there is no startedAt in status field in the pod.
 			"cpuRequestedCores":    int64(100),
 			"cpuLimitCores":        int64(100),
 			"memoryRequestedBytes": int64(31457280),
