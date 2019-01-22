@@ -115,7 +115,6 @@
     "namespace",
     "nodeIP",
     "nodeName",
-    "podName",
-    "status"
+    "podName"
   ]
 }

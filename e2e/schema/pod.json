@@ -98,15 +98,12 @@
     "displayName",
     "entityName",
     "event_type",
-    "isReady",
-    "isScheduled",
     "namespace",
     "net.errorsPerSecond",
     "net.rxBytesPerSecond",
     "net.txBytesPerSecond",
     "nodeIP",
     "nodeName",
-    "podName",
-    "status"
+    "podName"
   ]
 }
