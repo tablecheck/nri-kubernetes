@@ -75,6 +75,8 @@ func scenarios(integrationImageRepository string, integrationImageTag string, rb
 		s(rbac, integrationImageRepository, integrationImageTag, "v1.2.0", true),
 		s(rbac, integrationImageRepository, integrationImageTag, "v1.3.0", false),
 		s(rbac, integrationImageRepository, integrationImageTag, "v1.3.0", true),
+		s(rbac, integrationImageRepository, integrationImageTag, "v1.4.0", false),
+		s(rbac, integrationImageRepository, integrationImageTag, "v1.4.0", true),
 	}
 }
 
