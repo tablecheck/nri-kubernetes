@@ -2,7 +2,7 @@ def ws = "/data/jenkins/workspace/${JOB_NAME}-${BUILD_NUMBER}"
 def quayImage = 'quay.io/newrelic/infrastructure-k8s-staging'
 def quayE2eImage = 'quay.io/newrelic/infrastructure-k8s-e2e'
 def integrationPath = '.'
-def kubernetesTestCluster = 'fsi-jenkins-19-rbac'
+def kubernetesTestCluster = 'fsi-jenkins-111-rbac'
 
 pipeline {
   agent {
