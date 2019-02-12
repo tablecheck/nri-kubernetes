@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## 1.6.0
+### Added
+- `namespaceName` metric attribute was added to all the samples where `namespace` attribute is present.
+
+### Deprecated
+- `namespace` metric attribute will be removed soon. Please use `namespaceName` from now on.
+
 ## 1.5.0
 
 ### Changed
