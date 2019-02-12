@@ -36,6 +36,11 @@
       "type": "string",
       "minLength": 1
     },
+    "namespaceName": {
+      "$id": "/properties/namespaceName",
+      "type": "string",
+      "minLength": 1
+    },
     "podsAvailable": {
       "$id": "/properties/podsAvailable",
       "type": "integer"
@@ -69,6 +74,7 @@
     "entityName",
     "event_type",
     "namespace",
+    "namespaceName",
     "podsAvailable",
     "podsDesired",
     "podsTotal",

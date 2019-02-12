@@ -76,6 +76,11 @@
       "$id": "/properties/namespace",
       "type": "string"
     },
+    "namespaceName": {
+      "$id": "/properties/namespaceName",
+      "type": "string",
+      "minLength": 1
+    },
     "nodeIP": {
       "$id": "/properties/nodeIP",
       "type": "string"
@@ -113,6 +118,7 @@
     "event_type",
     "memoryUsedBytes",
     "namespace",
+    "namespaceName",
     "nodeIP",
     "nodeName",
     "podName"
