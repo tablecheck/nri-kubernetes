@@ -23,7 +23,7 @@ import (
 	"github.com/newrelic/nri-kubernetes/e2e/retry"
 	"github.com/newrelic/nri-kubernetes/e2e/timer"
 	"github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 var cliArgs = struct {
@@ -77,6 +77,8 @@ func scenarios(integrationImageRepository string, integrationImageTag string, rb
 		s(rbac, integrationImageRepository, integrationImageTag, "v1.3.0", true),
 		s(rbac, integrationImageRepository, integrationImageTag, "v1.4.0", false),
 		s(rbac, integrationImageRepository, integrationImageTag, "v1.4.0", true),
+		s(rbac, integrationImageRepository, integrationImageTag, "v1.5.0", false),
+		s(rbac, integrationImageRepository, integrationImageTag, "v1.5.0", true),
 	}
 }
 

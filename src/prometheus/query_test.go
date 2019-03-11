@@ -1,6 +1,7 @@
 package prometheus
 
 import (
+	"io"
 	"testing"
 
 	"net/http"
@@ -26,10 +27,9 @@ func (c *ksm) Do(method, path string) (*http.Response, error) {
 	}
 	defer f.Close() // nolint: errcheck
 
-	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
 	w := httptest.NewRecorder()
 
-	TextToProtoHandleFunc(f)(w, req)
+	io.Copy(w, f)
 
 	return w.Result(), nil
 }

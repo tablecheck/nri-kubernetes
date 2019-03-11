@@ -366,7 +366,7 @@ func TestDo(t *testing.T) {
 	// The request was created with updated path for URL
 	assert.Equal(t, fmt.Sprintf("%s/foo", s.URL), resp.Request.URL.String())
 	// Accept Header was added to the request
-	assert.Equal(t, prometheus.ProtobufferAcceptHeader, resp.Request.Header.Get("Accept"))
+	assert.Equal(t, prometheus.AcceptHeader, resp.Request.Header.Get("Accept"))
 	// Correct http method was used
 	assert.Equal(t, "GET", resp.Request.Method)
 }

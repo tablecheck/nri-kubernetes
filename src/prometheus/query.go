@@ -2,12 +2,11 @@ package prometheus
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 
-	"github.com/matttproud/golang_protobuf_extensions/pbutil"
 	"github.com/newrelic/nri-kubernetes/src/client"
 	model "github.com/prometheus/client_model/go"
+	"github.com/prometheus/prom2json"
 )
 
 //TODO: See https://github.com/prometheus/prom2json/blob/master/prom2json.go#L171 for how to connect, how to parse plain text, etc
@@ -141,28 +140,22 @@ func Do(c client.HTTPClient, endpoint string, queries []Query) ([]MetricFamily, 
 	}
 
 	metrics := make([]MetricFamily, 0)
-	for {
-		promMetricFamily := model.MetricFamily{}
-		_, err = pbutil.ReadDelimited(resp.Body, &promMetricFamily)
+	ch := make(chan *model.MetricFamily)
 
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
+	go func() {
+		err = prom2json.ParseResponse(resp, ch)
+	}()
 
-			return nil, err
-		}
-
+	for promMetricFamily := range ch {
 		for _, q := range queries {
-			f := q.Execute(&promMetricFamily)
+			f := q.Execute(promMetricFamily)
 			if f.Valid() {
-				metrics = append(metrics, q.Execute(&promMetricFamily))
-
+				metrics = append(metrics, q.Execute(promMetricFamily))
 			}
 		}
 	}
 
-	return metrics, nil
+	return metrics, err
 }
 
 func labelsFromPrometheus(pairs []*model.LabelPair) Labels {

@@ -121,9 +121,6 @@ var KSMQueries = []prometheus.Query{
 		},
 	},
 	{
-		MetricName: "kube_namespace_created",
-	},
-	{
 		MetricName: "kube_deployment_labels",
 		Value: prometheus.QueryValue{
 			Value: prometheus.GaugeValue(1),

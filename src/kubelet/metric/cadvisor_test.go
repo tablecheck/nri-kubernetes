@@ -2,6 +2,8 @@ package metric
 
 import (
 	"errors"
+	"io"
+	"net/http"
 	"testing"
 
 	"os"
@@ -26,6 +28,12 @@ var cadvisorQueries = []prometheus.Query{
 	},
 }
 
+func readerToHandler(r io.Reader) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		io.Copy(w, r)
+	}
+}
+
 func TestCadvisorFetchFunc(t *testing.T) {
 	f, err := os.Open("testdata/kubelet_metrics_cadvisor_payload_plain.txt")
 	if err != nil {
@@ -35,7 +43,7 @@ func TestCadvisorFetchFunc(t *testing.T) {
 	defer f.Close()
 
 	c := testClient{
-		handler: prometheus.TextToProtoHandleFunc(f),
+		handler: readerToHandler(f),
 	}
 
 	g, err := CadvisorFetchFunc(&c, cadvisorQueries)()
@@ -54,7 +62,7 @@ container_memory_usage_bytes{container_name="influxdb",id="/kubepods/besteffort/
 `)
 
 	c := testClient{
-		handler: prometheus.TextToProtoHandleFunc(f),
+		handler: readerToHandler(f),
 	}
 
 	_, err := CadvisorFetchFunc(&c, cadvisorQueries)()

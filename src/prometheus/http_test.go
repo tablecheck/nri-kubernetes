@@ -13,7 +13,7 @@ func TestNewRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, ProtobufferAcceptHeader, r.Header.Get("Accept"))
+	assert.Equal(t, AcceptHeader, r.Header.Get("Accept"))
 	assert.Equal(t, "http://example.com", r.URL.String())
 	assert.Equal(t, http.MethodGet, r.Method)
 }

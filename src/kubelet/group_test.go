@@ -58,8 +58,8 @@ func rawGroupsHandlerFunc(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 		defer f.Close() // nolint: errcheck
-
-		prometheus.TextToProtoHandleFunc(f)(w, r)
+		w.Header().Set("Content-Type", "text/plain")
+		io.Copy(w, f)
 	}
 
 }

@@ -501,6 +501,12 @@
 			"revisionTime": "2018-03-26T16:04:09Z"
 		},
 		{
+			"checksumSHA1": "STyz+rWYuhV2oE8YCiU2JzUvOMM=",
+			"path": "github.com/prometheus/prom2json",
+			"revision": "47e3ee600b5a838d6b19b887fc51d4b77c52fd4e",
+			"revisionTime": "2019-01-07T15:38:43Z"
+		},
+		{
 			"checksumSHA1": "0XHhI9La8A/Z8Cj6iZ+QCExAoOM=",
 			"path": "github.com/sirupsen/logrus",
 			"revision": "d682213848ed68c0a260ca37d6dd5ace8423f5ba",
