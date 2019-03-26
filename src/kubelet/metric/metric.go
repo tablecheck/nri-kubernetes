@@ -131,6 +131,7 @@ func fetchContainerStats(c v1.ContainerStats) (definition.RawMetrics, error) {
 	}
 	if c.Memory != nil {
 		AddUint64RawMetric(r, "usageBytes", c.Memory.UsageBytes)
+		AddUint64RawMetric(r, "workingSetBytes", c.Memory.WorkingSetBytes)
 	}
 	if c.Rootfs != nil {
 		AddUint64RawMetric(r, "fsAvailableBytes", c.Rootfs.AvailableBytes)

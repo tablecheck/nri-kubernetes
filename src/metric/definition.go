@@ -231,6 +231,7 @@ var KubeletSpecs = definition.SpecGroups{
 		Specs: []definition.Spec{
 			// /stats/summary endpoint
 			{Name: "memoryUsedBytes", ValueFunc: definition.FromRaw("usageBytes"), Type: sdkMetric.GAUGE},
+			{Name: "memoryWorkingSetBytes", ValueFunc: definition.FromRaw("workingSetBytes"), Type: sdkMetric.GAUGE},
 			{Name: "cpuUsedCores", ValueFunc: definition.Transform(definition.FromRaw("usageNanoCores"), fromNano), Type: sdkMetric.GAUGE},
 			{Name: "fsAvailableBytes", ValueFunc: definition.FromRaw("fsAvailableBytes"), Type: sdkMetric.GAUGE},
 			{Name: "fsCapacityBytes", ValueFunc: definition.FromRaw("fsCapacityBytes"), Type: sdkMetric.GAUGE},

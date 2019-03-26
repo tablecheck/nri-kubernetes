@@ -107,6 +107,7 @@ func TestGroupStatsSummary_CorrectValue(t *testing.T) {
 			"kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics": definition.RawMetrics{
 				"containerName":    "kube-state-metrics",
 				"usageBytes":       uint64(22552576),
+				"workingSetBytes":  uint64(15196160),
 				"usageNanoCores":   uint64(184087),
 				"podName":          "newrelic-infra-monitoring-pjp0v",
 				"namespace":        "kube-system",
@@ -120,6 +121,7 @@ func TestGroupStatsSummary_CorrectValue(t *testing.T) {
 			"kube-system_newrelic-infra-monitoring-pjp0v_newrelic-infra": definition.RawMetrics{
 				"containerName":    "newrelic-infra",
 				"usageBytes":       uint64(243638272),
+				"workingSetBytes":  uint64(38313984),
 				"usageNanoCores":   uint64(13046199),
 				"podName":          "newrelic-infra-monitoring-pjp0v",
 				"namespace":        "kube-system",
@@ -133,6 +135,7 @@ func TestGroupStatsSummary_CorrectValue(t *testing.T) {
 			"kube-system_kube-dns-910330662-pflkj_dnsmasq": definition.RawMetrics{
 				"containerName":    "dnsmasq",
 				"usageBytes":       uint64(19812352),
+				"workingSetBytes":  uint64(12828672),
 				"usageNanoCores":   uint64(208374),
 				"podName":          "kube-dns-910330662-pflkj",
 				"namespace":        "kube-system",
@@ -175,6 +178,7 @@ func TestGroupStatsSummary_MissingNodeData_ContainerWithTheSameName(t *testing.T
 			"kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics": definition.RawMetrics{
 				"containerName":    "kube-state-metrics",
 				"usageBytes":       uint64(22552576),
+				"workingSetBytes":  uint64(15196160),
 				"usageNanoCores":   uint64(184087),
 				"podName":          "newrelic-infra-monitoring-pjp0v",
 				"namespace":        "kube-system",
@@ -188,6 +192,7 @@ func TestGroupStatsSummary_MissingNodeData_ContainerWithTheSameName(t *testing.T
 			"kube-system_kube-dns-910330662-pflkj_kube-state-metrics": definition.RawMetrics{
 				"containerName":    "kube-state-metrics",
 				"usageBytes":       uint64(22552576),
+				"workingSetBytes":  uint64(15196160),
 				"usageNanoCores":   uint64(184087),
 				"podName":          "kube-dns-910330662-pflkj",
 				"namespace":        "kube-system",
@@ -201,6 +206,7 @@ func TestGroupStatsSummary_MissingNodeData_ContainerWithTheSameName(t *testing.T
 			"kube-system_newrelic-infra-monitoring-pjp0v_newrelic-infra": definition.RawMetrics{
 				"containerName":    "newrelic-infra",
 				"usageBytes":       uint64(243638272),
+				"workingSetBytes":  uint64(38313984),
 				"usageNanoCores":   uint64(13046199),
 				"podName":          "newrelic-infra-monitoring-pjp0v",
 				"namespace":        "kube-system",
@@ -214,6 +220,7 @@ func TestGroupStatsSummary_MissingNodeData_ContainerWithTheSameName(t *testing.T
 			"kube-system_kube-dns-910330662-pflkj_dnsmasq": definition.RawMetrics{
 				"containerName":    "dnsmasq",
 				"usageBytes":       uint64(19812352),
+				"workingSetBytes":  uint64(12828672),
 				"usageNanoCores":   uint64(208374),
 				"podName":          "kube-dns-910330662-pflkj",
 				"namespace":        "kube-system",
@@ -316,11 +323,12 @@ func TestGroupStatsSummary_IncompleteStatsSummaryMessage_MissingNodeData_NoRxByt
 		},
 		"container": {
 			"kube-system_newrelic-infra-monitoring-pjp0v_kube-state-metrics": definition.RawMetrics{
-				"containerName":  "kube-state-metrics",
-				"usageBytes":     uint64(22552576),
-				"usageNanoCores": uint64(184087),
-				"podName":        "newrelic-infra-monitoring-pjp0v",
-				"namespace":      "kube-system",
+				"containerName":   "kube-state-metrics",
+				"usageBytes":      uint64(22552576),
+				"workingSetBytes": uint64(15196160),
+				"usageNanoCores":  uint64(184087),
+				"podName":         "newrelic-infra-monitoring-pjp0v",
+				"namespace":       "kube-system",
 			},
 		},
 		"volume": {},
