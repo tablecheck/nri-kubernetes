@@ -21,8 +21,8 @@ var ExpectedGroupData = definition.RawGroups{
 			"createdAt":   parseTime("2018-02-14T16:26:33Z"),
 			"labels": map[string]string{
 				"controller-revision-hash": "3887482659",
-				"name": "newrelic-infra",
-				"pod-template-generation": "1",
+				"name":                     "newrelic-infra",
+				"pod-template-generation":  "1",
 			},
 			"errors":  uint64(0),
 			"rxBytes": uint64(106175985),
@@ -47,6 +47,24 @@ var ExpectedGroupData = definition.RawGroups{
 			"errors":  uint64(0),
 			"rxBytes": uint64(32575098),
 			"txBytes": uint64(27840584),
+		},
+		"default_sh-7c95664875-4btqh": {
+			"createdKind":    "ReplicaSet",
+			"createdBy":      "sh-7c95664875",
+			"nodeIP":         "192.168.99.100",
+			"namespace":      "default",
+			"podName":        "sh-7c95664875-4btqh",
+			"nodeName":       "minikube",
+			"status":         "Failed",
+			"reason":         "Evicted",
+			"message":        "The node was low on resource: memory.",
+			"createdAt":      parseTime("2019-03-13T07:59:00Z"),
+			"startTime":      parseTime("2019-03-13T07:59:00Z"),
+			"deploymentName": "sh",
+			"labels": map[string]string{
+				"pod-template-hash": "3751220431",
+				"run":               "sh",
+			},
 		},
 	},
 	"container": {
@@ -76,8 +94,8 @@ var ExpectedGroupData = definition.RawGroups{
 			"fsInodesUsed":         uint64(36),
 			"labels": map[string]string{
 				"controller-revision-hash": "3887482659",
-				"name": "newrelic-infra",
-				"pod-template-generation": "1",
+				"name":                     "newrelic-infra",
+				"pod-template-generation":  "1",
 			},
 		},
 		"kube-system_kube-state-metrics-57f4659995-6n2qq_kube-state-metrics": {
@@ -140,6 +158,19 @@ var ExpectedGroupData = definition.RawGroups{
 			"labels": map[string]string{
 				"k8s-app":           "kube-state-metrics",
 				"pod-template-hash": "1390215551",
+			},
+		},
+		"default_sh-7c95664875-4btqh_sh": {
+			"containerName":  "sh",
+			"containerImage": "python",
+			"namespace":      "default",
+			"podName":        "sh-7c95664875-4btqh",
+			"nodeName":       "minikube",
+			"nodeIP":         "192.168.99.100",
+			"deploymentName": "sh",
+			"labels": map[string]string{
+				"pod-template-hash": "3751220431",
+				"run":               "sh",
 			},
 		},
 	},

@@ -18,7 +18,7 @@ import (
 	"github.com/newrelic/nri-kubernetes/src/client"
 	"github.com/newrelic/nri-kubernetes/src/data"
 	"github.com/newrelic/nri-kubernetes/src/definition"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // KubeletPodsPath is the path where kubelet serves information about pods.
@@ -254,6 +254,14 @@ func fetchPodData(logger *logrus.Logger, pod *v1.Pod) definition.RawMetrics {
 		if d := deploymentNameBasedOnCreator(ref[0].Kind, ref[0].Name); d != "" {
 			metrics["deploymentName"] = d
 		}
+	}
+
+	if pod.Status.Reason != "" {
+		metrics["reason"] = pod.Status.Reason
+	}
+
+	if pod.Status.Message != "" {
+		metrics["message"] = pod.Status.Message
 	}
 
 	labels := podLabels(pod)

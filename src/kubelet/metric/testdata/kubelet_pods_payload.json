@@ -366,6 +366,96 @@
           }
         ]
       }
-    }
+    },
+    {
+      "metadata": {
+        "name": "sh-7c95664875-4btqh",
+        "generateName": "sh-7c95664875-",
+        "namespace": "default",
+        "selfLink": "/api/v1/namespaces/default/pods/sh-7c95664875-4btqh",
+        "uid": "dc378485-4565-11e9-822c-080027ecada5",
+        "resourceVersion": "36255",
+        "creationTimestamp": "2019-03-13T07:59:00Z",
+        "labels": {
+          "pod-template-hash": "3751220431",
+          "run": "sh"
+        },
+        "annotations": {
+          "kubernetes.io/config.seen": "2019-03-13T08:03:01.880958599Z",
+          "kubernetes.io/config.source": "api"
+        },
+        "ownerReferences": [
+          {
+            "apiVersion": "extensions/v1beta1",
+            "kind": "ReplicaSet",
+            "name": "sh-7c95664875",
+            "uid": "dc355f75-4565-11e9-822c-080027ecada5",
+            "controller": true,
+            "blockOwnerDeletion": true
+          }
+        ]
+      },
+      "spec": {
+        "volumes": [
+          {
+            "name": "default-token-kgz8j",
+            "secret": {
+              "secretName": "default-token-kgz8j",
+              "defaultMode": 420
+            }
+          }
+        ],
+        "containers": [
+          {
+            "name": "sh",
+            "image": "python",
+            "args": [
+              "sh"
+            ],
+            "resources": {},
+            "volumeMounts": [
+              {
+                "name": "default-token-kgz8j",
+                "readOnly": true,
+                "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount"
+              }
+            ],
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "imagePullPolicy": "Always",
+            "stdin": true,
+            "tty": true
+          }
+        ],
+        "restartPolicy": "Always",
+        "terminationGracePeriodSeconds": 30,
+        "dnsPolicy": "ClusterFirst",
+        "serviceAccountName": "default",
+        "serviceAccount": "default",
+        "nodeName": "minikube",
+        "securityContext": {},
+        "schedulerName": "default-scheduler",
+        "tolerations": [
+          {
+            "key": "node.kubernetes.io/not-ready",
+            "operator": "Exists",
+            "effect": "NoExecute",
+            "tolerationSeconds": 300
+          },
+          {
+            "key": "node.kubernetes.io/unreachable",
+            "operator": "Exists",
+            "effect": "NoExecute",
+            "tolerationSeconds": 300
+          }
+        ]
+      },
+      "status": {
+        "phase": "Failed",
+        "message": "The node was low on resource: memory.",
+        "reason": "Evicted",
+        "startTime": "2019-03-13T07:59:00Z"
+      }
+    }  
   ]
 }
