@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## 1.7.0
+
+### Added
+- Support for kube-state-metrics v1.5.
+- Pod's status reason and status message are now sent in the `K8sPodSample` as `reason` and `message` fields.
+- Container's `memory_working_set_bytes` is now sent in the `K8sContainerSample` as `workingSetBytes`. 
+
+### Changed
+- Always request metrics from kube-state-metrics in the text format. In kube-state-metrics v1.5 this is the default
+regardless of the format requested.
+
 ## 1.6.0
 ### Added
 - `namespaceName` metric attribute was added to all the samples where `namespace` attribute is present.
