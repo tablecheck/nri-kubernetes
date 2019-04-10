@@ -28,7 +28,7 @@ pipeline {
     stage('Dependencies') {
       steps {
         withCredentials([string(credentialsId: 'KOPS_AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'), string(credentialsId: 'KOPS_AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')]) {
-          sh 'aws s3 sync s3://nr-vendor-cache-ohai/vendor ./vendor --quiet'
+          sh 'aws s3 sync s3://nr-vendor-cache-fsi/vendor ./vendor --quiet'
         }
         sh 'make deps'
       }
