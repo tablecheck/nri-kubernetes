@@ -16,6 +16,16 @@ type PopulateFunc func(RawGroups, SpecGroups) (bool, []error)
 // MetricSetManipulator manipulates the MetricSet for a given entity and clusterName
 type MetricSetManipulator func(ms metric.MetricSet, entity sdk.Entity, clusterName string) error
 
+func populateCluster(i *sdk.IntegrationProtocol2, clusterName string) error {
+	e, err := i.Entity(clusterName, "k8s:cluster")
+	if err != nil {
+		return err
+	}
+	e.Inventory.SetItem("cluster", "name", clusterName)
+	ms := e.NewMetricSet("K8sClusterSample")
+	return ms.SetMetric("clusterName", clusterName, metric.ATTRIBUTE)
+}
+
 // IntegrationProtocol2PopulateFunc populates an integration protocol v2 with the given metrics and definition.
 func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName string, msTypeGuesser GuessFunc, msManipulators ...MetricSetManipulator) PopulateFunc {
 	return func(groups RawGroups, specs SpecGroups) (bool, []error) {
@@ -83,7 +93,12 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName s
 
 			}
 		}
-
+		if populated {
+			err := populateCluster(i, clusterName)
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
 		return populated, errs
 	}
 }

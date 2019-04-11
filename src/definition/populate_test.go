@@ -435,6 +435,20 @@ func TestIntegrationProtocol2PopulateFunc_PopulateOnlySpecifiedGroups(t *testing
 	}
 	expectedEntityData2.Metrics = []metric.MetricSet{expectedMetricSet2}
 
+	expectedEntityData3, err := sdk.NewEntityData("playground", "k8s:cluster")
+	if err != nil {
+		t.Fatal()
+	}
+	expectedMetricSet3 := metric.MetricSet{
+		"event_type":  "K8sClusterSample",
+		"entityName":  "k8s:cluster:playground",
+		"clusterName": "playground",
+	}
+	expectedEntityData3.Metrics = []metric.MetricSet{expectedMetricSet3}
+	expectedInventory := sdk.Inventory{}
+	expectedInventory.SetItem("cluster", "name", "playground")
+	expectedEntityData3.Inventory = expectedInventory
+
 	integration, err := sdk.NewIntegrationProtocol2("nr.test", "1.0.0", new(struct{}))
 	if err != nil {
 		t.Fatal()
@@ -444,7 +458,8 @@ func TestIntegrationProtocol2PopulateFunc_PopulateOnlySpecifiedGroups(t *testing
 	assert.Empty(t, errs)
 	assert.Contains(t, integration.Data, &expectedEntityData1)
 	assert.Contains(t, integration.Data, &expectedEntityData2)
-	assert.Len(t, integration.Data, 2)
+	assert.Contains(t, integration.Data, &expectedEntityData3)
+	assert.Len(t, integration.Data, 3)
 }
 
 func TestIntegrationProtocol2PopulateFunc_EntityTypeGeneratorFuncWithError(t *testing.T) {

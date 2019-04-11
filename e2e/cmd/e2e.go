@@ -459,6 +459,7 @@ func testEventTypes(output map[string]integrationData) error {
 			"K8sContainerSample":  "container.json",
 			"K8sNodeSample":       "node.json",
 			"K8sVolumeSample":     "volume.json",
+			"K8sClusterSample":    "cluster.json",
 		},
 	}
 	eventTypeSchemas["follower"] = jsonschema.EventTypeToSchemaFilename{
@@ -466,6 +467,7 @@ func testEventTypes(output map[string]integrationData) error {
 		"K8sContainerSample": eventTypeSchemas["leader"]["K8sContainerSample"],
 		"K8sNodeSample":      eventTypeSchemas["leader"]["K8sNodeSample"],
 		"K8sVolumeSample":    eventTypeSchemas["leader"]["K8sVolumeSample"],
+		"K8sClusterSample":   eventTypeSchemas["leader"]["K8sClusterSample"],
 	}
 	for podName, o := range output {
 		i := sdk.IntegrationProtocol2{}

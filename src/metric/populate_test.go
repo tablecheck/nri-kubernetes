@@ -23,6 +23,21 @@ func parseTime(raw string) time.Time {
 var expectedMetrics = []*sdk.EntityData{
 	{
 		Entity: sdk.Entity{
+			Name: "test-cluster",
+			Type: "k8s:cluster",
+		},
+		Metrics: []sdkMetric.MetricSet{
+			{
+				"entityName":  "k8s:cluster:test-cluster",
+				"event_type":  "K8sClusterSample",
+				"clusterName": "test-cluster",
+			},
+		},
+		Inventory: sdk.Inventory{},
+		Events:    []*sdk.Event{},
+	},
+	{
+		Entity: sdk.Entity{
 			Name: "newrelic-infra-rz225",
 			Type: "k8s:test-cluster:kube-system:pod",
 		},
@@ -138,5 +153,8 @@ func TestPopulateK8s(t *testing.T) {
 	}
 
 	assert.ElementsMatch(t, expectedErrs, err.(*data.PopulateErr).Errs)
-	assert.Equal(t, expectedMetrics, i.Data)
+	expectedInventory := sdk.Inventory{}
+	expectedInventory.SetItem("cluster", "name", expectedMetrics[0].Entity.Name)
+	expectedMetrics[0].Inventory = expectedInventory
+	assert.ElementsMatch(t, expectedMetrics, i.Data)
 }
