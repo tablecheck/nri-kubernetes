@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## 1.8.0
+
+### Added
+- The integration reports the name of the cluster as Infrastructure inventory.
+- The integration reports a new event type `K8sClusterSample`. At this moment,
+  these events contain only the cluster name as an attribute.
+
 ## 1.7.0
 
 ### Added
