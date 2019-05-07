@@ -1,6 +1,6 @@
-# Agent v1.1.14 (2018-12-20)
+# Agent v1.3.18 (2019-04-11)
 ARG IMAGE_NAME=newrelic/infrastructure
-ARG IMAGE_TAG=0.0.62
+ARG IMAGE_TAG=1.3.18
 ARG MODE=normal
 
 FROM $IMAGE_NAME:$IMAGE_TAG AS base
