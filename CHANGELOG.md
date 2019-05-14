@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## 1.9.0
+
 ### Changed
 
 - The integraion now uses the infrastructure agent v1.3.18 instead of 1.1.14. Refer to the
