@@ -12,7 +12,7 @@ import (
 
 const (
 	fileExt  = ".json"
-	filePerm = 0644
+	filePerm = 0744
 )
 
 var now = time.Now
