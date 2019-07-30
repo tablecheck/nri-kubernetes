@@ -12,72 +12,72 @@ can be found at https://github.com/newrelic/nri-kubernetes.
 
 ## Contents
  
-* [xeipuuv/gojsonreference](#xeipuuv/gojsonreference)
-* [golang/glog](#golang/glog)
-* [imdario/mergo](#imdario/mergo)
-* [x/net](#x/net)
-* [api/networking](#api/networking)
-* [apimachinery/third_party](#apimachinery/third_party)
-* [api/apps](#api/apps)
-* [client-go/plugin](#client-go/plugin)
-* [x/sys](#x/sys)
-* [x/oauth2](#x/oauth2)
-* [x/crypto](#x/crypto)
-* [prometheus/common](#prometheus/common)
-* [api/authorization](#api/authorization)
-* [client-go/third_party](#client-go/third_party)
-* [newrelic/infra-integrations-sdk](#newrelic/infra-integrations-sdk)
-* [pmezard/go-difflib](#pmezard/go-difflib)
-* [go/compute](#go/compute)
+* [xeipuuv/gojsonreference](#xeipuuvgojsonreference)
+* [golang/glog](#golangglog)
+* [imdario/mergo](#imdariomergo)
+* [x/net](#xnet)
+* [api/networking](#apinetworking)
+* [apimachinery/third_party](#apimachinerythird_party)
+* [api/apps](#apiapps)
+* [client-go/plugin](#client-goplugin)
+* [x/sys](#xsys)
+* [x/oauth2](#xoauth2)
+* [x/crypto](#xcrypto)
+* [prometheus/common](#prometheuscommon)
+* [api/authorization](#apiauthorization)
+* [client-go/third_party](#client-gothird_party)
+* [newrelic/infra-integrations-sdk](#newrelicinfra-integrations-sdk)
+* [pmezard/go-difflib](#pmezardgo-difflib)
+* [go/compute](#gocompute)
 * [yaml.v2](#yaml.v2)
-* [gogo/protobuf](#gogo/protobuf)
-* [x/text](#x/text)
-* [stretchr/objx](#stretchr/objx)
-* [api/rbac](#api/rbac)
-* [ghodss/yaml](#ghodss/yaml)
-* [x/time](#x/time)
-* [stretchr/testify](#stretchr/testify)
-* [client-go/transport](#client-go/transport)
-* [api/admissionregistration](#api/admissionregistration)
-* [xeipuuv/gojsonpointer](#xeipuuv/gojsonpointer)
+* [gogo/protobuf](#gogoprotobuf)
+* [x/text](#xtext)
+* [stretchr/objx](#stretchrobjx)
+* [api/rbac](#apirbac)
+* [ghodss/yaml](#ghodssyaml)
+* [x/time](#xtime)
+* [stretchr/testify](#stretchrtestify)
+* [client-go/transport](#client-gotransport)
+* [api/admissionregistration](#apiadmissionregistration)
+* [xeipuuv/gojsonpointer](#xeipuuvgojsonpointer)
 * [inf.v0](#inf.v0)
-* [googleapis/gnostic](#googleapis/gnostic)
-* [client-go/discovery](#client-go/discovery)
-* [api/events](#api/events)
-* [pkg/errors](#pkg/errors)
-* [kubernetes/pkg](#kubernetes/pkg)
-* [api/certificates](#api/certificates)
-* [xeipuuv/gojsonschema](#xeipuuv/gojsonschema)
-* [api/scheduling](#api/scheduling)
-* [prometheus/client_model](#prometheus/client_model)
-* [api/settings](#api/settings)
-* [client-go/pkg](#client-go/pkg)
-* [api/authentication](#api/authentication)
-* [prometheus/prom2json](#prometheus/prom2json)
-* [client-go/kubernetes](#client-go/kubernetes)
-* [davecgh/go-spew](#davecgh/go-spew)
-* [sirupsen/logrus](#sirupsen/logrus)
-* [json-iterator/go](#json-iterator/go)
-* [client-go/rest](#client-go/rest)
-* [api/policy](#api/policy)
-* [spf13/pflag](#spf13/pflag)
-* [api/autoscaling](#api/autoscaling)
-* [api/batch](#api/batch)
-* [client-go/tools](#client-go/tools)
-* [api/extensions](#api/extensions)
-* [api/core](#api/core)
-* [google/gofuzz](#google/gofuzz)
-* [matttproud/golang_protobuf_extensions](#matttproud/golang_protobuf_extensions)
-* [apimachinery/pkg](#apimachinery/pkg)
-* [api/storage](#api/storage)
-* [howeyc/gopass](#howeyc/gopass)
-* [docker/spdystream](#docker/spdystream)
-* [golang/protobuf](#golang/protobuf)
-* [client-go/util](#client-go/util)
+* [googleapis/gnostic](#googleapisgnostic)
+* [client-go/discovery](#client-godiscovery)
+* [api/events](#apievents)
+* [pkg/errors](#pkgerrors)
+* [kubernetes/pkg](#kubernetespkg)
+* [api/certificates](#apicertificates)
+* [xeipuuv/gojsonschema](#xeipuuvgojsonschema)
+* [api/scheduling](#apischeduling)
+* [prometheus/client_model](#prometheusclient_model)
+* [api/settings](#apisettings)
+* [client-go/pkg](#client-gopkg)
+* [api/authentication](#apiauthentication)
+* [prometheus/prom2json](#prometheusprom2json)
+* [client-go/kubernetes](#client-gokubernetes)
+* [davecgh/go-spew](#davecghgo-spew)
+* [sirupsen/logrus](#sirupsenlogrus)
+* [json-iterator/go](#json-iteratorgo)
+* [client-go/rest](#client-gorest)
+* [api/policy](#apipolicy)
+* [spf13/pflag](#spf13pflag)
+* [api/autoscaling](#apiautoscaling)
+* [api/batch](#apibatch)
+* [client-go/tools](#client-gotools)
+* [api/extensions](#apiextensions)
+* [api/core](#apicore)
+* [google/gofuzz](#googlegofuzz)
+* [matttproud/golang_protobuf_extensions](#matttproudgolang_protobuf_extensions)
+* [apimachinery/pkg](#apimachinerypkg)
+* [api/storage](#apistorage)
+* [howeyc/gopass](#howeycgopass)
+* [docker/spdystream](#dockerspdystream)
+* [golang/protobuf](#golangprotobuf)
+* [client-go/util](#client-goutil)
 
 ## x/net
 
-* Web: golang.org/x/net
+* Web: http://golang.org/x/net
 * License: BSD-3-Clause
 
 ```
@@ -114,7 +114,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## api/networking
 
-* Web: k8s.io/api/networking
+* Web: http://k8s.io/api/networking
 * License: Apache-2.0
 
 ```
@@ -326,7 +326,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## apimachinery/third_party
 
-* Web: k8s.io/apimachinery/third_party
+* Web: http://k8s.io/apimachinery/third_party
 * License: Apache-2.0
 
 ```
@@ -538,7 +538,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## api/apps
 
-* Web: k8s.io/api/apps
+* Web: http://k8s.io/api/apps
 * License: Apache-2.0
 
 ```
@@ -750,7 +750,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## client-go/plugin
 
-* Web: k8s.io/client-go/plugin
+* Web: http://k8s.io/client-go/plugin
 * License: Apache-2.0
 
 ```
@@ -962,7 +962,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## x/sys
 
-* Web: golang.org/x/sys
+* Web: http://golang.org/x/sys
 * License: BSD-3-Clause
 
 ```
@@ -999,7 +999,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## x/oauth2
 
-* Web: golang.org/x/oauth2
+* Web: http://golang.org/x/oauth2
 * License: BSD-3-Clause
 
 ```
@@ -1036,7 +1036,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## x/crypto
 
-* Web: golang.org/x/crypto
+* Web: http://golang.org/x/crypto
 * License: BSD-3-Clause
 
 ```
@@ -1073,7 +1073,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## prometheus/common
 
-* Web: github.com/prometheus/common
+* Web: http://github.com/prometheus/common
 * License: Apache-2.0
 
 ```
@@ -1284,7 +1284,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## api/authorization
 
-* Web: k8s.io/api/authorization
+* Web: http://k8s.io/api/authorization
 * License: Apache-2.0
 
 ```
@@ -1496,7 +1496,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## client-go/third_party
 
-* Web: k8s.io/client-go/third_party
+* Web: http://k8s.io/client-go/third_party
 * License: Apache-2.0
 
 ```
@@ -1708,7 +1708,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## newrelic/infra-integrations-sdk
 
-* Web: github.com/newrelic/infra-integrations-sdk
+* Web: http://github.com/newrelic/infra-integrations-sdk
 * License: Unknown
 
 ```
@@ -1764,7 +1764,7 @@ punitive damages or for lost profits or data.
 
 ## pmezard/go-difflib
 
-* Web: github.com/pmezard/go-difflib
+* Web: http://github.com/pmezard/go-difflib
 * License: BSD-3-Clause
 
 ```
@@ -1801,7 +1801,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## go/compute
 
-* Web: cloud.google.com/go/compute
+* Web: http://cloud.google.com/go/compute
 * License: Apache-2.0
 
 ```
@@ -2013,7 +2013,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## yaml.v2
 
-* Web: gopkg.in/yaml.v2
+* Web: http://gopkg.in/yaml.v2
 * License: Apache-2.0
 
 ```
@@ -2224,7 +2224,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## gogo/protobuf
 
-* Web: github.com/gogo/protobuf
+* Web: http://github.com/gogo/protobuf
 * License: BSD-3-Clause
 
 ```
@@ -2270,7 +2270,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## x/text
 
-* Web: golang.org/x/text
+* Web: http://golang.org/x/text
 * License: BSD-3-Clause
 
 ```
@@ -2307,7 +2307,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## stretchr/objx
 
-* Web: github.com/stretchr/objx
+* Web: http://github.com/stretchr/objx
 * License: MIT
 
 ```
@@ -2340,7 +2340,7 @@ SOFTWARE.
 
 ## api/rbac
 
-* Web: k8s.io/api/rbac
+* Web: http://k8s.io/api/rbac
 * License: Apache-2.0
 
 ```
@@ -2552,7 +2552,7 @@ SOFTWARE.
 
 ## ghodss/yaml
 
-* Web: github.com/ghodss/yaml
+* Web: http://github.com/ghodss/yaml
 * License: MIT
 
 ```
@@ -2612,7 +2612,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## x/time
 
-* Web: golang.org/x/time
+* Web: http://golang.org/x/time
 * License: BSD-3-Clause
 
 ```
@@ -2649,7 +2649,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## stretchr/testify
 
-* Web: github.com/stretchr/testify
+* Web: http://github.com/stretchr/testify
 * License: MIT
 
 ```
@@ -2681,7 +2681,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## client-go/transport
 
-* Web: k8s.io/client-go/transport
+* Web: http://k8s.io/client-go/transport
 * License: Apache-2.0
 
 ```
@@ -2893,7 +2893,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## api/admissionregistration
 
-* Web: k8s.io/api/admissionregistration
+* Web: http://k8s.io/api/admissionregistration
 * License: Apache-2.0
 
 ```
@@ -3105,7 +3105,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## xeipuuv/gojsonpointer
 
-* Web: github.com/xeipuuv/gojsonpointer
+* Web: http://github.com/xeipuuv/gojsonpointer
 * License: Apache-2.0
 
 ```
@@ -3317,7 +3317,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## inf.v0
 
-* Web: gopkg.in/inf.v0
+* Web: http://gopkg.in/inf.v0
 * License: BSD-3-Clause
 
 ```
@@ -3355,7 +3355,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## googleapis/gnostic
 
-* Web: github.com/googleapis/gnostic
+* Web: http://github.com/googleapis/gnostic
 * License: Apache-2.0
 
 ```
@@ -3568,7 +3568,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## client-go/discovery
 
-* Web: k8s.io/client-go/discovery
+* Web: http://k8s.io/client-go/discovery
 * License: Apache-2.0
 
 ```
@@ -3780,7 +3780,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## api/events
 
-* Web: k8s.io/api/events
+* Web: http://k8s.io/api/events
 * License: Apache-2.0
 
 ```
@@ -3992,7 +3992,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## pkg/errors
 
-* Web: github.com/pkg/errors
+* Web: http://github.com/pkg/errors
 * License: BSD-2-Clause
 
 ```
@@ -4025,7 +4025,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## kubernetes/pkg
 
-* Web: k8s.io/kubernetes/pkg
+* Web: http://k8s.io/kubernetes/pkg
 * License: Apache-2.0
 
 ```
@@ -4237,7 +4237,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## api/certificates
 
-* Web: k8s.io/api/certificates
+* Web: http://k8s.io/api/certificates
 * License: Apache-2.0
 
 ```
@@ -4449,7 +4449,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## xeipuuv/gojsonschema
 
-* Web: github.com/xeipuuv/gojsonschema
+* Web: http://github.com/xeipuuv/gojsonschema
 * License: Apache-2.0
 
 ```
@@ -4661,7 +4661,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## api/scheduling
 
-* Web: k8s.io/api/scheduling
+* Web: http://k8s.io/api/scheduling
 * License: Apache-2.0
 
 ```
@@ -4873,7 +4873,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## prometheus/client_model
 
-* Web: github.com/prometheus/client_model
+* Web: http://github.com/prometheus/client_model
 * License: Apache-2.0
 
 ```
@@ -5084,7 +5084,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## api/settings
 
-* Web: k8s.io/api/settings
+* Web: http://k8s.io/api/settings
 * License: Apache-2.0
 
 ```
@@ -5296,7 +5296,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## client-go/pkg
 
-* Web: k8s.io/client-go/pkg
+* Web: http://k8s.io/client-go/pkg
 * License: Apache-2.0
 
 ```
@@ -5508,7 +5508,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## api/authentication
 
-* Web: k8s.io/api/authentication
+* Web: http://k8s.io/api/authentication
 * License: Apache-2.0
 
 ```
@@ -5720,7 +5720,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## prometheus/prom2json
 
-* Web: github.com/prometheus/prom2json
+* Web: http://github.com/prometheus/prom2json
 * License: Apache-2.0
 
 ```
@@ -5931,7 +5931,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## client-go/kubernetes
 
-* Web: k8s.io/client-go/kubernetes
+* Web: http://k8s.io/client-go/kubernetes
 * License: Apache-2.0
 
 ```
@@ -6143,7 +6143,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## davecgh/go-spew
 
-* Web: github.com/davecgh/go-spew
+* Web: http://github.com/davecgh/go-spew
 * License: ISC
 
 ```
@@ -6168,7 +6168,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ## sirupsen/logrus
 
-* Web: github.com/sirupsen/logrus
+* Web: http://github.com/sirupsen/logrus
 * License: MIT
 
 ```
@@ -6199,7 +6199,7 @@ THE SOFTWARE.
 
 ## json-iterator/go
 
-* Web: github.com/json-iterator/go
+* Web: http://github.com/json-iterator/go
 * License: MIT
 
 ```
@@ -6230,7 +6230,7 @@ SOFTWARE.
 
 ## spf13/pflag
 
-* Web: github.com/spf13/pflag
+* Web: http://github.com/spf13/pflag
 * License: BSD-3-Clause
 
 ```
@@ -6268,7 +6268,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## api/autoscaling
 
-* Web: k8s.io/api/autoscaling
+* Web: http://k8s.io/api/autoscaling
 * License: Apache-2.0
 
 ```
@@ -6480,7 +6480,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## api/batch
 
-* Web: k8s.io/api/batch
+* Web: http://k8s.io/api/batch
 * License: Apache-2.0
 
 ```
@@ -6692,7 +6692,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## client-go/tools
 
-* Web: k8s.io/client-go/tools
+* Web: http://k8s.io/client-go/tools
 * License: Apache-2.0
 
 ```
@@ -6904,7 +6904,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## api/extensions
 
-* Web: k8s.io/api/extensions
+* Web: http://k8s.io/api/extensions
 * License: Apache-2.0
 
 ```
@@ -7116,7 +7116,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## api/core
 
-* Web: k8s.io/api/core
+* Web: http://k8s.io/api/core
 * License: Apache-2.0
 
 ```
@@ -7328,7 +7328,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## client-go/rest
 
-* Web: k8s.io/client-go/rest
+* Web: http://k8s.io/client-go/rest
 * License: Apache-2.0
 
 ```
@@ -7540,7 +7540,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## api/policy
 
-* Web: k8s.io/api/policy
+* Web: http://k8s.io/api/policy
 * License: Apache-2.0
 
 ```
@@ -7752,7 +7752,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## google/gofuzz
 
-* Web: github.com/google/gofuzz
+* Web: http://github.com/google/gofuzz
 * License: Apache-2.0
 
 ```
@@ -7964,7 +7964,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## matttproud/golang_protobuf_extensions
 
-* Web: github.com/matttproud/golang_protobuf_extensions
+* Web: http://github.com/matttproud/golang_protobuf_extensions
 * License: Apache-2.0
 
 ```
@@ -8175,7 +8175,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## apimachinery/pkg
 
-* Web: k8s.io/apimachinery/pkg
+* Web: http://k8s.io/apimachinery/pkg
 * License: Apache-2.0
 
 ```
@@ -8387,7 +8387,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## api/storage
 
-* Web: k8s.io/api/storage
+* Web: http://k8s.io/api/storage
 * License: Apache-2.0
 
 ```
@@ -8599,7 +8599,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## howeyc/gopass
 
-* Web: github.com/howeyc/gopass
+* Web: http://github.com/howeyc/gopass
 * License: ISC
 
 ```
@@ -8624,7 +8624,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ## docker/spdystream
 
-* Web: github.com/docker/spdystream
+* Web: http://github.com/docker/spdystream
 * License: Apache-2.0
 
 ```
@@ -8825,7 +8825,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ## golang/protobuf
 
-* Web: github.com/golang/protobuf
+* Web: http://github.com/golang/protobuf
 * License: BSD-3-Clause
 
 ```
@@ -8866,7 +8866,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## client-go/util
 
-* Web: k8s.io/client-go/util
+* Web: http://k8s.io/client-go/util
 * License: Apache-2.0
 
 ```
@@ -9078,7 +9078,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## xeipuuv/gojsonreference
 
-* Web: github.com/xeipuuv/gojsonreference
+* Web: http://github.com/xeipuuv/gojsonreference
 * License: Apache-2.0
 
 ```
@@ -9290,7 +9290,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## golang/glog
 
-* Web: github.com/golang/glog
+* Web: http://github.com/golang/glog
 * License: Apache-2.0
 
 ```
@@ -9491,7 +9491,7 @@ third-party archives.
 
 ## imdario/mergo
 
-* Web: github.com/imdario/mergo
+* Web: http://github.com/imdario/mergo
 * License: BSD-3-Clause
 
 ```
