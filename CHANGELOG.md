@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+
+## 1.9.5
 ### Changed
 
 - The integration now uses the Infrastructu Agent v1.5.31. The biggest changes were major improvements to logging and
