@@ -5,6 +5,7 @@ New Relic Kubernetes Infrastructure Integration instruments the container orches
 * `/stats/summary` kubelet endpoint gives information about network, errors, memory and CPU usage
 * `/pods` kubelet endpoint provides information about state of running pods and containers
 * `/metrics/cadvisor` cAdvisor endpoint provides missing data that is not included in the previous sources.
+* Node labels are retrieved from the k8s API server.
 
 Check [documentation](https://docs.newrelic.com/docs/kubernetes-integration-new-relic-infrastructure) in order to find out more how to install and configure the integration, learn what metrics are captured and how to view them.
 
