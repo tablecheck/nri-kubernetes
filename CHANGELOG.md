@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## Unreleased 
+
+## 1.10.0
 ### Added
 - Node labes are added to the `K8sNodeSample`. They are retrieved from the k8s
   api and cached.
