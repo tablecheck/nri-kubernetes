@@ -96,3 +96,22 @@ CLUSTER_NAME=<your-cluster-name> NR_LICENSE_KEY=<your-license-key>  make e2e
 
 This make target is executing `go run e2e/cmd/e2e.go`. You could execute that
 command with `--help` flag to see all the available options.
+
+## Release
+
+- Run the `release.sh` script to update the version number in the code and 
+  manifests files, commit and push the changes.
+- Create a branch called `release/X.Y.Z` where `X.Y.Z` is the version to
+  release. This will trigger the Jenkins job that pushes the image to
+  be released to quay. This is done in the `Jenkinsfile` jobs. Make sure the PR
+  job finishes successfully. This branch doesn't need to be merged.
+- Run the [k8s-integration-release](`https://fsi-build.pdx.vm.datanerd.us/job/k8s-integration-release/`)
+  job.
+- Create the Github release.
+- Update the release notes under the [On-Host Integrations Release Notes](https://docs.newrelic.com/docs/release-notes/platform-release-notes).
+- Once the release is finished send a notification in the following slack
+  channels #kubernetes #infra-news #fsi-team. The notification can be
+  something like (make sure to update the version and the link):
+
+> New Relic Integration for Kubernetes :k8s: 1.10.0 has been released.
+> You can find the release notes in https://docs.newrelic.com/docs/release-notes/platform-release-notes/host-integrations-release-notes/new-relic-integration-kubernetes-1100
