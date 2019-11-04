@@ -8,11 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/newrelic/nri-kubernetes/src/apiserver"
+	"github.com/newrelic/nri-kubernetes/src/scrape"
 
-	"github.com/newrelic/nri-kubernetes/src/client"
-	"github.com/newrelic/nri-kubernetes/src/data"
-	"github.com/newrelic/nri-kubernetes/src/definition"
+	"github.com/newrelic/nri-kubernetes/src/apiserver"
 
 	"github.com/newrelic/nri-kubernetes/src/ksm"
 	"github.com/newrelic/nri-kubernetes/src/kubelet"
@@ -20,6 +18,7 @@ import (
 	sdkArgs "github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/newrelic/infra-integrations-sdk/log"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
+	"github.com/newrelic/nri-kubernetes/src/client"
 	clientKsm "github.com/newrelic/nri-kubernetes/src/ksm/client"
 	clientKubelet "github.com/newrelic/nri-kubernetes/src/kubelet/client"
 	metric2 "github.com/newrelic/nri-kubernetes/src/kubelet/metric"
@@ -53,22 +52,6 @@ const (
 )
 
 var args argumentList
-
-func populate(grouper data.Grouper, specs definition.SpecGroups, i *sdk.IntegrationProtocol2, clusterName string, logger *logrus.Logger) *data.PopulateErr {
-	groups, errs := grouper.Group(specs)
-	if errs != nil && len(errs.Errors) > 0 {
-		if !errs.Recoverable {
-			return &data.PopulateErr{
-				Errs:      errs.Errors,
-				Populated: false,
-			}
-		}
-
-		logger.Warnf("%s", errs)
-	}
-
-	return metric.NewK8sPopulator().Populate(groups, specs, i, clusterName)
-}
 
 func getCacheDir(subDirectory string) string {
 	cacheDir := args.CacheDir
@@ -112,135 +95,108 @@ func main() {
 		logger.Panicf("%s env var should be provided by Kubernetes and is mandatory", nodeNameEnvVar)
 	}
 
-	if args.All || args.Metrics {
-		ttl, err := time.ParseDuration(args.DiscoveryCacheTTL)
-		if err != nil {
-			logger.WithError(err).Errorf("while parsing the cache TTL value. Defaulting to %s", defaultDiscoveryCacheTTL)
-			ttl = defaultDiscoveryCacheTTL
+	if !args.All && !args.Metrics {
+		return
+	}
+
+	ttl, err := time.ParseDuration(args.DiscoveryCacheTTL)
+	if err != nil {
+		logger.WithError(err).Errorf("while parsing the cache TTL value. Defaulting to %s", defaultDiscoveryCacheTTL)
+		ttl = defaultDiscoveryCacheTTL
+	}
+
+	timeout := time.Millisecond * time.Duration(args.Timeout)
+
+	innerKubeletDiscoverer, err := clientKubelet.NewDiscoverer(nodeName, logger)
+	if err != nil {
+		logger.Panicf("error during Kubelet auto discovering process. %s", err)
+	}
+	cacheStorage := storage.NewJSONDiskStorage(getCacheDir(discoveryCacheDir))
+	kubeletDiscoverer := clientKubelet.NewDiscoveryCacher(innerKubeletDiscoverer, cacheStorage, ttl, logger)
+
+	kubeletClient, err := kubeletDiscoverer.Discover(timeout)
+	if err != nil {
+		logger.Panic(err)
+	}
+	kubeletNodeIP := kubeletClient.NodeIP()
+	logger.Debugf("Kubelet node IP = %s", kubeletNodeIP)
+
+	var innerKSMDiscoverer client.Discoverer
+
+	if args.KubeStateMetricsURL != "" {
+		// checking to see if KubeStateMetricsURL contains the /metrics path already.
+		if strings.Contains(args.KubeStateMetricsURL, "/metrics") {
+			args.KubeStateMetricsURL = strings.Trim(args.KubeStateMetricsURL, "/metrics")
+		}
+		innerKSMDiscoverer, err = clientKsm.NewDiscovererForNodeIP(args.KubeStateMetricsURL, logger)
+	} else {
+		innerKSMDiscoverer, err = clientKsm.NewDiscoverer(logger)
+	}
+
+	if err != nil {
+		logger.Panic(err)
+	}
+
+	ksmDiscoverer := clientKsm.NewDiscoveryCacher(innerKSMDiscoverer, cacheStorage, ttl, logger)
+	ksmClient, err := ksmDiscoverer.Discover(timeout)
+	if err != nil {
+		logger.Panic(err)
+	}
+	ksmNodeIP := ksmClient.NodeIP()
+	logger.Debugf("KSM Node = %s", ksmNodeIP)
+
+	ttlAPIServerCache, err := time.ParseDuration(args.APIServerCacheTTL)
+	if err != nil {
+		logger.WithError(err).Errorf("while parsing the api server cache TTL value. Defaulting to %s", ttlAPIServerCache)
+		ttlAPIServerCache = defaultAPIServerCacheTTL
+	}
+	k8s, err := client.NewKubernetes()
+	if err != nil {
+		logger.Panic(err)
+	}
+
+	apiServerClient := apiserver.NewClient(k8s)
+
+	if ttlAPIServerCache != time.Duration(0) {
+		apiServerClient = apiserver.NewFileCacheClientWrapper(apiServerClient,
+			getCacheDir(apiserverCacheDir),
+			ttlAPIServerCache)
+	}
+
+	var jobs []*scrape.Job
+
+	// Kubelet is always scraped, on each node
+	kubeletGrouper := kubelet.NewGrouper(kubeletClient, logger, apiServerClient,
+		metric2.PodsFetchFunc(logger, kubeletClient),
+		metric2.CadvisorFetchFunc(kubeletClient, metric.CadvisorQueries))
+	jobs = append(jobs, scrape.NewScrapeJob("kubelet", kubeletGrouper, metric.KubeletSpecs))
+
+	// we only scrape KSM when we are on the same Node as KSM
+	if kubeletNodeIP == ksmNodeIP {
+		ksmGrouper := ksm.NewGrouper(ksmClient, metric.KSMQueries, logger)
+		jobs = append(jobs, scrape.NewScrapeJob("kube-state-metrics", ksmGrouper, metric.KSMSpecs))
+	}
+
+	successfulJobs := 0
+	for _, job := range jobs {
+		logger.Debugf("Running job: %s", job.Name)
+		result := job.Populate(integration, args.ClusterName, logger)
+
+		if result.Populated {
+			successfulJobs++
 		}
 
-		timeout := time.Millisecond * time.Duration(args.Timeout)
-
-		innerKubeletDiscoverer, err := clientKubelet.NewDiscoverer(nodeName, logger)
-		if err != nil {
-			logger.Panicf("error during Kubelet auto discovering process. %s", err)
-		}
-		cacheStorage := storage.NewJSONDiskStorage(getCacheDir(discoveryCacheDir))
-		kubeletDiscoverer := clientKubelet.NewDiscoveryCacher(innerKubeletDiscoverer, cacheStorage, ttl, logger)
-
-		kubeletClient, err := kubeletDiscoverer.Discover(timeout)
-		if err != nil {
-			logger.Panic(err)
-		}
-		kubeletNodeIP := kubeletClient.NodeIP()
-		logger.Debugf("Kubelet Node = %s", kubeletNodeIP)
-
-		var innerKSMDiscoverer client.Discoverer
-
-		if args.KubeStateMetricsURL != "" {
-			// checking to see if KubeStateMetricsURL contains the /metrics path already.
-			if strings.Contains(args.KubeStateMetricsURL, "/metrics") {
-				args.KubeStateMetricsURL = strings.Trim(args.KubeStateMetricsURL, "/metrics")
-			}
-			innerKSMDiscoverer, err = clientKsm.NewDiscovererForNodeIP(args.KubeStateMetricsURL, logger)
-		} else {
-			innerKSMDiscoverer, err = clientKsm.NewDiscoverer(logger)
-		}
-		if err != nil {
-			logger.Panic(err)
-		}
-		ksmDiscoverer := clientKsm.NewDiscoveryCacher(innerKSMDiscoverer, cacheStorage, ttl, logger)
-		ksmClient, err := ksmDiscoverer.Discover(timeout)
-		if err != nil {
-			logger.Panic(err)
-		}
-		ksmNodeIP := ksmClient.NodeIP()
-		logger.Debugf("KSM Node = %s", ksmNodeIP)
-
-		// setting role by auto discovery
-		var role string
-		if kubeletNodeIP == ksmNodeIP {
-			role = "leader"
-		} else {
-			role = "follower"
-		}
-		logger.Debugf("Auto-discovered role = %s", role)
-
-		k8s, err := client.NewKubernetes()
-		if err != nil {
-			logger.Panic(err)
-		}
-
-		ttlAPIServerCache, err := time.ParseDuration(args.APIServerCacheTTL)
-		if err != nil {
-			logger.WithError(err).Errorf("while parsing the api server cache TTL value. Defaulting to %s", ttlAPIServerCache)
-			ttlAPIServerCache = defaultAPIServerCacheTTL
-		}
-
-		apiServerClient := apiserver.NewClient(k8s)
-
-		if ttlAPIServerCache != time.Duration(0) {
-			apiServerClient = apiserver.NewFileCacheClientWrapper(apiServerClient,
-				getCacheDir(apiserverCacheDir),
-				ttlAPIServerCache)
-		}
-
-		kubeletGrouper := kubelet.NewGrouper(kubeletClient, logger, apiServerClient,
-			metric2.PodsFetchFunc(logger, kubeletClient),
-			metric2.CadvisorFetchFunc(kubeletClient, metric.CadvisorQueries))
-
-		switch role {
-		case "leader":
-			kubeletErr := populate(kubeletGrouper, metric.KubeletSpecs, integration, args.ClusterName, logger)
-			if kubeletErr != nil && len(kubeletErr.Errs) != 0 {
-				// We don't panic as we want to try populating ksm metrics.
-				for _, e := range kubeletErr.Errs {
-					logger.WithFields(
-						logrus.Fields{
-							"phase":      "populate",
-							"datasource": "kubelet",
-						}).Debug(e)
-				}
-
-			}
-
-			ksmGrouper := ksm.NewGrouper(ksmClient, metric.KSMQueries, logger)
-			ksmErr := populate(ksmGrouper, metric.KSMSpecs, integration, args.ClusterName, logger)
-			if ksmErr != nil && len(ksmErr.Errs) != 0 {
-				for _, e := range ksmErr.Errs {
-					logger.WithFields(
-						logrus.Fields{
-							"phase":      "populate",
-							"datasource": "kube-state-metrics",
-						}).Debug(e)
-				}
-			}
-
-			if !ksmErr.Populated && !kubeletErr.Populated {
-				// We panic since both populate processes failed.
-				logger.Panic("No data was populated")
-			}
-		case "follower":
-			populateErr := populate(kubeletGrouper, metric.KubeletSpecs, integration, args.ClusterName, logger)
-			if populateErr != nil && len(populateErr.Errs) != 0 {
-				for _, e := range populateErr.Errs {
-					logger.WithFields(
-						logrus.Fields{
-							"phase":      "populate",
-							"datasource": "kubelet",
-						}).Debug(e)
-				}
-			}
-
-			if !populateErr.Populated {
-				// We panic since the only populate process failed.
-				logger.Panic("No data was populated")
-			}
-		}
-
-		err = integration.Publish()
-		if err != nil {
-			logger.Panic(err)
+		if len(result.Errors) > 0 {
+			logger.WithFields(logrus.Fields{"phase": "populate", "datasource": job.Name}).Debug(result.Error())
 		}
 	}
+
+	if successfulJobs == 0 {
+		logger.Panic("No data was populated")
+	}
+
+	if err := integration.Publish(); err != nil {
+		logger.Panic(err)
+	}
+
 }

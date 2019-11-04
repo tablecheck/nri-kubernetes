@@ -90,7 +90,6 @@ func IntegrationProtocol2PopulateFunc(i *sdk.IntegrationProtocol2, clusterName s
 				if wasPopulated {
 					populated = true
 				}
-
 			}
 		}
 		if populated {

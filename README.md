@@ -26,10 +26,14 @@ For troubleshooting help, see [Not seeing data](https://docs.newrelic.com/docs/i
 
 Check how to [find and use data](https://docs.newrelic.com/docs/kubernetes-monitoring-integration#view-data) and description of all [captured data](https://docs.newrelic.com/docs/kubernetes-monitoring-integration#metrics).
 
-## Development
+## Local machine development
+
+See [cmd/kubernetes-static/readme.md](./cmd/kubernetes-static/readme.md) for more details.
+
+## In cluster development
 
 ### Prerequisites
-For development process [Minikube](https://kubernetes.io/docs/getting-started-guides/minikube) and [Skaffold](https://github.com/GoogleCloudPlatform/skaffold) tools are used.
+For in cluster development process [Minikube](https://kubernetes.io/docs/getting-started-guides/minikube) and [Skaffold](https://github.com/GoogleCloudPlatform/skaffold) tools are used.
 * [Install Minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/).
 * [Install Skaffold](https://github.com/GoogleCloudPlatform/skaffold#installation).
 
