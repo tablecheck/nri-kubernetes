@@ -7,42 +7,48 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 ### Changed
- - The old way of determining Leader/Follower status has been switched to a 
-   job based architecture. The old Leader/Follower was needed to detect which nri-kubernetes Pod 
-   should query Kube State Metrics (a.k.a. the Leader), but it was hard to add additional scrape targets (e.g. control plane).  
+ - The old way of determining Leader/Follower status has been switched to a
+   job based architecture. The old Leader/Follower was needed to detect which nri-kubernetes Pod
+   should query Kube State Metrics (a.k.a. the Leader), but it was hard to add additional scrape targets (e.g. control plane).
    Important notice: The output logs have been changed. Before the integration logged whether
    it was Follower or a Leader, and this has been changed to show which jobs are executed.
-   
+
    Following are 2 examples of logs that are being output by the integration before and after this update.
-   
+
    Before, logs for leaders:
    ```
    Auto-discovered role: Leader
-   ``` 
-   
+   ```
+
    After, equivalent example, now using jobs:
    ```
    Running job: kubelet
    Running job: kube state metrics
-   ```  
-   
+   ```
+
    Before, logs for followers:
    ```
    Auto-disovered role: Follower
    ```
-   
+
    After, equivalent example, now using jobs:
    ```
    Running job: kubelet
    ```
    These 2 before & after examples are identical in the targets & information they scrape.
-   
+
  - The e2e test package has been updated to work with this refactor.
-  
+
 ### Added
  - A new command, called kubernetes-static has been added, which enables the
    integration to be run locally on your machine, without deploying it to k8s.
    It uses a static set of exports from kubelet & KSM.
+
+## 1.10.2
+### Added
+- The integration now uses the infrastructure agent v1.5.75. For more
+  information refer to the [infrastructure agent release notes](https://docs.newrelic.com/docs/release-notes/infrastructure-release-notes/infrastructure-agent-release-notes/)
+  between versions v1.5.31 and v1.5.75.
 
 ## 1.10.1
 ### Changed
