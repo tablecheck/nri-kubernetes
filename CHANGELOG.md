@@ -43,6 +43,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - A new command, called kubernetes-static has been added, which enables the
    integration to be run locally on your machine, without deploying it to k8s.
    It uses a static set of exports from kubelet & KSM.
+ - A new way to query a specific Kube State Metrics (KSM) pod  when running multiple redundant pods: by Label Selector.
+   If you want to target a certain KSM instance, you can now use the `KUBE_STATE_METRICS_POD_LABEL` environment variable. 
+   If this variable has been set (and KUBE_STATE_METRICS_URL is unset) the integration will find the KSM pod by this variable.
+   
+   For example:
+      ```shell script
+      # Label a specific KSM pod. Always set the value to the string "true".
+      kubectl label pod kube-state-metrics please-use-this-ksm-pod=true
+      ```
+   Configure `nri-kubernetes` to use this KSM pod:
+    
+   ```yaml
+    env:
+    - name: KUBE_STATE_METRICS_POD_LABEL
+      value: please-use-this-ksm-pod 
+    ```
 
 ## 1.10.2
 ### Added

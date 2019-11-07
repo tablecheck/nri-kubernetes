@@ -29,13 +29,14 @@ import (
 
 type argumentList struct {
 	sdkArgs.DefaultArgumentList
-	Timeout             int    `default:"5000" help:"timeout in milliseconds for calling metrics sources"`
-	ClusterName         string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
-	DiscoveryCacheDir   string `default:"/var/cache/nr-kubernetes" help:"The location of the cached values for discovered endpoints. Obsolete, use CacheDir instead."`
-	CacheDir            string `default:"/var/cache/nr-kubernetes" help:"The location where to store various cached data."`
-	DiscoveryCacheTTL   string `default:"1h" help:"Duration since the discovered endpoints are stored in the cache until they expire. Valid time units: 'ns', 'us', 'ms', 's', 'm', 'h'"`
-	APIServerCacheTTL   string `default:"5m" help:"Duration to cache responses from the API Server. Valid time units: 'ns', 'us', 'ms', 's', 'm', 'h'. Set to 0s to disable"`
-	KubeStateMetricsURL string `help:"kube-state-metrics URL. If it is not provided, it will be discovered."`
+	Timeout                  int    `default:"5000" help:"timeout in milliseconds for calling metrics sources"`
+	ClusterName              string `help:"Identifier of your cluster. You could use it later to filter data in your New Relic account"`
+	DiscoveryCacheDir        string `default:"/var/cache/nr-kubernetes" help:"The location of the cached values for discovered endpoints. Obsolete, use CacheDir instead."`
+	CacheDir                 string `default:"/var/cache/nr-kubernetes" help:"The location where to store various cached data."`
+	DiscoveryCacheTTL        string `default:"1h" help:"Duration since the discovered endpoints are stored in the cache until they expire. Valid time units: 'ns', 'us', 'ms', 's', 'm', 'h'"`
+	APIServerCacheTTL        string `default:"5m" help:"Duration to cache responses from the API Server. Valid time units: 'ns', 'us', 'ms', 's', 'm', 'h'. Set to 0s to disable"`
+	KubeStateMetricsURL      string `help:"kube-state-metrics URL. If it is not provided, it will be discovered."`
+	KubeStateMetricsPodLabel string `help:"discover KSM using Kubernetes Labels."`
 }
 
 const (
@@ -121,17 +122,7 @@ func main() {
 	kubeletNodeIP := kubeletClient.NodeIP()
 	logger.Debugf("Kubelet node IP = %s", kubeletNodeIP)
 
-	var innerKSMDiscoverer client.Discoverer
-
-	if args.KubeStateMetricsURL != "" {
-		// checking to see if KubeStateMetricsURL contains the /metrics path already.
-		if strings.Contains(args.KubeStateMetricsURL, "/metrics") {
-			args.KubeStateMetricsURL = strings.Trim(args.KubeStateMetricsURL, "/metrics")
-		}
-		innerKSMDiscoverer, err = clientKsm.NewDiscovererForNodeIP(args.KubeStateMetricsURL, logger)
-	} else {
-		innerKSMDiscoverer, err = clientKsm.NewDiscoverer(logger)
-	}
+	innerKSMDiscoverer, err := getKSMDiscoverer(logger)
 
 	if err != nil {
 		logger.Panic(err)
@@ -150,7 +141,7 @@ func main() {
 		logger.WithError(err).Errorf("while parsing the api server cache TTL value. Defaulting to %s", ttlAPIServerCache)
 		ttlAPIServerCache = defaultAPIServerCacheTTL
 	}
-	k8s, err := client.NewKubernetes()
+	k8s, err := client.NewKubernetes(false)
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -199,4 +190,31 @@ func main() {
 		logger.Panic(err)
 	}
 
+}
+
+func getKSMDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
+
+	k8sClient, err := client.NewKubernetes( /* tryLocalKubeconfig */ false)
+	if err != nil {
+		return nil, err
+	}
+
+	// It's important this one is before the NodeLabel selector, for backwards compatibility.
+	if args.KubeStateMetricsURL != "" {
+		// checking to see if KubeStateMetricsURL contains the /metrics path already.
+		if strings.Contains(args.KubeStateMetricsURL, "/metrics") {
+			args.KubeStateMetricsURL = strings.Trim(args.KubeStateMetricsURL, "/metrics")
+		}
+
+		logger.Debugf("Discovering KSM using static endpoint (KUBE_STATE_METRICS_URL)")
+		return clientKsm.NewStaticEndpointDiscoverer(args.KubeStateMetricsURL, logger, k8sClient), nil
+	}
+
+	if args.KubeStateMetricsPodLabel != "" {
+		logger.Debugf("Discovering KSM using Pod Label (KUBE_STATE_METRICS_POD_LABEL)")
+		return clientKsm.NewPodLabelDiscoverer(args.KubeStateMetricsPodLabel, logger, k8sClient), nil
+	}
+
+	logger.Debugf("Discovering KSM using DNS / k8s ApiServer (default)")
+	return clientKsm.NewDiscoverer(logger, k8sClient), nil
 }
