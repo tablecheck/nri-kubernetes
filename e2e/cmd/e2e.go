@@ -117,16 +117,21 @@ func (err executionErr) Error() string {
 type job string
 
 const (
-	jobKSM     job = "kube-state-metrics"
-	jobKubelet job = "kubelet"
+	jobKSM               job = "kube-state-metrics"
+	jobKubelet           job = "kubelet"
+	jobScheduler         job = "scheduler"
+	jobEtcd              job = "etcd"
+	jobControllerManager job = "controller-manager"
+	jobAPIServer         job = "api-server"
 )
+
+var allJobs = [...]job{jobKSM, jobKubelet, jobScheduler, jobEtcd, jobControllerManager, jobAPIServer}
 
 func execIntegration(pod v1.Pod, ksmPod *v1.Pod, dataChannel chan integrationData, wg *sync.WaitGroup, c *k8s.Client, logger *logrus.Logger) {
 	defer timer.Track(time.Now(), fmt.Sprintf("execIntegration func for pod %s", pod.Name), logger)
 	defer wg.Done()
 	d := integrationData{
-		podName:      pod.Name,
-		expectedJobs: []job{jobKubelet},
+		podName: pod.Name,
 	}
 
 	output, err := c.PodExec(namespace, pod.Name, nrContainer, "/var/db/newrelic-infra/newrelic-integrations/bin/nr-kubernetes", "-timeout=15000", "-verbose")
@@ -139,9 +144,14 @@ func execIntegration(pod v1.Pod, ksmPod *v1.Pod, dataChannel chan integrationDat
 	d.stdOut = output.Stdout.Bytes()
 	d.stdErr = output.Stderr.Bytes()
 
-	if strings.Contains(string(d.stdErr), "Running job: kube-state-metrics") {
-		d.expectedJobs = append(d.expectedJobs, jobKSM)
+	for _, j := range allJobs {
+		expectedStr := fmt.Sprintf("Running job: %s", string(j))
+		if strings.Contains(string(d.stdErr), expectedStr) {
+			d.expectedJobs = append(d.expectedJobs, j)
+		}
 	}
+
+	logrus.Printf("Pod: %s, hostIP %s, expected jobs: %#v", pod.Name, pod.Status.HostIP, d.expectedJobs)
 
 	dataChannel <- d
 }
@@ -478,12 +488,25 @@ var eventTypeSchemas = map[string]jsonschema.EventTypeToSchemaFilename{
 		"K8sVolumeSample":    "volume.json",
 		"K8sClusterSample":   "cluster.json",
 	},
+	"scheduler": {
+		"K8sSchedulerSample": "scheduler.json",
+	},
+	"etcd": {
+		"K8sEtcdSample": "etcd.json",
+	},
+	"controller-manager": {
+		"K8sControllerManagerSample": "controller-manager.json",
+	},
+	"api-server": {
+		"K8sApiServerSample": "apiserver.json",
+	},
 }
 
 func testEventTypes(output map[string]integrationData) error {
 	for podName, o := range output {
 		schemasToMatch := make(map[string]jsonschema.EventTypeToSchemaFilename)
 		for _, expectedJob := range o.expectedJobs {
+			logrus.Printf("Job: %s, types: %#v", expectedJob, eventTypeSchemas[string(expectedJob)])
 			schemasToMatch[string(expectedJob)] = eventTypeSchemas[string(expectedJob)]
 		}
 

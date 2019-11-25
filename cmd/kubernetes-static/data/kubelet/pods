@@ -729,6 +729,7 @@
         "uid": "38d78cbd438e068d417c11c848b26f09",
         "creationTimestamp": null,
         "labels": {
+          "k8s-app": "kube-controller-manager",
           "component": "kube-controller-manager",
           "tier": "control-plane"
         },
@@ -1580,10 +1581,6 @@
                 "value": "jorik-local-minikube"
               },
               {
-                "name": "NRIA_LICENSE_KEY",
-                "value": "0b699f515c87f778f7055002c8e192fc54a8cba2"
-              },
-              {
                 "name": "NRIA_VERBOSE",
                 "value": "1"
               },
@@ -1799,6 +1796,7 @@
         "uid": "55fb35c74d029b98fd09840061da9bec",
         "creationTimestamp": null,
         "labels": {
+          "k8s-app": "kube-apiserver",
           "component": "kube-apiserver",
           "tier": "control-plane"
         },
@@ -1993,6 +1991,7 @@
         "uid": "c18ee741ac4ad7b2bfda7d88116f3047",
         "creationTimestamp": null,
         "labels": {
+          "k8s-app": "kube-scheduler",
           "component": "kube-scheduler",
           "tier": "control-plane"
         },

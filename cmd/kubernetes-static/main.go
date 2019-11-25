@@ -10,6 +10,7 @@ import (
 	"github.com/newrelic/infra-integrations-sdk/log"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
 	"github.com/newrelic/nri-kubernetes/src/apiserver"
+	"github.com/newrelic/nri-kubernetes/src/controlplane"
 	"github.com/newrelic/nri-kubernetes/src/ksm"
 	"github.com/newrelic/nri-kubernetes/src/kubelet"
 	metric2 "github.com/newrelic/nri-kubernetes/src/kubelet/metric"
@@ -55,10 +56,10 @@ func main() {
 
 	// Kubelet
 	kubeletClient := newBasicHTTPClient(endpoint + "/kubelet")
+	podsFetcher := metric2.NewPodsFetcher(logger, kubeletClient)
 	kubeletGrouper := kubelet.NewGrouper(kubeletClient, logger, apiServerClient,
-		metric2.PodsFetchFunc(logger, kubeletClient),
+		podsFetcher.FetchFuncWithCache(),
 		metric2.CadvisorFetchFunc(kubeletClient, metric.CadvisorQueries))
-
 	// KSM
 	ksmClient := newBasicHTTPClient(endpoint + "/ksm")
 	ksmGrouper := ksm.NewGrouper(ksmClient, metric.KSMQueries, logger)
@@ -66,6 +67,28 @@ func main() {
 	jobs := []*scrape.Job{
 		scrape.NewScrapeJob("kubelet", kubeletGrouper, metric.KubeletSpecs),
 		scrape.NewScrapeJob("kube-state-metrics", ksmGrouper, metric.KSMSpecs),
+	}
+
+	// controlPlaneComponentPods maps component.Name to the pod name
+	// found in the file `cmd/kubernetes-static/data/kubelet/pods`
+	controlPlaneComponentPods := map[controlplane.ComponentName]string{
+		"scheduler":          "kube-scheduler-minikube",
+		"etcd":               "etcd-minikube",
+		"controller-manager": "kube-controller-manager-minikube",
+		"apiserver":          "kube-apiserver-minikube",
+	}
+
+	for _, component := range controlplane.BuildComponentList() {
+		componentGrouper := controlplane.NewComponentGrouper(
+			newBasicHTTPClient(fmt.Sprintf("%s/controlplane/%s", endpoint, component.Name)),
+			component.Queries,
+			logger,
+			controlPlaneComponentPods[component.Name],
+		)
+		jobs = append(
+			jobs,
+			scrape.NewScrapeJob(string(component.Name), componentGrouper, component.Specs),
+		)
 	}
 
 	for _, job := range jobs {

@@ -12,6 +12,400 @@ import (
 	"github.com/newrelic/nri-kubernetes/src/prometheus"
 )
 
+// APIServerSpecs are the metric specifications we want to collect
+// from the control plane API server.
+var APIServerSpecs = definition.SpecGroups{
+	"api-server": {
+		IDGenerator:   prometheus.FromRawEntityIDGenerator,
+		TypeGenerator: prometheus.ControlPlaneComponentTypeGenerator,
+		Specs: []definition.Spec{
+			{
+				Name: "apiserver_request_total",
+				ValueFunc: prometheus.FromValue(
+					"apiserver_request_total",
+					prometheus.IncludeOnlyLabelsFilter("verb", "code"),
+				),
+				Type: sdkMetric.GAUGE,
+			},
+			{
+				Name: "rest_client_requests_total",
+				ValueFunc: prometheus.FromValue(
+					"rest_client_requests_total",
+					prometheus.IncludeOnlyLabelsFilter("method", "code"),
+				),
+				Type: sdkMetric.GAUGE,
+			},
+			{
+				Name:      "etcd_object_counts",
+				ValueFunc: prometheus.FromValue("etcd_object_counts"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "process_resident_memory_bytes",
+				ValueFunc: prometheus.FromValue("process_resident_memory_bytes"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "process_cpu_seconds_total",
+				ValueFunc: prometheus.FromValue("process_cpu_seconds_total"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "go_threads",
+				ValueFunc: prometheus.FromValue("go_threads"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "go_goroutines",
+				ValueFunc: prometheus.FromValue("go_goroutines"),
+				Type:      sdkMetric.GAUGE,
+			},
+		},
+	},
+}
+
+// APIServerQueries are the queries we will do to the control plane
+// API Server in order to fetch all the raw metrics.
+var APIServerQueries = []prometheus.Query{
+	{
+		MetricName: "apiserver_request_total",
+	},
+	{
+		MetricName: "rest_client_requests_total",
+	},
+	{
+		MetricName: "etcd_object_counts",
+	},
+	{
+		MetricName: "process_resident_memory_bytes",
+	},
+	{
+		MetricName: "process_cpu_seconds_total",
+	},
+	{
+		MetricName: "go_threads",
+	},
+	{
+		MetricName: "go_goroutines",
+	},
+}
+
+// ControllerManagerSpecs are the metric specifications we want to collect
+// from the control plane controller manager.
+var ControllerManagerSpecs = definition.SpecGroups{
+	"controller-manager": {
+		IDGenerator:   prometheus.FromRawEntityIDGenerator,
+		TypeGenerator: prometheus.ControlPlaneComponentTypeGenerator,
+		Specs: []definition.Spec{
+			{
+				Name:      "workqueue_adds_total",
+				ValueFunc: prometheus.FromValue("workqueue_adds_total"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "workqueue_depth",
+				ValueFunc: prometheus.FromValue("workqueue_depth"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "workqueue_retries_total",
+				ValueFunc: prometheus.FromValue("workqueue_retries_total"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "leader_election_master_status",
+				ValueFunc: prometheus.FromValue("leader_election_master_status", prometheus.IgnoreLabelsFilter("name")),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "process_resident_memory_bytes",
+				ValueFunc: prometheus.FromValue("process_resident_memory_bytes"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "process_cpu_seconds_total",
+				ValueFunc: prometheus.FromValue("process_cpu_seconds_total"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "go_threads",
+				ValueFunc: prometheus.FromValue("go_threads"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "go_goroutines",
+				ValueFunc: prometheus.FromValue("go_goroutines"),
+				Type:      sdkMetric.GAUGE,
+			},
+		},
+	},
+}
+
+// ControllerManagerQueries are the queries we will do to the control plane
+// controller manager in order to fetch all the raw metrics.
+var ControllerManagerQueries = []prometheus.Query{
+	{
+		MetricName: "workqueue_adds_total",
+	},
+	{
+		MetricName: "workqueue_depth",
+	},
+	{
+		MetricName: "workqueue_retries_total",
+	},
+	{
+		MetricName: "leader_election_master_status",
+	},
+	{
+		MetricName: "process_resident_memory_bytes",
+	},
+	{
+		MetricName: "process_cpu_seconds_total",
+	},
+	{
+		MetricName: "go_threads",
+	},
+	{
+		MetricName: "go_goroutines",
+	},
+}
+
+// SchedulerSpecs are the metric specifications we want to collect
+// from the control plane scheduler.
+var SchedulerSpecs = definition.SpecGroups{
+	"scheduler": {
+		IDGenerator:   prometheus.FromRawEntityIDGenerator,
+		TypeGenerator: prometheus.ControlPlaneComponentTypeGenerator,
+		Specs: []definition.Spec{
+			{
+				Name:      "http_request_duration_microseconds",
+				ValueFunc: prometheus.FromSummary("http_request_duration_microseconds"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "leader_election_master_status",
+				ValueFunc: prometheus.FromValue("leader_election_master_status", prometheus.IgnoreLabelsFilter("name")),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "rest_client_requests_total",
+				ValueFunc: prometheus.FromValue("rest_client_requests_total"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "schedule_attempts_total",
+				ValueFunc: prometheus.FromValue("scheduler_schedule_attempts_total"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "scheduling_duration_seconds",
+				ValueFunc: prometheus.FromSummary("scheduler_scheduling_duration_seconds"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "total_preemption_attempts",
+				ValueFunc: prometheus.FromValue("scheduler_total_preemption_attempts"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "pod_preemption_victims",
+				ValueFunc: prometheus.FromValue("scheduler_pod_preemption_victims"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "process_resident_memory_bytes",
+				ValueFunc: prometheus.FromValue("process_resident_memory_bytes"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "process_cpu_seconds_total",
+				ValueFunc: prometheus.FromValue("process_cpu_seconds_total"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "go_threads",
+				ValueFunc: prometheus.FromValue("go_threads"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "go_goroutines",
+				ValueFunc: prometheus.FromValue("go_goroutines"),
+				Type:      sdkMetric.GAUGE,
+			},
+		},
+	},
+}
+
+// SchedulerQueries are the queries we will do to the control plane
+// scheduler in order to fetch all the raw metrics.
+var SchedulerQueries = []prometheus.Query{
+	{
+		MetricName: "http_request_duration_microseconds",
+	},
+	{
+		MetricName: "leader_election_master_status",
+	},
+	{
+		MetricName: "rest_client_requests_total",
+	},
+	{
+		MetricName: "scheduler_schedule_attempts_total",
+	},
+	{
+		MetricName: "scheduler_scheduling_duration_seconds",
+	},
+	{
+		MetricName: "scheduler_total_preemption_attempts",
+	},
+	{
+		MetricName: "scheduler_pod_preemption_victims",
+	},
+	{
+		MetricName: "process_resident_memory_bytes",
+	},
+	{
+		MetricName: "process_cpu_seconds_total",
+	},
+	{
+		MetricName: "go_threads",
+	},
+	{
+		MetricName: "go_goroutines",
+	},
+}
+
+var EtcdSpecs = definition.SpecGroups{
+	"etcd": {
+		IDGenerator:   prometheus.FromRawEntityIDGenerator,
+		TypeGenerator: prometheus.ControlPlaneComponentTypeGenerator,
+		Specs: []definition.Spec{
+			{
+				Name:      "etcd_server_has_leader",
+				ValueFunc: prometheus.FromValue("etcd_server_has_leader"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "etcd_server_leader_changes_seen_total",
+				ValueFunc: prometheus.FromValue("etcd_server_leader_changes_seen_total"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "etcd_mvcc_db_total_size_in_bytes",
+				ValueFunc: prometheus.FromValue("etcd_mvcc_db_total_size_in_bytes"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "etcd_server_proposals_committed_total",
+				ValueFunc: prometheus.FromValue("etcd_server_proposals_committed_total"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "etcd_server_proposals_applied_total",
+				ValueFunc: prometheus.FromValue("etcd_server_proposals_applied_total"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "etcd_server_proposals_pending",
+				ValueFunc: prometheus.FromValue("etcd_server_proposals_pending"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "etcd_server_proposals_failed_total",
+				ValueFunc: prometheus.FromValue("etcd_server_proposals_failed_total"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "process_open_fds",
+				ValueFunc: prometheus.FromValue("process_open_fds"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "process_max_fds",
+				ValueFunc: prometheus.FromValue("process_max_fds"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "etcd_network_client_grpc_received_bytes_total",
+				ValueFunc: prometheus.FromValue("etcd_network_client_grpc_received_bytes_total"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "etcd_network_client_grpc_sent_bytes_total",
+				ValueFunc: prometheus.FromValue("etcd_network_client_grpc_sent_bytes_total"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "process_resident_memory_bytes",
+				ValueFunc: prometheus.FromValue("process_resident_memory_bytes"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "process_cpu_seconds_total",
+				ValueFunc: prometheus.FromValue("process_cpu_seconds_total"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "go_threads",
+				ValueFunc: prometheus.FromValue("go_threads"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "go_goroutines",
+				ValueFunc: prometheus.FromValue("go_goroutines"),
+				Type:      sdkMetric.GAUGE,
+			},
+		},
+	},
+}
+
+var EtcdQueries = []prometheus.Query{
+	{
+		MetricName: "etcd_server_has_leader",
+	},
+	{
+		MetricName: "etcd_server_leader_changes_seen_total",
+	},
+	{
+		MetricName: "etcd_mvcc_db_total_size_in_bytes",
+	},
+	{
+		MetricName: "etcd_server_proposals_committed_total",
+	},
+	{
+		MetricName: "etcd_server_proposals_applied_total",
+	},
+	{
+		MetricName: "etcd_server_proposals_pending",
+	},
+	{
+		MetricName: "etcd_server_proposals_failed_total",
+	},
+	{
+		MetricName: "process_open_fds",
+	},
+	{
+		MetricName: "process_max_fds",
+	},
+	{
+		MetricName: "etcd_network_client_grpc_received_bytes_total",
+	},
+	{
+		MetricName: "etcd_network_client_grpc_sent_bytes_total",
+	},
+	{
+		MetricName: "process_resident_memory_bytes",
+	},
+	{
+		MetricName: "process_cpu_seconds_total",
+	},
+	{
+		MetricName: "go_threads",
+	},
+	{
+		MetricName: "go_goroutines",
+	},
+}
+
 // KSMSpecs are the metric specifications we want to collect from KSM.
 var KSMSpecs = definition.SpecGroups{
 	"replicaset": {

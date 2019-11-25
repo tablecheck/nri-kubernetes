@@ -11,7 +11,7 @@ func newBasicHTTPClient(url string) *basicHTTPClient {
 	return &basicHTTPClient{
 		url: url,
 		httpClient: http.Client{
-			Timeout: time.Second * 2,
+			Timeout: time.Minute * 10, // high for debugging purposes
 		},
 	}
 }

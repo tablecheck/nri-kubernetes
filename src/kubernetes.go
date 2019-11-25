@@ -8,23 +8,24 @@ import (
 	"strings"
 	"time"
 
-	"github.com/newrelic/nri-kubernetes/src/scrape"
-
-	"github.com/newrelic/nri-kubernetes/src/apiserver"
-
-	"github.com/newrelic/nri-kubernetes/src/ksm"
-	"github.com/newrelic/nri-kubernetes/src/kubelet"
-
 	sdkArgs "github.com/newrelic/infra-integrations-sdk/args"
 	"github.com/newrelic/infra-integrations-sdk/log"
 	"github.com/newrelic/infra-integrations-sdk/sdk"
+	"github.com/sirupsen/logrus"
+
+	"github.com/newrelic/nri-kubernetes/src/apiserver"
 	"github.com/newrelic/nri-kubernetes/src/client"
+	"github.com/newrelic/nri-kubernetes/src/controlplane"
+	clientControlPlane "github.com/newrelic/nri-kubernetes/src/controlplane/client"
+	"github.com/newrelic/nri-kubernetes/src/data"
+	"github.com/newrelic/nri-kubernetes/src/ksm"
 	clientKsm "github.com/newrelic/nri-kubernetes/src/ksm/client"
+	"github.com/newrelic/nri-kubernetes/src/kubelet"
 	clientKubelet "github.com/newrelic/nri-kubernetes/src/kubelet/client"
 	metric2 "github.com/newrelic/nri-kubernetes/src/kubelet/metric"
 	"github.com/newrelic/nri-kubernetes/src/metric"
+	"github.com/newrelic/nri-kubernetes/src/scrape"
 	"github.com/newrelic/nri-kubernetes/src/storage"
-	"github.com/sirupsen/logrus"
 )
 
 type argumentList struct {
@@ -36,6 +37,8 @@ type argumentList struct {
 	DiscoveryCacheTTL        string `default:"1h" help:"Duration since the discovered endpoints are stored in the cache until they expire. Valid time units: 'ns', 'us', 'ms', 's', 'm', 'h'"`
 	APIServerCacheTTL        string `default:"5m" help:"Duration to cache responses from the API Server. Valid time units: 'ns', 'us', 'ms', 's', 'm', 'h'. Set to 0s to disable"`
 	KubeStateMetricsURL      string `help:"kube-state-metrics URL. If it is not provided, it will be discovered."`
+	EtcdTLSSecretName        string `help:"Name of the secret that stores your ETCD TLS configuration"`
+	EtcdTLSSecretNamespace   string `default:"default" help:"Namespace in which the ETCD TLS secret lives"`
 	KubeStateMetricsPodLabel string `help:"discover KSM using Kubernetes Labels."`
 }
 
@@ -63,6 +66,74 @@ func getCacheDir(subDirectory string) string {
 	}
 
 	return path.Join(cacheDir, subDirectory)
+}
+
+func controlPlaneJobs(
+	logger *logrus.Logger,
+	apiServerClient apiserver.Client,
+	nodeName string,
+	ttl time.Duration,
+	timeout time.Duration,
+	cacheStorage storage.Storage,
+	nodeIP string,
+	podsFetcher data.FetchFunc,
+	k8sClient client.Kubernetes,
+	etcdTLSSecretName string,
+	etcdTLSSecretNamespace string,
+) ([]*scrape.Job, error) {
+
+	nodeInfo, err := apiServerClient.GetNodeInfo(nodeName)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't query ApiServer server: %v", err)
+	}
+
+	if !nodeInfo.IsMasterNode() {
+		return nil, nil
+	}
+
+	var opts []controlplane.ComponentOption
+	if etcdTLSSecretName != "" {
+		opts = append(opts, controlplane.WithEtcdTLSConfig(etcdTLSSecretName, etcdTLSSecretNamespace))
+	}
+
+	var jobs []*scrape.Job
+	for _, component := range controlplane.BuildComponentList(opts...) {
+
+		// Components will be skipped if their configuration is not correct.
+		if component.Skip {
+			logger.Debugf("Skipping job creation for component %s: %s", component.Name, component.SkipReason)
+			continue
+		}
+
+		componentDiscoverer := clientControlPlane.NewComponentDiscoverer(component, logger, nodeIP, podsFetcher, k8sClient)
+		componentClient, err := componentDiscoverer.Discover(timeout)
+		if err != nil {
+			logger.Errorf("control plane component %s discovery failed: %v", component.Name, err)
+		}
+
+		c := componentClient.(*clientControlPlane.ControlPlaneComponentClient)
+
+		if !c.IsComponentRunningOnNode {
+			logger.Debugf(
+				"control plane component %s is not running on the node skipping job",
+				component.Name,
+			)
+			return nil, nil
+		}
+
+		componentGrouper := controlplane.NewComponentGrouper(
+			componentClient,
+			component.Queries,
+			logger,
+			c.PodName,
+		)
+		jobs = append(
+			jobs,
+			scrape.NewScrapeJob(string(component.Name), componentGrouper, component.Specs),
+		)
+	}
+
+	return jobs, nil
 }
 
 func main() {
@@ -154,11 +225,31 @@ func main() {
 			ttlAPIServerCache)
 	}
 
+	podsFetcher := metric2.NewPodsFetcher(logger, kubeletClient).FetchFuncWithCache()
 	var jobs []*scrape.Job
+	cpJobs, err := controlPlaneJobs(
+		logger,
+		apiServerClient,
+		nodeName,
+		ttl,
+		timeout,
+		cacheStorage,
+		kubeletNodeIP,
+		podsFetcher,
+		k8s,
+		args.EtcdTLSSecretName,
+		args.EtcdTLSSecretNamespace,
+	)
+
+	if err != nil {
+		logger.Errorf("couldn't configure control plane components jobs: %v", err)
+	} else {
+		jobs = append(jobs, cpJobs...)
+	}
 
 	// Kubelet is always scraped, on each node
 	kubeletGrouper := kubelet.NewGrouper(kubeletClient, logger, apiServerClient,
-		metric2.PodsFetchFunc(logger, kubeletClient),
+		podsFetcher,
 		metric2.CadvisorFetchFunc(kubeletClient, metric.CadvisorQueries))
 	jobs = append(jobs, scrape.NewScrapeJob("kubelet", kubeletGrouper, metric.KubeletSpecs))
 

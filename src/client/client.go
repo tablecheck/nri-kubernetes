@@ -34,6 +34,8 @@ type Kubernetes interface {
 	Config() *rest.Config
 	// SecureHTTPClient returns http.Client configured with timeout and CA Cert
 	SecureHTTPClient(time.Duration) (*http.Client, error)
+	// FindSecret returns the secret with the given name, if any
+	FindSecret(name, namespace string) (*v1.Secret, error)
 }
 
 type goClientImpl struct {
@@ -79,6 +81,10 @@ func (ka *goClientImpl) SecureHTTPClient(t time.Duration) (*http.Client, error) 
 		return nil, errors.New("failed to set up a client for connecting to Kubelet through API proxy")
 	}
 	return c.Client, nil
+}
+
+func (ka *goClientImpl) FindSecret(name, namespace string) (*v1.Secret, error) {
+	return ka.client.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
 }
 
 // BasicHTTPClient returns http.Client configured with timeout
