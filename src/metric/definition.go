@@ -20,20 +20,20 @@ var APIServerSpecs = definition.SpecGroups{
 		TypeGenerator: prometheus.ControlPlaneComponentTypeGenerator,
 		Specs: []definition.Spec{
 			{
-				Name: "apiserver_request_total",
+				Name: "apiserver_requests",
 				ValueFunc: prometheus.FromValue(
 					"apiserver_request_total",
 					prometheus.IncludeOnlyLabelsFilter("verb", "code"),
 				),
-				Type: sdkMetric.GAUGE,
+				Type: sdkMetric.DELTA,
 			},
 			{
-				Name: "rest_client_requests_total",
+				Name: "rest_client_requests",
 				ValueFunc: prometheus.FromValue(
 					"rest_client_requests_total",
 					prometheus.IncludeOnlyLabelsFilter("method", "code"),
 				),
-				Type: sdkMetric.GAUGE,
+				Type: sdkMetric.DELTA,
 			},
 			{
 				Name:      "etcd_object_counts",
@@ -46,9 +46,9 @@ var APIServerSpecs = definition.SpecGroups{
 				Type:      sdkMetric.GAUGE,
 			},
 			{
-				Name:      "process_cpu_seconds_total",
+				Name:      "process_cpu_seconds",
 				ValueFunc: prometheus.FromValue("process_cpu_seconds_total"),
-				Type:      sdkMetric.GAUGE,
+				Type:      sdkMetric.DELTA,
 			},
 			{
 				Name:      "go_threads",
@@ -98,19 +98,22 @@ var ControllerManagerSpecs = definition.SpecGroups{
 		TypeGenerator: prometheus.ControlPlaneComponentTypeGenerator,
 		Specs: []definition.Spec{
 			{
-				Name:      "workqueue_adds_total",
+				Name:      "workqueue_adds",
 				ValueFunc: prometheus.FromValue("workqueue_adds_total"),
-				Type:      sdkMetric.GAUGE,
+				Type:      sdkMetric.DELTA,
+				Optional:  true,
 			},
 			{
 				Name:      "workqueue_depth",
 				ValueFunc: prometheus.FromValue("workqueue_depth"),
 				Type:      sdkMetric.GAUGE,
+				Optional:  true,
 			},
 			{
-				Name:      "workqueue_retries_total",
+				Name:      "workqueue_retries",
 				ValueFunc: prometheus.FromValue("workqueue_retries_total"),
-				Type:      sdkMetric.GAUGE,
+				Type:      sdkMetric.DELTA,
+				Optional:  true,
 			},
 			{
 				Name:      "leader_election_master_status",
@@ -123,9 +126,9 @@ var ControllerManagerSpecs = definition.SpecGroups{
 				Type:      sdkMetric.GAUGE,
 			},
 			{
-				Name:      "process_cpu_seconds_total",
+				Name:      "process_cpu_seconds",
 				ValueFunc: prometheus.FromValue("process_cpu_seconds_total"),
-				Type:      sdkMetric.GAUGE,
+				Type:      sdkMetric.DELTA,
 			},
 			{
 				Name:      "go_threads",
@@ -178,34 +181,30 @@ var SchedulerSpecs = definition.SpecGroups{
 		TypeGenerator: prometheus.ControlPlaneComponentTypeGenerator,
 		Specs: []definition.Spec{
 			{
-				Name:      "http_request_duration_microseconds",
-				ValueFunc: prometheus.FromSummary("http_request_duration_microseconds"),
-				Type:      sdkMetric.GAUGE,
-			},
-			{
 				Name:      "leader_election_master_status",
 				ValueFunc: prometheus.FromValue("leader_election_master_status", prometheus.IgnoreLabelsFilter("name")),
 				Type:      sdkMetric.GAUGE,
 			},
 			{
-				Name:      "rest_client_requests_total",
+				Name:      "rest_client_requests",
 				ValueFunc: prometheus.FromValue("rest_client_requests_total"),
-				Type:      sdkMetric.GAUGE,
+				Type:      sdkMetric.DELTA,
 			},
 			{
-				Name:      "schedule_attempts_total",
+				Name:      "schedule_attempts",
 				ValueFunc: prometheus.FromValue("scheduler_schedule_attempts_total"),
-				Type:      sdkMetric.GAUGE,
+				Type:      sdkMetric.DELTA,
 			},
 			{
 				Name:      "scheduling_duration_seconds",
 				ValueFunc: prometheus.FromSummary("scheduler_scheduling_duration_seconds"),
 				Type:      sdkMetric.GAUGE,
+				Optional:  true,
 			},
 			{
-				Name:      "total_preemption_attempts",
+				Name:      "preemption_attempts",
 				ValueFunc: prometheus.FromValue("scheduler_total_preemption_attempts"),
-				Type:      sdkMetric.GAUGE,
+				Type:      sdkMetric.DELTA,
 			},
 			{
 				Name:      "pod_preemption_victims",
@@ -218,9 +217,9 @@ var SchedulerSpecs = definition.SpecGroups{
 				Type:      sdkMetric.GAUGE,
 			},
 			{
-				Name:      "process_cpu_seconds_total",
+				Name:      "process_cpu_seconds",
 				ValueFunc: prometheus.FromValue("process_cpu_seconds_total"),
-				Type:      sdkMetric.GAUGE,
+				Type:      sdkMetric.DELTA,
 			},
 			{
 				Name:      "go_threads",
@@ -239,9 +238,6 @@ var SchedulerSpecs = definition.SpecGroups{
 // SchedulerQueries are the queries we will do to the control plane
 // scheduler in order to fetch all the raw metrics.
 var SchedulerQueries = []prometheus.Query{
-	{
-		MetricName: "http_request_duration_microseconds",
-	},
 	{
 		MetricName: "leader_election_master_status",
 	},
@@ -285,9 +281,9 @@ var EtcdSpecs = definition.SpecGroups{
 				Type:      sdkMetric.GAUGE,
 			},
 			{
-				Name:      "etcd_server_leader_changes_seen_total",
+				Name:      "etcd_server_leader_changes_seen",
 				ValueFunc: prometheus.FromValue("etcd_server_leader_changes_seen_total"),
-				Type:      sdkMetric.GAUGE,
+				Type:      sdkMetric.DELTA,
 			},
 			{
 				Name:      "etcd_mvcc_db_total_size_in_bytes",
@@ -295,14 +291,14 @@ var EtcdSpecs = definition.SpecGroups{
 				Type:      sdkMetric.GAUGE,
 			},
 			{
-				Name:      "etcd_server_proposals_committed_total",
+				Name:      "etcd_server_proposals_committed",
 				ValueFunc: prometheus.FromValue("etcd_server_proposals_committed_total"),
-				Type:      sdkMetric.GAUGE,
+				Type:      sdkMetric.DELTA,
 			},
 			{
-				Name:      "etcd_server_proposals_applied_total",
+				Name:      "etcd_server_proposals_applied",
 				ValueFunc: prometheus.FromValue("etcd_server_proposals_applied_total"),
-				Type:      sdkMetric.GAUGE,
+				Type:      sdkMetric.DELTA,
 			},
 			{
 				Name:      "etcd_server_proposals_pending",
@@ -310,9 +306,9 @@ var EtcdSpecs = definition.SpecGroups{
 				Type:      sdkMetric.GAUGE,
 			},
 			{
-				Name:      "etcd_server_proposals_failed_total",
+				Name:      "etcd_server_proposals_failed",
 				ValueFunc: prometheus.FromValue("etcd_server_proposals_failed_total"),
-				Type:      sdkMetric.GAUGE,
+				Type:      sdkMetric.DELTA,
 			},
 			{
 				Name:      "process_open_fds",
@@ -325,14 +321,14 @@ var EtcdSpecs = definition.SpecGroups{
 				Type:      sdkMetric.GAUGE,
 			},
 			{
-				Name:      "etcd_network_client_grpc_received_bytes_total",
+				Name:      "etcd_network_client_grpc_received_bytes",
 				ValueFunc: prometheus.FromValue("etcd_network_client_grpc_received_bytes_total"),
-				Type:      sdkMetric.GAUGE,
+				Type:      sdkMetric.DELTA,
 			},
 			{
-				Name:      "etcd_network_client_grpc_sent_bytes_total",
+				Name:      "etcd_network_client_grpc_sent_bytes",
 				ValueFunc: prometheus.FromValue("etcd_network_client_grpc_sent_bytes_total"),
-				Type:      sdkMetric.GAUGE,
+				Type:      sdkMetric.DELTA,
 			},
 			{
 				Name:      "process_resident_memory_bytes",
@@ -340,9 +336,9 @@ var EtcdSpecs = definition.SpecGroups{
 				Type:      sdkMetric.GAUGE,
 			},
 			{
-				Name:      "process_cpu_seconds_total",
+				Name:      "process_cpu_seconds",
 				ValueFunc: prometheus.FromValue("process_cpu_seconds_total"),
-				Type:      sdkMetric.GAUGE,
+				Type:      sdkMetric.DELTA,
 			},
 			{
 				Name:      "go_threads",
