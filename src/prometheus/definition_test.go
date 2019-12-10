@@ -254,6 +254,13 @@ var summarySpec = definition.SpecGroups{
 	},
 }
 
+func float64Ptr(f float64) *float64 {
+	return &f
+}
+func uint64Ptr(u uint64) *uint64 {
+	return &u
+}
+
 var summaryRawGroups = definition.RawGroups{
 	"scheduler": {
 		"kube-scheduler-minikube": {
@@ -261,22 +268,22 @@ var summaryRawGroups = definition.RawGroups{
 				{
 					Labels: Labels{"l2": "v2", "l1": "v1", "handler": "prometheus"},
 					Value: &model.Summary{
-						SampleCount: func(x uint64) *uint64 { return &x }(5),
-						SampleSum:   func(x float64) *float64 { return &x }(45),
+						SampleCount: uint64Ptr(5),
+						SampleSum:   float64Ptr(45),
 						Quantile: []*model.Quantile{
 							{
-								Quantile:         func(x float64) *float64 { return &x }(0.5),
-								Value:            func(x float64) *float64 { return &x }(42),
+								Quantile:         float64Ptr(0.5),
+								Value:            float64Ptr(42),
 								XXX_unrecognized: nil,
 							},
 							{
-								Quantile:         func(x float64) *float64 { return &x }(0.9),
-								Value:            func(x float64) *float64 { return &x }(43),
+								Quantile:         float64Ptr(0.9),
+								Value:            float64Ptr(43),
 								XXX_unrecognized: nil,
 							},
 							{
-								Quantile:         func(x float64) *float64 { return &x }(0.99),
-								Value:            func(x float64) *float64 { return &x }(44),
+								Quantile:         float64Ptr(0.99),
+								Value:            float64Ptr(44),
 								XXX_unrecognized: nil,
 							},
 						},
@@ -285,22 +292,22 @@ var summaryRawGroups = definition.RawGroups{
 				}, {
 					Labels: Labels{"l2": "v2", "l1": "v1", "handler": "other"},
 					Value: &model.Summary{
-						SampleCount: func(x uint64) *uint64 { return &x }(5),
-						SampleSum:   func(x float64) *float64 { return &x }(45),
+						SampleCount: uint64Ptr(5),
+						SampleSum:   float64Ptr(45),
 						Quantile: []*model.Quantile{
 							{
-								Quantile:         func(x float64) *float64 { return &x }(0.5),
-								Value:            func(x float64) *float64 { return &x }(42),
+								Quantile:         float64Ptr(0.5),
+								Value:            float64Ptr(42),
 								XXX_unrecognized: nil,
 							},
 							{
-								Quantile:         func(x float64) *float64 { return &x }(0.9),
-								Value:            func(x float64) *float64 { return &x }(43),
+								Quantile:         float64Ptr(0.9),
+								Value:            float64Ptr(43),
 								XXX_unrecognized: nil,
 							},
 							{
-								Quantile:         func(x float64) *float64 { return &x }(0.99),
-								Value:            func(x float64) *float64 { return &x }(44),
+								Quantile:         float64Ptr(0.99),
+								Value:            float64Ptr(44),
 								XXX_unrecognized: nil,
 							},
 						},
@@ -320,22 +327,22 @@ var summaryMetricFamily = []MetricFamily{
 			{
 				Labels: Labels{"l2": "v2", "l1": "v1", "handler": "prometheus"},
 				Value: &model.Summary{
-					SampleCount: func(x uint64) *uint64 { return &x }(5),
-					SampleSum:   func(x float64) *float64 { return &x }(45),
+					SampleCount: uint64Ptr(5),
+					SampleSum:   float64Ptr(45),
 					Quantile: []*model.Quantile{
 						{
-							Quantile:         func(x float64) *float64 { return &x }(0.5),
-							Value:            func(x float64) *float64 { return &x }(42),
+							Quantile:         float64Ptr(0.5),
+							Value:            float64Ptr(42),
 							XXX_unrecognized: nil,
 						},
 						{
-							Quantile:         func(x float64) *float64 { return &x }(0.9),
-							Value:            func(x float64) *float64 { return &x }(43),
+							Quantile:         float64Ptr(0.9),
+							Value:            float64Ptr(43),
 							XXX_unrecognized: nil,
 						},
 						{
-							Quantile:         func(x float64) *float64 { return &x }(0.99),
-							Value:            func(x float64) *float64 { return &x }(44),
+							Quantile:         float64Ptr(0.99),
+							Value:            float64Ptr(44),
 							XXX_unrecognized: nil,
 						},
 					},
@@ -345,22 +352,22 @@ var summaryMetricFamily = []MetricFamily{
 			{
 				Labels: Labels{"l2": "v2", "l1": "v1", "handler": "other"},
 				Value: &model.Summary{
-					SampleCount: func(x uint64) *uint64 { return &x }(5),
-					SampleSum:   func(x float64) *float64 { return &x }(45),
+					SampleCount: uint64Ptr(5),
+					SampleSum:   float64Ptr(45),
 					Quantile: []*model.Quantile{
 						{
-							Quantile:         func(x float64) *float64 { return &x }(0.5),
-							Value:            func(x float64) *float64 { return &x }(42),
+							Quantile:         float64Ptr(0.5),
+							Value:            float64Ptr(42),
 							XXX_unrecognized: nil,
 						},
 						{
-							Quantile:         func(x float64) *float64 { return &x }(0.9),
-							Value:            func(x float64) *float64 { return &x }(43),
+							Quantile:         float64Ptr(0.9),
+							Value:            float64Ptr(43),
 							XXX_unrecognized: nil,
 						},
 						{
-							Quantile:         func(x float64) *float64 { return &x }(0.99),
-							Value:            func(x float64) *float64 { return &x }(44),
+							Quantile:         float64Ptr(0.99),
+							Value:            float64Ptr(44),
 							XXX_unrecognized: nil,
 						},
 					},
@@ -535,6 +542,30 @@ func TestFetchFuncs_CorrectValue(t *testing.T) {
 			},
 		},
 		{
+			name: "FromValueOverriddenName sets the correct name",
+			rawGroups: definition.RawGroups{
+				"scheduler": {
+					"kube-scheduler-minikube": {
+						"http_request_count": []Metric{
+							{
+								Labels: Labels{"verb": "GET"},
+								Value:  GaugeValue(1),
+							},
+							{
+								Labels: Labels{"verb": "POST"},
+								Value:  GaugeValue(9),
+							},
+						},
+					},
+				},
+			},
+			fetchFunc: FromValueWithOverriddenName("http_request_count", "my_custom_request_count"),
+			expectedFetchedValue: definition.FetchedValues{
+				"my_custom_request_count_verb_GET":  GaugeValue(1),
+				"my_custom_request_count_verb_POST": GaugeValue(9),
+			},
+		},
+		{
 			name: "FromValue correct multiple values",
 			rawGroups: definition.RawGroups{
 				"scheduler": {
@@ -599,22 +630,22 @@ func TestFetchFuncs_CorrectValue(t *testing.T) {
 							{
 								Labels: Labels{"l2": "v2", "l1": "v1", "handler": "prometheus"},
 								Value: &model.Summary{
-									SampleCount: func(x uint64) *uint64 { return &x }(5),
-									SampleSum:   func(x float64) *float64 { return &x }(math.Inf(1)),
+									SampleCount: uint64Ptr(5),
+									SampleSum:   float64Ptr(math.Inf(1)),
 									Quantile: []*model.Quantile{
 										{
-											Quantile:         func(x float64) *float64 { return &x }(0.5),
-											Value:            func(x float64) *float64 { return &x }(math.NaN()),
+											Quantile:         float64Ptr(0.5),
+											Value:            float64Ptr(math.NaN()),
 											XXX_unrecognized: nil,
 										},
 										{
-											Quantile:         func(x float64) *float64 { return &x }(0.9),
-											Value:            func(x float64) *float64 { return &x }(math.NaN()),
+											Quantile:         float64Ptr(0.9),
+											Value:            float64Ptr(math.NaN()),
 											XXX_unrecognized: nil,
 										},
 										{
-											Quantile:         func(x float64) *float64 { return &x }(0.99),
-											Value:            func(x float64) *float64 { return &x }(44),
+											Quantile:         float64Ptr(0.99),
+											Value:            float64Ptr(44),
 											XXX_unrecognized: nil,
 										},
 									},

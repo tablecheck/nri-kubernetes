@@ -282,10 +282,15 @@ func IncludeOnlyLabelsFilter(labelsToInclude ...string) func(Labels) Labels {
 
 // attributeName genereates the attribute name by suffixing the time-series
 // labels to the given metricName in order.
-func attributeName(metricName string, labels Labels, labelsFilter ...LabelsFilter) string {
+func attributeName(metricName, nameOverride string, labels Labels, labelsFilter ...LabelsFilter) string {
 	for _, filter := range labelsFilter {
 		labels = filter(labels)
 	}
+
+	if nameOverride != "" {
+		return suffixLabelsInOrder(nameOverride, labels)
+	}
+
 	return suffixLabelsInOrder(metricName, labels)
 }
 
@@ -329,12 +334,13 @@ func attributeName(metricName string, labels Labels, labelsFilter ...LabelsFilte
 // }
 func fetchedValuesFromRawMetrics(
 	metricName string,
+	nameOverride string,
 	metrics []Metric,
 	labelsFilter ...LabelsFilter,
 ) (definition.FetchedValues, error) {
 	val := make(definition.FetchedValues)
 	for _, metric := range metrics {
-		attrName := attributeName(metricName, metric.Labels, labelsFilter...)
+		attrName := attributeName(metricName, nameOverride, metric.Labels, labelsFilter...)
 		aggregatedValue, ok := val[attrName]
 
 		if !ok {
@@ -369,9 +375,15 @@ func fetchedValuesFromRawMetrics(
 }
 
 // FromValue creates a FetchFunc that fetches values from prometheus metrics values.
-func FromValue(key string, labelsFilter ...LabelsFilter) definition.FetchFunc {
+func FromValue(metricName string, labelsFilter ...LabelsFilter) definition.FetchFunc {
+	return FromValueWithOverriddenName(metricName, "", labelsFilter...)
+}
+
+// FromValueWithOverriddenName creates a FetchFunc that fetches values from prometheus metrics values.
+// If there are multiple values returned, and nameOverride is not empty, this name will be used as a prefix instead of the metricName.
+func FromValueWithOverriddenName(metricName string, nameOverride string, labelsFilter ...LabelsFilter) definition.FetchFunc {
 	return func(groupLabel, entityID string, groups definition.RawGroups) (definition.FetchedValue, error) {
-		value, err := definition.FromRaw(key)(groupLabel, entityID, groups)
+		value, err := definition.FromRaw(metricName)(groupLabel, entityID, groups)
 		if err != nil {
 			return nil, err
 		}
@@ -380,11 +392,11 @@ func FromValue(key string, labelsFilter ...LabelsFilter) definition.FetchFunc {
 		case Metric:
 			return m.Value, nil
 		case []Metric:
-			return fetchedValuesFromRawMetrics(key, m, labelsFilter...)
+			return fetchedValuesFromRawMetrics(metricName, nameOverride, m, labelsFilter...)
 		}
 		return nil, fmt.Errorf(
 			"incompatible metric type for %s. Expected: Metric or []Metric. Got: %T",
-			key,
+			metricName,
 			value,
 		)
 	}
