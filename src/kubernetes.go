@@ -115,10 +115,10 @@ func controlPlaneJobs(
 
 		if !c.IsComponentRunningOnNode {
 			logger.Debugf(
-				"control plane component %s is not running on the node skipping job",
+				"Could not find component %s on this master node, skipping job. ",
 				component.Name,
 			)
-			return nil, nil
+			continue
 		}
 
 		componentGrouper := controlplane.NewComponentGrouper(
