@@ -40,6 +40,35 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - The e2e test package has been updated to work with this refactor.
 
 ### Added
+ - Control Plane Monitoring: the integration will automatically detect if it's running on a master node using
+   its Kubernetes pod's labels, which are retrieved from the API Server. If it finds itself running on a master 
+   node, these additional jobs will run: 
+     - ETCD 
+     - API Server
+     - Controller Manager
+     - Scheduler
+   
+   All jobs, except ETCD, will work out of the box with no further configuration needed.
+   ETCD exposes its metrics using Mutual TLS, which can be configured as follows.
+    
+   First, create a secret containing the following fields:
+   ```
+   key: <private_key_data, PEM format>
+   cert: <certificate_belonging_to_private_key, PEM format>
+   cacert: <optional, the ETCD cacert, PEM format>
+   insecureSkipVerify: <optional, bool 'true' or 'false', default: 'false'>
+   ```
+   Which can be created like this (expecting the files `key`, `cert` and `cacert` to be present):
+   ```
+   kubectl create secret generic etcd-server-tls --from-file=./key --from-file=./cert --from-file=./cacert
+   ```
+   Then, configure the integration to use this secret using these environment variables.
+   ```
+   ETCD_TLS_SECRET_NAME: etcd-server-tls
+   ETCD_TLS_SECRET_NAMESPACE: default 
+   ```
+   
+   If everything is configured properly the integration should start collecting ETCD metrics.
  - A new command, called kubernetes-static has been added, which enables the
    integration to be run locally on your machine, without deploying it to k8s.
    It uses a static set of exports from kubelet & KSM.
