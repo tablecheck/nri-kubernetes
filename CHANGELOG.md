@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.11.0
 ### Changed
  - The old way of determining Leader/Follower status has been switched to a
    job based architecture. The old Leader/Follower was needed to detect which nri-kubernetes Pod
@@ -38,7 +38,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
    These 2 before & after examples are identical in the targets & information they scrape.
 
  - The e2e test package has been updated to work with this refactor.
-
 ### Added
  - Control Plane Monitoring: the integration will automatically detect if it's running on a master node using
    its Kubernetes pod's labels, which are retrieved from the API Server. If it finds itself running on a master 
