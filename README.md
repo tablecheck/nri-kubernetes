@@ -11,9 +11,16 @@ Check [documentation](https://docs.newrelic.com/docs/kubernetes-integration-new-
 
 ## Table of Contents
 
-* [Configuration and installation](#configuration-and-installation)
-* [Usage](#usage)
-* [Integration Development usage](#integration-development-usage)
+- [Table of Contents](#table-of-contents)
+- [Configuration and installation](#configuration-and-installation)
+- [Usage](#usage)
+- [Local machine development](#local-machine-development)
+- [In cluster development](#in-cluster-development)
+  - [Prerequisites](#prerequisites)
+  - [Configuration](#configuration)
+  - [Run](#run)
+  - [Tests](#tests)
+- [Releasing a new version](#releasing-a-new-version)
 
 ## Configuration and installation
 
@@ -101,17 +108,18 @@ CLUSTER_NAME=<your-cluster-name> NR_LICENSE_KEY=<your-license-key>  make e2e
 This make target is executing `go run e2e/cmd/e2e.go`. You could execute that
 command with `--help` flag to see all the available options.
 
-## Release
+## Releasing a new version
 
 - Run the `release.sh` script to update the version number in the code and 
   manifests files, commit and push the changes.
-- Create a branch called `release/X.Y.Z` where `X.Y.Z` is the version to
+  - This script could fail to run, because of major differences in `sed` across systems. If this happens, manually changing the entries found in `release.sh` also works.
+- Create a branch called `release/X.Y.Z` where `X.Y.Z` is the [Semantic Version](https://semver.org/#semantic-versioning-specification-semver) to
   release. This will trigger the Jenkins job that pushes the image to
   be released to quay. This is done in the `Jenkinsfile` jobs. Make sure the PR
   job finishes successfully. This branch doesn't need to be merged.
+- Create the Github release.
 - Run the [k8s-integration-release](`https://fsi-build.pdx.vm.datanerd.us/job/k8s-integration-release/`)
   job.
-- Create the Github release.
 - Update the release notes under the [On-Host Integrations Release Notes](https://docs.newrelic.com/docs/release-notes/platform-release-notes).
 - Once the release is finished send a notification in the following slack
   channels #kubernetes #infra-news #fsi-team. The notification can be
