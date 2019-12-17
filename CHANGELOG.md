@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+### Changed
+ - Control Plane components can now also be discovered using the `tier` and `component` labels, besides `k8s-app`.
+
 ## 1.11.0
 ### Changed
  - The old way of determining Leader/Follower status has been switched to a
