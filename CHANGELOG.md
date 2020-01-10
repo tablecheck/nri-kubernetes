@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 ### Changed
  - Control Plane components can now also be discovered using the `tier` and `component` labels, besides `k8s-app`.
+- The integration now uses the infrastructure agent v1.8.23. For more
+  information refer to the [infrastructure agent release notes](https://docs.newrelic.com/docs/release-notes/infrastructure-release-notes/infrastructure-agent-release-notes/)
+  between versions v1.5.75 and v1.8.23.
 
 ## 1.11.0
 ### Changed
