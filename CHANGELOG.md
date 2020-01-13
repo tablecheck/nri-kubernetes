@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+
+## 1.12.0
 ### Changed
  - Control Plane components can now also be discovered using the `tier` and `component` labels, besides `k8s-app`.
 - The integration now uses the infrastructure agent v1.8.23. For more
