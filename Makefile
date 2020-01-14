@@ -32,7 +32,7 @@ $(TOOLS_DIR)/govendor: $(TOOLS_DIR)
 
 $(TOOLS_DIR)/papers-go: $(TOOLS_DIR)
 	@echo "[tools] Downloading 'papers-go'"
-	@go get go.datanerd.us/p/ohai/papers-go/...
+	@go get source.datanerd.us/ohai/papers-go/...
 	@cp $(GOPATH)/bin/papers-go $(TOOLS_DIR)/papers-go
 
 .PHONY: deps
