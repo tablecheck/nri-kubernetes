@@ -53,7 +53,6 @@ ksm-instance-one:
     replicationcontrollers: false
     resourcequotas: false
     cronjobs: false
-    daemonsets: false
     endpoints: false
     horizontalpodautoscalers: false
     jobs: false
@@ -61,7 +60,6 @@ ksm-instance-one:
     persistentvolumeclaims: false
     persistentvolumes: false
     services: false
-    statefulsets: false
     configmaps: false
     ingresses: false
     poddisruptionbudgets: false
@@ -82,7 +80,6 @@ ksm-instance-two:
     replicationcontrollers: false
     resourcequotas: false
     cronjobs: false
-    daemonsets: false
     endpoints: false
     horizontalpodautoscalers: false
     jobs: false
@@ -90,7 +87,6 @@ ksm-instance-two:
     persistentvolumeclaims: false
     persistentvolumes: false
     services: false
-    statefulsets: false
     configmaps: false
     ingresses: false
     poddisruptionbudgets: false

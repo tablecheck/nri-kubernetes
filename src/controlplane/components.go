@@ -60,7 +60,7 @@ func WithEtcdTLSConfig(etcdTLSSecretName, etcdTLSSecretNamespace string) Compone
 	}
 }
 
-// findComponentByName will find the compeont with the given name
+// findComponentByName will find the component with the given name
 func findComponentByName(name ComponentName, components []Component) *Component {
 	for i := range components {
 		if components[i].Name == name {

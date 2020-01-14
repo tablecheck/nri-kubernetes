@@ -468,9 +468,46 @@ var KSMSpecs = definition.SpecGroups{
 			{Name: "podsFullyLabeled", ValueFunc: prometheus.FromValue("kube_replicaset_status_fully_labeled_replicas"), Type: sdkMetric.GAUGE},
 			{Name: "observedGeneration", ValueFunc: prometheus.FromValue("kube_replicaset_status_observed_generation"), Type: sdkMetric.GAUGE},
 			{Name: "replicasetName", ValueFunc: prometheus.FromLabelValue("kube_replicaset_created", "replicaset"), Type: sdkMetric.ATTRIBUTE},
+			// namespace is here for backwards compatibility, we should use the namespaceName
 			{Name: "namespace", ValueFunc: prometheus.FromLabelValue("kube_replicaset_created", "namespace"), Type: sdkMetric.ATTRIBUTE},
 			{Name: "namespaceName", ValueFunc: prometheus.FromLabelValue("kube_replicaset_created", "namespace"), Type: sdkMetric.ATTRIBUTE},
 			{Name: "deploymentName", ValueFunc: ksmMetric.GetDeploymentNameForReplicaSet(), Type: sdkMetric.ATTRIBUTE},
+		},
+	},
+	"statefulset": {
+		IDGenerator:   prometheus.FromLabelValueEntityIDGenerator("kube_statefulset_created", "statefulset"),
+		TypeGenerator: prometheus.FromLabelValueEntityTypeGenerator("kube_statefulset_created"),
+		Specs: []definition.Spec{
+			{Name: "createdAt", ValueFunc: prometheus.FromValue("kube_statefulset_created"), Type: sdkMetric.GAUGE},
+			{Name: "podsDesired", ValueFunc: prometheus.FromValue("kube_statefulset_replicas"), Type: sdkMetric.GAUGE},
+			{Name: "podsReady", ValueFunc: prometheus.FromValue("kube_statefulset_status_replicas_ready"), Type: sdkMetric.GAUGE},
+			{Name: "podsCurrent", ValueFunc: prometheus.FromValue("kube_statefulset_status_replicas_current"), Type: sdkMetric.GAUGE},
+			{Name: "podsTotal", ValueFunc: prometheus.FromValue("kube_statefulset_status_replicas"), Type: sdkMetric.GAUGE},
+			{Name: "podsUpdated", ValueFunc: prometheus.FromValue("kube_statefulset_status_replicas_updated"), Type: sdkMetric.GAUGE},
+			{Name: "observedGeneration", ValueFunc: prometheus.FromValue("kube_statefulset_status_observed_generation"), Type: sdkMetric.GAUGE},
+			{Name: "metadataGeneration", ValueFunc: prometheus.FromValue("kube_statefulset_metadata_generation"), Type: sdkMetric.GAUGE},
+			{Name: "currentRevision", ValueFunc: prometheus.FromValue("kube_statefulset_status_current_revision"), Type: sdkMetric.GAUGE},
+			{Name: "updateRevision", ValueFunc: prometheus.FromValue("kube_statefulset_status_update_revision"), Type: sdkMetric.GAUGE},
+			{Name: "statefulsetName", ValueFunc: prometheus.FromLabelValue("kube_statefulset_created", "statefulset"), Type: sdkMetric.ATTRIBUTE},
+			{Name: "namespaceName", ValueFunc: prometheus.FromLabelValue("kube_statefulset_created", "namespace"), Type: sdkMetric.ATTRIBUTE},
+			{Name: "label.*", ValueFunc: prometheus.InheritAllLabelsFrom("statefulset", "kube_statefulset_labels"), Type: sdkMetric.ATTRIBUTE},
+		},
+	},
+	"daemonset": {
+		IDGenerator:   prometheus.FromLabelValueEntityIDGenerator("kube_daemonset_created", "daemonset"),
+		TypeGenerator: prometheus.FromLabelValueEntityTypeGenerator("kube_daemonset_created"),
+		Specs: []definition.Spec{
+			{Name: "createdAt", ValueFunc: prometheus.FromValue("kube_daemonset_created"), Type: sdkMetric.GAUGE},
+			{Name: "podsDesired", ValueFunc: prometheus.FromValue("kube_daemonset_status_desired_number_scheduled"), Type: sdkMetric.GAUGE},
+			{Name: "podsScheduled", ValueFunc: prometheus.FromValue("kube_daemonset_status_current_number_scheduled"), Type: sdkMetric.GAUGE},
+			{Name: "podsAvailable", ValueFunc: prometheus.FromValue("kube_daemonset_status_number_available"), Type: sdkMetric.GAUGE},
+			{Name: "podsReady", ValueFunc: prometheus.FromValue("kube_daemonset_status_number_ready"), Type: sdkMetric.GAUGE},
+			{Name: "podsUnavailable", ValueFunc: prometheus.FromValue("kube_daemonset_status_number_unavailable"), Type: sdkMetric.GAUGE},
+			{Name: "podsMisscheduled", ValueFunc: prometheus.FromValue("kube_daemonset_status_number_misscheduled"), Type: sdkMetric.GAUGE},
+			{Name: "podsUpdatedScheduled", ValueFunc: prometheus.FromValue("kube_daemonset_updated_number_scheduled"), Type: sdkMetric.GAUGE},
+			{Name: "metadataGeneration", ValueFunc: prometheus.FromValue("kube_daemonset_metadata_generation"), Type: sdkMetric.GAUGE},
+			{Name: "namespaceName", ValueFunc: prometheus.FromLabelValue("kube_daemonset_created", "namespace"), Type: sdkMetric.ATTRIBUTE},
+			{Name: "label.*", ValueFunc: prometheus.InheritAllLabelsFrom("daemonset", "kube_daemonset_labels"), Type: sdkMetric.ATTRIBUTE},
 		},
 	},
 	"namespace": {
@@ -487,8 +524,8 @@ var KSMSpecs = definition.SpecGroups{
 		IDGenerator:   prometheus.FromLabelValueEntityIDGenerator("kube_deployment_created", "deployment"),
 		TypeGenerator: prometheus.FromLabelValueEntityTypeGenerator("kube_deployment_created"),
 		Specs: []definition.Spec{
-			{Name: "podsDesired", ValueFunc: prometheus.FromValue("kube_deployment_spec_replicas"), Type: sdkMetric.GAUGE},
 			{Name: "createdAt", ValueFunc: prometheus.FromValue("kube_deployment_created"), Type: sdkMetric.GAUGE},
+			{Name: "podsDesired", ValueFunc: prometheus.FromValue("kube_deployment_spec_replicas"), Type: sdkMetric.GAUGE},
 			{Name: "podsTotal", ValueFunc: prometheus.FromValue("kube_deployment_status_replicas"), Type: sdkMetric.GAUGE},
 			{Name: "podsAvailable", ValueFunc: prometheus.FromValue("kube_deployment_status_replicas_available"), Type: sdkMetric.GAUGE},
 			{Name: "podsUnavailable", ValueFunc: prometheus.FromValue("kube_deployment_status_replicas_unavailable"), Type: sdkMetric.GAUGE},
@@ -530,99 +567,70 @@ var KSMSpecs = definition.SpecGroups{
 
 // KSMQueries are the queries we will do to KSM in order to fetch all the raw metrics.
 var KSMQueries = []prometheus.Query{
-	{
-		MetricName: "kube_replicaset_spec_replicas",
-	},
-	{
-		MetricName: "kube_replicaset_status_ready_replicas",
-	},
-	{
-		MetricName: "kube_replicaset_status_replicas",
-	},
-	{
-		MetricName: "kube_replicaset_status_fully_labeled_replicas",
-	},
-	{
-		MetricName: "kube_replicaset_status_observed_generation",
-	},
-	{
-		MetricName: "kube_replicaset_created",
-	},
-	{
-		MetricName: "kube_namespace_labels",
-		Value: prometheus.QueryValue{
-			Value: prometheus.GaugeValue(1),
-		},
-	},
-	{
-		MetricName: "kube_namespace_created",
-	},
-	{
-		MetricName: "kube_namespace_status_phase",
-		Value: prometheus.QueryValue{
-			Value: prometheus.GaugeValue(1),
-		},
-	},
-	{
-		MetricName: "kube_deployment_labels",
-		Value: prometheus.QueryValue{
-			Value: prometheus.GaugeValue(1),
-		},
-	},
-	{
-		MetricName: "kube_deployment_created",
-	},
-	{
-		MetricName: "kube_deployment_spec_replicas",
-	},
-	{
-		MetricName: "kube_deployment_status_replicas",
-	},
-	{
-		MetricName: "kube_deployment_status_replicas_available",
-	},
-	{
-		MetricName: "kube_deployment_status_replicas_unavailable",
-	},
-	{
-		MetricName: "kube_deployment_status_replicas_updated",
-	},
-	{
-		MetricName: "kube_deployment_spec_strategy_rollingupdate_max_unavailable",
-	},
-	{
-		MetricName: "kube_pod_status_phase",
-		Labels: prometheus.QueryLabels{
-			Labels: prometheus.Labels{"phase": "Pending"},
-		},
-		Value: prometheus.QueryValue{
-			Value: prometheus.GaugeValue(1),
-		},
-	},
-	{
-		MetricName: "kube_pod_info",
-	},
-	{
-		MetricName: "kube_pod_created",
-	},
-	{
-		MetricName: "kube_pod_labels",
-	},
-	{
-		MetricName: "kube_pod_status_scheduled",
-		Value: prometheus.QueryValue{
-			Value: prometheus.GaugeValue(1),
-		},
-	},
-	{
-		MetricName: "kube_pod_status_ready",
-		Value: prometheus.QueryValue{
-			Value: prometheus.GaugeValue(1),
-		},
-	},
-	{
-		MetricName: "kube_pod_start_time",
-	},
+
+	{MetricName: "kube_statefulset_replicas"},
+	{MetricName: "kube_statefulset_status_replicas_ready"},
+	{MetricName: "kube_statefulset_status_replicas"},
+	{MetricName: "kube_statefulset_status_replicas_current"},
+	{MetricName: "kube_statefulset_status_replicas_updated"},
+	{MetricName: "kube_statefulset_status_observed_generation"},
+	{MetricName: "kube_statefulset_metadata_generation"},
+	{MetricName: "kube_statefulset_status_current_revision"},
+	{MetricName: "kube_statefulset_status_update_revision"},
+	{MetricName: "kube_statefulset_created"},
+	{MetricName: "kube_statefulset_labels", Value: prometheus.QueryValue{
+		Value: prometheus.GaugeValue(1),
+	}},
+	{MetricName: "kube_daemonset_created"},
+	{MetricName: "kube_daemonset_status_desired_number_scheduled"},
+	{MetricName: "kube_daemonset_status_current_number_scheduled"},
+	{MetricName: "kube_daemonset_status_number_ready"},
+	{MetricName: "kube_daemonset_status_number_available"},
+	{MetricName: "kube_daemonset_status_number_unavailable"},
+	{MetricName: "kube_daemonset_status_number_misscheduled"},
+	{MetricName: "kube_daemonset_updated_number_scheduled"},
+	{MetricName: "kube_daemonset_metadata_generation"},
+	{MetricName: "kube_daemonset_labels", Value: prometheus.QueryValue{
+		Value: prometheus.GaugeValue(1),
+	}},
+	{MetricName: "kube_replicaset_spec_replicas"},
+	{MetricName: "kube_replicaset_status_ready_replicas"},
+	{MetricName: "kube_replicaset_status_replicas"},
+	{MetricName: "kube_replicaset_status_fully_labeled_replicas"},
+	{MetricName: "kube_replicaset_status_observed_generation"},
+	{MetricName: "kube_replicaset_created"},
+	{MetricName: "kube_namespace_labels", Value: prometheus.QueryValue{
+		Value: prometheus.GaugeValue(1),
+	}},
+	{MetricName: "kube_namespace_created"},
+	{MetricName: "kube_namespace_status_phase", Value: prometheus.QueryValue{
+		Value: prometheus.GaugeValue(1),
+	}},
+	{MetricName: "kube_deployment_labels", Value: prometheus.QueryValue{
+		Value: prometheus.GaugeValue(1),
+	}},
+	{MetricName: "kube_deployment_created"},
+	{MetricName: "kube_deployment_spec_replicas"},
+	{MetricName: "kube_deployment_status_replicas"},
+	{MetricName: "kube_deployment_status_replicas_available"},
+	{MetricName: "kube_deployment_status_replicas_unavailable"},
+	{MetricName: "kube_deployment_status_replicas_updated"},
+	{MetricName: "kube_deployment_spec_strategy_rollingupdate_max_unavailable"},
+	{MetricName: "kube_pod_status_phase", Labels: prometheus.QueryLabels{
+		Labels: prometheus.Labels{"phase": "Pending"},
+	}, Value: prometheus.QueryValue{
+		Value: prometheus.GaugeValue(1),
+	}},
+	{MetricName: "kube_pod_info"},
+	{MetricName: "kube_pod_created"},
+	{MetricName: "kube_pod_labels"},
+	{MetricName: "kube_pod_status_scheduled", Value: prometheus.QueryValue{
+		Value: prometheus.GaugeValue(1),
+	}},
+	{MetricName: "kube_pod_status_ready", Value: prometheus.QueryValue{
+		Value: prometheus.GaugeValue(1),
+	}},
+	{MetricName: "kube_pod_start_time"},
 }
 
 // CadvisorQueries are the queries we will do to the kubelet metrics cadvisor endpoint in order to fetch all the raw metrics.
