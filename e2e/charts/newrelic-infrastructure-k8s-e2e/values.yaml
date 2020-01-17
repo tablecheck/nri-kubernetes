@@ -53,13 +53,11 @@ ksm-instance-one:
     replicationcontrollers: false
     resourcequotas: false
     cronjobs: false
-    endpoints: false
     horizontalpodautoscalers: false
     jobs: false
     limitranges: false
     persistentvolumeclaims: false
     persistentvolumes: false
-    services: false
     configmaps: false
     ingresses: false
     poddisruptionbudgets: false
@@ -80,13 +78,11 @@ ksm-instance-two:
     replicationcontrollers: false
     resourcequotas: false
     cronjobs: false
-    endpoints: false
     horizontalpodautoscalers: false
     jobs: false
     limitranges: false
     persistentvolumeclaims: false
     persistentvolumes: false
-    services: false
     configmaps: false
     ingresses: false
     poddisruptionbudgets: false

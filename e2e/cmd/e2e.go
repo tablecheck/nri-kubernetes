@@ -507,6 +507,8 @@ var eventTypeSchemas = map[string]jsonschema.EventTypeToSchemaFilename{
 		"K8sDeploymentSample":  "deployment.json",
 		"K8sDaemonsetSample":   "daemonset.json",
 		"K8sStatefulsetSample": "statefulset.json",
+		"K8sEndpointSample":    "endpoint.json",
+		"K8sServiceSample":     "service.json",
 	},
 	"kubelet": {
 		"K8sPodSample":       "pod.json",

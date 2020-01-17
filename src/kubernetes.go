@@ -255,7 +255,7 @@ func main() {
 
 	// we only scrape KSM when we are on the same Node as KSM
 	if kubeletNodeIP == ksmNodeIP {
-		ksmGrouper := ksm.NewGrouper(ksmClient, metric.KSMQueries, logger)
+		ksmGrouper := ksm.NewGrouper(ksmClient, metric.KSMQueries, logger, k8s)
 		jobs = append(jobs, scrape.NewScrapeJob("kube-state-metrics", ksmGrouper, metric.KSMSpecs))
 	}
 

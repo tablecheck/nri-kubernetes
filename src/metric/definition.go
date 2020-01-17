@@ -308,6 +308,8 @@ var SchedulerQueries = []prometheus.Query{
 	},
 }
 
+// EtcdSpecs are the metric specifications we want to collect
+// from ETCD.
 var EtcdSpecs = definition.SpecGroups{
 	"etcd": {
 		IDGenerator:   prometheus.FromRawEntityIDGenerator,
@@ -407,6 +409,8 @@ var EtcdSpecs = definition.SpecGroups{
 	},
 }
 
+// EtcdQueries are the queries we will do to the control plane
+// etcd instances in order to fetch all the raw metrics.
 var EtcdQueries = []prometheus.Query{
 	{
 		MetricName: "etcd_server_has_leader",
@@ -539,6 +543,97 @@ var KSMSpecs = definition.SpecGroups{
 			{Name: "label.*", ValueFunc: prometheus.InheritAllLabelsFrom("deployment", "kube_deployment_labels"), Type: sdkMetric.ATTRIBUTE},
 		},
 	},
+	"service": {
+		IDGenerator:   prometheus.FromLabelValueEntityIDGenerator("kube_service_created", "service"),
+		TypeGenerator: prometheus.FromLabelValueEntityTypeGenerator("kube_service_created"),
+		Specs: []definition.Spec{
+			{
+				Name:      "createdAt",
+				ValueFunc: prometheus.FromValue("kube_service_created"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "namespaceName",
+				ValueFunc: prometheus.FromLabelValue("kube_service_labels", "namespace"),
+				Type:      sdkMetric.ATTRIBUTE,
+			},
+			{
+				Name:      "serviceName",
+				ValueFunc: prometheus.FromLabelValue("kube_service_labels", "service"),
+				Type:      sdkMetric.ATTRIBUTE,
+			},
+			{
+				Name:      "loadBalancerIP",
+				ValueFunc: prometheus.FromLabelValue("kube_service_info", "load_balancer_ip"),
+				Type:      sdkMetric.ATTRIBUTE,
+				Optional:  true,
+			},
+			{
+				Name:      "externalName",
+				ValueFunc: prometheus.FromLabelValue("kube_service_info", "external_name"),
+				Type:      sdkMetric.ATTRIBUTE,
+				Optional:  true,
+			},
+			{
+				Name:      "clusterIP",
+				ValueFunc: prometheus.FromLabelValue("kube_service_info", "cluster_ip"),
+				Type:      sdkMetric.ATTRIBUTE,
+				Optional:  true,
+			},
+			{
+				Name:      "label.*",
+				ValueFunc: prometheus.InheritAllLabelsFrom("service", "kube_service_labels"),
+				Type:      sdkMetric.ATTRIBUTE,
+			},
+			{
+				Name:      "specType",
+				ValueFunc: prometheus.FromLabelValue("kube_service_spec_type", "type"),
+				Type:      sdkMetric.ATTRIBUTE,
+			},
+			{
+				Name: "selector.*",
+				// Fetched from the APIServer that's why it has the `apiserver` prefix.
+				ValueFunc: prometheus.InheritAllSelectorsFrom("service", "apiserver_kube_service_spec_selectors"),
+				Type:      sdkMetric.ATTRIBUTE,
+			},
+		},
+	},
+	"endpoint": {
+		IDGenerator:   prometheus.FromLabelValueEntityIDGenerator("kube_endpoint_created", "endpoint"),
+		TypeGenerator: prometheus.FromLabelValueEntityTypeGenerator("kube_endpoint_created"),
+		Specs: []definition.Spec{
+			{
+				Name:      "createdAt",
+				ValueFunc: prometheus.FromValue("kube_endpoint_created"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "namespaceName",
+				ValueFunc: prometheus.FromLabelValue("kube_endpoint_labels", "namespace"),
+				Type:      sdkMetric.ATTRIBUTE,
+			},
+			{
+				Name:      "endpointName",
+				ValueFunc: prometheus.FromLabelValue("kube_endpoint_labels", "endpoint"),
+				Type:      sdkMetric.ATTRIBUTE,
+			},
+			{
+				Name:      "label.*",
+				ValueFunc: prometheus.InheritAllLabelsFrom("endpoint", "kube_endpoint_labels"),
+				Type:      sdkMetric.ATTRIBUTE,
+			},
+			{
+				Name:      "addressNotReady",
+				ValueFunc: prometheus.FromValue("kube_endpoint_address_not_ready"),
+				Type:      sdkMetric.GAUGE,
+			},
+			{
+				Name:      "addressAvailable",
+				ValueFunc: prometheus.FromValue("kube_endpoint_address_available"),
+				Type:      sdkMetric.GAUGE,
+			},
+		},
+	},
 	// We get Pod metrics from kube-state-metrics for those pods that are in
 	// "Pending" status and are not scheduled. We can't get the data from Kubelet because
 	// they aren't running in any node and the information about them is only
@@ -567,7 +662,6 @@ var KSMSpecs = definition.SpecGroups{
 
 // KSMQueries are the queries we will do to KSM in order to fetch all the raw metrics.
 var KSMQueries = []prometheus.Query{
-
 	{MetricName: "kube_statefulset_replicas"},
 	{MetricName: "kube_statefulset_status_replicas_ready"},
 	{MetricName: "kube_statefulset_status_replicas"},
@@ -631,6 +725,16 @@ var KSMQueries = []prometheus.Query{
 		Value: prometheus.GaugeValue(1),
 	}},
 	{MetricName: "kube_pod_start_time"},
+	{MetricName: "kube_service_created"},
+	{MetricName: "kube_service_labels"},
+	{MetricName: "kube_service_info"},
+	{MetricName: "kube_service_spec_type", Value: prometheus.QueryValue{
+		Value: prometheus.GaugeValue(1),
+	}},
+	{MetricName: "kube_endpoint_created"},
+	{MetricName: "kube_endpoint_labels"},
+	{MetricName: "kube_endpoint_address_not_ready"},
+	{MetricName: "kube_endpoint_address_available"},
 }
 
 // CadvisorQueries are the queries we will do to the kubelet metrics cadvisor endpoint in order to fetch all the raw metrics.
