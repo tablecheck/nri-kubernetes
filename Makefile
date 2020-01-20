@@ -2,7 +2,7 @@ OSFLAG := $(shell uname -s | tr A-Z a-z)
 OSFLAG := $(OSFLAG)_amd64
 BIN_DIR = ./bin
 TOOLS_DIR := $(BIN_DIR)/dev-tools
-BINARY_NAME = nr-kubernetes
+BINARY_NAME = nri-kubernetes
 E2E_BINARY_NAME := $(BINARY_NAME)-e2e
 
 GOVENDOR_VERSION = 1.0.8

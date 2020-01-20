@@ -1,8 +1,6 @@
-integration_name: com.newrelic.kubernetes
-
-instances:
+integrations:
   - name: nri-kubernetes
-    command: metrics
+    interval: 15s
 #    arguments:
 #      arg1: <ARG_VALUE>
 #    labels:

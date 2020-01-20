@@ -79,6 +79,10 @@ spec:
               readOnly: true
             - mountPath: /var/run/docker.sock
               name: host-docker-socket
+            - mountPath: /var/db/newrelic-infra/integrations.d/
+              name: nri-default-integration-cfg-volume
+            - mountPath: /etc/newrelic-infra/integrations.d/
+              name: nri-integration-cfg-volume
           env:
             - name: "CLUSTER_NAME"
               value: "<YOUR_CLUSTER_NAME>"
@@ -117,8 +121,31 @@ spec:
         - name: host-docker-socket
           hostPath:
             path: /var/run/docker.sock
+        - name: nri-default-integration-cfg-volume
+          configMap:
+            name: nri-default-integration-cfg
+        - name: nri-integration-cfg-volume
+          configMap:
+            name: nri-integration-cfg
       tolerations:
         - operator: "Exists"
           effect: "NoSchedule"
         - operator: "Exists"
           effect: "NoExecute"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nri-default-integration-cfg # integrations config provided by default
+  namespace: default
+data:
+  nri-kubernetes-config.yml: |
+    integrations:
+      - name: nri-kubernetes
+        interval: 15s
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nri-integration-cfg # aimed to be safely overridden by users
+  namespace: default

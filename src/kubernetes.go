@@ -44,6 +44,10 @@ type argumentList struct {
 }
 
 const (
+	// we use '/var/cache/nr-kubernetes' as the temp cache dir rather than
+	// '/var/cache/nri-kubernetes' due to the fact that this would break
+	// customers setup when running unprivileged mode. Changing this value
+	// would mean clients would have to update their manifest file.
 	defaultCacheDir   = "/var/cache/nr-kubernetes"
 	discoveryCacheDir = "discovery"
 	apiserverCacheDir = "apiserver"
