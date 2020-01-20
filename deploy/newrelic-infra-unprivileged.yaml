@@ -105,8 +105,10 @@ spec:
                   fieldPath: "spec.nodeName"
             - name: "NRIA_CUSTOM_ATTRIBUTES"
               value: '{"clusterName":"$(CLUSTER_NAME)"}'
+            # - name: API_SERVER_SECURE_PORT
+            #   value: "6443"
             - name: "NRIA_PASSTHROUGH_ENVIRONMENT"
-              value: "KUBERNETES_SERVICE_HOST,KUBERNETES_SERVICE_PORT,CLUSTER_NAME,CADVISOR_PORT,NRK8S_NODE_NAME,KUBE_STATE_METRICS_URL,KUBE_STATE_METRICS_POD_LABEL"
+              value: "KUBERNETES_SERVICE_HOST,KUBERNETES_SERVICE_PORT,CLUSTER_NAME,CADVISOR_PORT,NRK8S_NODE_NAME,KUBE_STATE_METRICS_URL,KUBE_STATE_METRICS_POD_LABEL,API_SERVER_SECURE_PORT"
       volumes:
         - name: tmpfs-data
           emptyDir: {}

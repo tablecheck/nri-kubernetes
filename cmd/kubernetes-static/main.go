@@ -18,7 +18,7 @@ import (
 	"github.com/newrelic/nri-kubernetes/src/metric"
 	"github.com/newrelic/nri-kubernetes/src/scrape"
 	"github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 const (

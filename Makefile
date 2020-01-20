@@ -6,13 +6,13 @@ BINARY_NAME = nr-kubernetes
 E2E_BINARY_NAME := $(BINARY_NAME)-e2e
 
 GOVENDOR_VERSION = 1.0.8
-GOLANGCILINT_VERSION = 1.12
+GOLANGCILINT_VERSION = 1.13
 
 .PHONY: all
 all: build
 
 .PHONY: build
-build: clean lint license-check test compile
+build: clean lint  test compile
 
 .PHONY: clean
 clean:

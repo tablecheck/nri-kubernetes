@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 ### Added
  - Added samples for Statefulsets and Daemonsets.
+ - API Server metrics can now be queried using the secure port. Configure the port using the `API_SERVER_SECURE_PORT` environment variable. The ClusterRole has been updated to allow this query to happen. 
  - Added samples for Endpoints and Services.
 
 ## 1.12.0
@@ -16,7 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - The integration now uses the infrastructure agent v1.8.23. For more
    information refer to the [infrastructure agent release notes](https://docs.newrelic.com/docs/release-notes/infrastructure-release-notes/infrastructure-agent-release-notes/)
    between versions v1.5.75 and v1.8.23.
-
+  
 ## 1.11.0
 ### Changed
  - The old way of determining Leader/Follower status has been switched to a
