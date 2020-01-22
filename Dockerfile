@@ -7,7 +7,7 @@ ADD nri-kubernetes-definition.yml /var/db/newrelic-infra/newrelic-integrations/
 ADD bin/nri-kubernetes /var/db/newrelic-infra/newrelic-integrations/bin/
 # Warning: First, Edit sample file to suit your needs and rename it to
 # `nri-kubernetes-config.yml`
-ADD nri-kubernetes-config.yml.sample /etc/newrelic-infra/integrations.d/nri-kubernetes-config.yml
+ADD nri-kubernetes-config.yml.sample /var/db/newrelic-infra/integrations.d/nri-kubernetes-config.yml
 
 FROM base AS branch-normal
 USER root
