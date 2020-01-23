@@ -17,7 +17,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
    The bundle container contains a subset of [On-host integrations](https://docs.newrelic.com/docs/integrations/new-relic-integrations/get-started/introduction-infrastructure-integrations) that are supported by New Relic.
    This also includes the ability to "Auto Discover" services running on Kubernetes in a similar way to our [Container auto-discovery](https://docs.newrelic.com/docs/integrations/host-integrations/installation/container-auto-discovery)
  - The integration has been renamed from `nr-kubernetes` to `nri-kubernetes`.
- - The configuration for the integration has been updated to [version 4 specification](https://docs.newrelic.com/docs/integrations/integrations-sdk/file-specifications/integration-configuration-file-specifications-agent-v180).
 
 ## 1.12.0
 ### Changed

@@ -141,9 +141,10 @@ metadata:
   namespace: default
 data:
   nri-kubernetes-config.yml: |
-    integrations:
+    integration_name: com.newrelic.kubernetes
+    instances:
       - name: nri-kubernetes
-        interval: 15s
+        command: metrics
 ---
 apiVersion: v1
 kind: ConfigMap
