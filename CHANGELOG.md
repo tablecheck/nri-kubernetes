@@ -5,11 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 1.13.0 
 ### Added
- - Added samples for Statefulsets and Daemonsets.
+ - Added samples for Statefulsets, Daemonsets, Endpoints and Services.
  - API Server metrics can now be queried using the secure port. Configure the port using the `API_SERVER_SECURE_PORT` environment variable. The ClusterRole has been updated to allow this query to happen. 
- - Added samples for Endpoints and Services.
  - The integration now uses the infrastructure agent v1.8.32-bundle. For more
    information refer to the [infrastructure agent release notes](https://docs.newrelic.com/docs/release-notes/infrastructure-release-notes/infrastructure-agent-release-notes/)
    between versions v1.8.23 and v1.8.32.
