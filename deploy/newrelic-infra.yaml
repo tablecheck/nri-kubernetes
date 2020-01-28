@@ -69,10 +69,10 @@ spec:
             privileged: true
           resources:
             limits:
-              memory: 150M
+              memory: 300M
             requests:
               cpu: 100m
-              memory: 30M
+              memory: 150M
           volumeMounts:
             - mountPath: /host
               name: host-volume
