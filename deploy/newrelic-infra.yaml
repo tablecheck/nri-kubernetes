@@ -104,8 +104,17 @@ spec:
            #   value: "newrelic-infra-etcd-tls-secret"
            # - name: "ETCD_TLS_SECRET_NAMESPACE" # Namespace where the the secret specified in ETCD_TLS_SECRET_NAME was created.
            #   value: "default"
+           # Note: Usage of API_SERVER_SECURE_PORT has been deprecated in favor of API_SERVER_ENDPOINT_URL.
            # - name: API_SERVER_SECURE_PORT
            #   value: "6443"
+           # - name: "SCHEDULER_ENDPOINT_URL"
+           #   value: "https://localhost:10259"
+           # - name: "ETCD_ENDPOINT_URL"
+           #   value: "https://localhost:9979"
+           # - name: "CONTROLLER_MANAGER_ENDPOINT_URL"
+           #   value: "https://localhost:10257"
+           # - name: "API_SERVER_ENDPOINT_URL"
+           #   value: "https://localhost:6443"
             - name: "NRIA_DISPLAY_NAME"
               valueFrom:
                 fieldRef:
@@ -119,7 +128,7 @@ spec:
             - name: "NRIA_CUSTOM_ATTRIBUTES"
               value: '{"clusterName":"$(CLUSTER_NAME)"}'
             - name: "NRIA_PASSTHROUGH_ENVIRONMENT"
-              value: "KUBERNETES_SERVICE_HOST,KUBERNETES_SERVICE_PORT,CLUSTER_NAME,CADVISOR_PORT,NRK8S_NODE_NAME,KUBE_STATE_METRICS_URL,KUBE_STATE_METRICS_POD_LABEL,ETCD_TLS_SECRET_NAME,ETCD_TLS_SECRET_NAMESPACE,API_SERVER_SECURE_PORT,KUBE_STATE_METRICS_SCHEME,KUBE_STATE_METRICS_PORT"
+              value: "KUBERNETES_SERVICE_HOST,KUBERNETES_SERVICE_PORT,CLUSTER_NAME,CADVISOR_PORT,NRK8S_NODE_NAME,KUBE_STATE_METRICS_URL,KUBE_STATE_METRICS_POD_LABEL,ETCD_TLS_SECRET_NAME,ETCD_TLS_SECRET_NAMESPACE,API_SERVER_SECURE_PORT,KUBE_STATE_METRICS_SCHEME,KUBE_STATE_METRICS_PORT,SCHEDULER_ENDPOINT_URL,ETCD_ENDPOINT_URL,CONTROLLER_MANAGER_ENDPOINT_URL,API_SERVER_ENDPOINT_URL"
       volumes:
         - name: host-volume
           hostPath:

@@ -70,6 +70,11 @@ deploy-dev: compile-dev
 	@echo "[deploy-dev] Deploying dev container image containing $(BINARY_NAME) in Kubernetes"
 	@skaffold run
 
+.PHONY: deploy-dev-openshift
+deploy-dev-openshift: compile-dev
+	@echo "[deploy-dev-openshift] Deploying dev container image containing $(BINARY_NAME) in Openshift"
+	@skaffold -v debug run -p openshift
+
 .PHONY: test
 test: deps
 	@echo "[test] Running unit tests"

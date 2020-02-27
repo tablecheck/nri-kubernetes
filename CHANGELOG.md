@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
    2 new configuration environment variables are added:
    - KUBE_STATE_METRICS_SCHEME: defaults to `http`. Valid values are `http` and `https`.
    - KUBE_STATE_METRICS_PORT: defaults to `8080`. On a standard setup of **kube-rbac-proxy** this should be set to `8443`.
+ - OpenShift Control Plane components are now automatically discovered.
+ - Added 4 new environment variables to explicitly set the Control Plane components URLs:
+   - SCHEDULER_ENDPOINT_URL
+   - ETCD_ENDPOINT_URL
+   - CONTROLLER_MANAGER_ENDPOINT_URL
+   - API_SERVER_ENDPOINT_URL
 
 ### Fixed
  - Fix a bug that was preventing `selector.<key>` type attributes to not be
