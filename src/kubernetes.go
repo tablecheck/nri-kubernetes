@@ -40,6 +40,8 @@ type argumentList struct {
 	EtcdTLSSecretName           string `help:"Name of the secret that stores your ETCD TLS configuration"`
 	EtcdTLSSecretNamespace      string `default:"default" help:"Namespace in which the ETCD TLS secret lives"`
 	KubeStateMetricsPodLabel    string `help:"discover KSM using Kubernetes Labels."`
+	KubeStateMetricsPort        int    `default:"8080" help:"port to query the KSM pod. Only works together with the pod label discovery"`
+	KubeStateMetricsScheme      string `default:"http" help:"scheme to query the KSM pod ('http' or 'https'). Only works together with the pod label discovery"`
 	APIServerSecurePort         string `default:"" help:"Set to query the API Server over a secure port. Disabled by default"`
 	DistributedKubeStateMetrics bool   `default:"false" help:"Set to enable distributed KSM discovery. Requires that KubeStateMetricsPodLabel is set. Disabled by default."`
 }
@@ -333,7 +335,7 @@ func getKSMDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
 
 	if args.KubeStateMetricsPodLabel != "" {
 		logger.Debugf("Discovering KSM using Pod Label (KUBE_STATE_METRICS_POD_LABEL)")
-		return clientKsm.NewPodLabelDiscoverer(args.KubeStateMetricsPodLabel, logger, k8sClient), nil
+		return clientKsm.NewPodLabelDiscoverer(args.KubeStateMetricsPodLabel, args.KubeStateMetricsPort, args.KubeStateMetricsScheme, logger, k8sClient), nil
 	}
 
 	logger.Debugf("Discovering KSM using DNS / k8s ApiServer (default)")

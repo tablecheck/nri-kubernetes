@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
+
+### Added
+ - Support for querying Kube State Metrics instances behind [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy).
+   It **ONLY works when the label-based KSM discovery is enabled through the `KUBE_STATE_METRICS_POD_LABEL` environment variable**.
+   2 new configuration environment variables are added:
+   - KUBE_STATE_METRICS_SCHEME: defaults to `http`. Valid values are `http` and `https`.
+   - KUBE_STATE_METRICS_PORT: defaults to `8080`. On a standard setup of **kube-rbac-proxy** this should be set to `8443`.
+
 ### Fixed
  - Fix a bug that was preventing `selector.<key>` type attributes to not be
   added to some of the `K8sServiceSample`.

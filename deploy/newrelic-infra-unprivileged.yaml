@@ -93,6 +93,12 @@ spec:
               value: "<YOUR_LICENSE_KEY>"
             - name: "NRIA_VERBOSE"
               value: "0"
+            # - name: "KUBE_STATE_METRICS_POD_LABEL" # Enables discovery of the KSM pod via a label. The value of the label needs to be "true".
+            #   value: "<YOUR_LABEL>" # Remember to replace this placeholder with the label name of your choice.
+            # - name: "KUBE_STATE_METRICS_PORT" # If the KUBE_STATE_METRICS_POD_LABEL is present, it changes the port queried in the pod.
+            #   value: "8080"
+            # - name: "KUBE_STATE_METRICS_SCHEME" # If the KUBE_STATE_METRICS_POD_LABEL is present, it changes the scheme used to send to request to the pod.
+            #   value: "http"
            # - name: "CADVISOR_PORT" # Enable direct connection to cAdvisor by specifying the port. Needed for Kubernetes versions prior to 1.7.6.
            #   value: "4194"
            # - name: "KUBE_STATE_METRICS_URL" # If this value is specified then discovery process for kube-state-metrics endpoint won't be triggered.
@@ -112,7 +118,7 @@ spec:
             # - name: API_SERVER_SECURE_PORT
             #   value: "6443"
             - name: "NRIA_PASSTHROUGH_ENVIRONMENT"
-              value: "KUBERNETES_SERVICE_HOST,KUBERNETES_SERVICE_PORT,CLUSTER_NAME,CADVISOR_PORT,NRK8S_NODE_NAME,KUBE_STATE_METRICS_URL,KUBE_STATE_METRICS_POD_LABEL,API_SERVER_SECURE_PORT"
+              value: "KUBERNETES_SERVICE_HOST,KUBERNETES_SERVICE_PORT,CLUSTER_NAME,CADVISOR_PORT,NRK8S_NODE_NAME,KUBE_STATE_METRICS_URL,KUBE_STATE_METRICS_POD_LABEL,API_SERVER_SECURE_PORT,KUBE_STATE_METRICS_SCHEME,KUBE_STATE_METRICS_PORT"
       volumes:
         - name: tmpfs-data
           emptyDir: {}
