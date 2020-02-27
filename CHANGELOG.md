@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  - Fix a bug that was preventing `selector.<key>` type attributes to not be
   added to some of the `K8sServiceSample`.
  - The integration now uses `newrelic/infrastructure-bundle` as the base image. The version used
-   is `1.1.0`, for more information on the release please see the [New Relic Infrastructure Bundle release notes](https://github.com/newrelic/infrastructure-bundle/releases/tag/1.1.0).
+   is `1.2.0`, for more information on the release please see the [New Relic Infrastructure Bundle release notes](https://github.com/newrelic/infrastructure-bundle/releases/tag/1.2.0).
 
 ## 1.13.2
 ### Changed
