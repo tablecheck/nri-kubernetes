@@ -136,8 +136,8 @@ func BuildComponentList(options ...ComponentOption) []Component {
 			Name: Etcd,
 			Labels: []labels{
 				// Kops / Kubeadm / ClusterAPI
-				{"tier": "control-plane", "component": "etcd"},
 				{"k8s-app": "etcd-manager-main"},
+				{"tier": "control-plane", "component": "etcd"},
 				// OpenShift
 				{"k8s-app": "etcd"},
 			},
