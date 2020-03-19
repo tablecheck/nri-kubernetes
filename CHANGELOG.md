@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Added
+- Added the necesary files for building a windows image of the integration.
+
 ## 1.16.0
 
 ### Added
