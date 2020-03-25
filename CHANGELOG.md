@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Added
-- Added the necesary files for building a windows image of the integration.
+ - Added the necesary files for building a windows image of the integration.
+ - Upgraded Docker base image `newrelic/infrastructure-bundle` to v1.3.0.
+   For more information on the release please see the [New Relic Infrastructure Bundle release notes](https://github.com/newrelic/infrastructure-bundle/releases/tag/1.3.0).
 
 ## 1.16.0
 
