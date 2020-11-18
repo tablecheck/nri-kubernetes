@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ feat/movePipelines ]
 jobs:
-  security:
+  e2eTests:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
