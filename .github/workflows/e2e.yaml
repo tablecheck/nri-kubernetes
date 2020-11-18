@@ -5,12 +5,13 @@ on:
     branches: [ feat/movePipelines ]
   pull_request:
     branches: [ feat/movePipelines ]
-strategy:
-  matrix:
-    priviledgeMode: [ "normal", "unprivileged" ]
+
 jobs:
   e2eTests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        priviledgeMode: [ "normal", "unprivileged" ]
     steps:
     - name: Checkout Code
       uses: actions/checkout@v2.3.4
