@@ -223,6 +223,7 @@ func main() {
 		for _, err := range errs {
 			logger.Errorf(err.Error())
 		}
+		logger.Fatal("Error Detected")
 	} else {
 		logger.Infof("OK")
 	}
