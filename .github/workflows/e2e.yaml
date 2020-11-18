@@ -34,8 +34,7 @@ jobs:
         kubernetes version: 'v1.19.2'
     - name: Interact with the cluster
       run: |
-      if [ "{{ matrix.priviledgeMode }}" = "unprivileged" ]
-      then
+      if [ "{{ matrix.priviledgeMode }}" = "unprivileged" ]; then
         UNPRIVILEDGE=true
       else
         UNPRIVILEDGE=false
