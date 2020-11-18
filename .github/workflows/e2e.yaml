@@ -19,7 +19,6 @@ jobs:
       run: |
         curl https://get.helm.sh/helm-v2.17.0-linux-amd64.tar.gz --output helm.tar.gz
         tar -zxvf helm.tar.gz
-        linux-amd64/helm version
     - name: Setup Minikube
       uses: manusa/actions-setup-minikube@v2.0.1
       with:
