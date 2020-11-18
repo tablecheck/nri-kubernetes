@@ -48,6 +48,14 @@ spec:
               name: host-docker-socket
             {{- end }}
           env:
+            {{- if eq .Values.daemonset.clusterFlavor "Minikube" }}
+            - name: "API_SERVER_ENDPOINT_URL"
+              value: "https://localhost:8443"
+            - name: "SCHEDULER_ENDPOINT_URL"
+              value: "https://localhost:10259"
+            - name: "CONTROLLER_MANAGER_ENDPOINT_URL"
+              value: "https://localhost:10257"
+            {{- end }}
             - name: "CLUSTER_NAME"
               value: {{ .Values.integration.k8sClusterName | quote }}
             - name: "NRIA_LICENSE_KEY"

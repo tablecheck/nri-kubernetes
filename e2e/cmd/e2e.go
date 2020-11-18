@@ -46,10 +46,12 @@ var cliArgs = struct {
 }{}
 
 const (
-	nrLabel     = "name=newrelic-infra"
-	namespace   = "default"
-	nrContainer = "newrelic-infra"
-	ksmLabel    = "app.kubernetes.io/name=kube-state-metrics"
+	nrLabel        = "name=newrelic-infra"
+	namespace      = "default"
+	nrContainer    = "newrelic-infra"
+	ksmLabel       = "app.kubernetes.io/name=kube-state-metrics"
+	minikubeFlavor = "Minikube"
+	unknownFlavor  = "Unknown"
 )
 
 type eventTypeSchemasPerEntity map[entityID]jsonschema.EventTypeToSchemaFilename
@@ -76,16 +78,17 @@ func generateScenarios(
 	rbac bool,
 	unprivileged bool,
 	serverInfo *version.Info,
+	clusterFlavor string,
 ) []scenario.Scenario {
 	return []scenario.Scenario{
 		// 4 latest versions, single KSM instance
-		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.7.1", false, serverInfo),
-		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.8.0", false, serverInfo),
-		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.9.0", false, serverInfo),
+		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.7.1", false, serverInfo, clusterFlavor),
+		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.8.0", false, serverInfo, clusterFlavor),
+		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.9.0", false, serverInfo, clusterFlavor),
 
 		// the behaviour for multiple KSMs only has to be tested for one version, because it's testing our logic,
 		// not the logic of KSM. This might change if KSM sharding becomes enabled by default.
-		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.9.0", true, serverInfo),
+		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.9.0", true, serverInfo, clusterFlavor),
 	}
 }
 
@@ -134,6 +137,7 @@ func execIntegration(pod v1.Pod, ksmPod *v1.Pod, dataChannel chan integrationDat
 	output, err := c.PodExec(namespace, pod.Name, nrContainer, "/var/db/newrelic-infra/newrelic-integrations/bin/nri-kubernetes", "-timeout=15000", "-verbose")
 	if err != nil {
 		d.err = err
+		logger.Debugf("Error detecting running pod exec: %s", d.err.Error())
 		dataChannel <- d
 		return
 	}
@@ -183,6 +187,12 @@ func main() {
 		}
 	}
 
+	minikubeHost := determineMinikubeHost(logger)
+	clusterFlavor := unknownFlavor
+	if strings.Contains(c.Config.Host, minikubeHost) {
+		clusterFlavor = minikubeFlavor
+	}
+
 	// TODO
 	var errs []error
 	ctx := context.TODO()
@@ -192,6 +202,7 @@ func main() {
 		cliArgs.Rbac,
 		cliArgs.Unprivileged,
 		c.ServerVersionInfo,
+		clusterFlavor,
 	)
 	for _, s := range scenarios {
 		logger.Infof("Scenario: %q", s)
@@ -367,8 +378,7 @@ func executeTests(
 		execErr.errs = append(execErr.errs, err)
 	}
 
-	minikubeHost := determineMinikubeHost(logger)
-	if strings.Contains(c.Config.Host, minikubeHost) {
+	if currentScenario.ClusterFlavor == minikubeFlavor {
 		logger.Info("Skipping `testSpecificEntities` because you're running them in Minikube (persistent volumes don't work well in Minikube)")
 	} else {
 		logger.Info("checking if specific entities match our JSON schemas")
@@ -552,6 +562,7 @@ func installRelease(_ context.Context, s scenario.Scenario, logger *logrus.Logge
 		fmt.Sprintf("integration.newRelicLicenseKey=%s", cliArgs.NrLicenseKey),
 		"integration.verbose=true",
 		fmt.Sprintf("integration.collectorURL=%s", cliArgs.CollectorURL),
+		fmt.Sprintf("daemonset.clusterFlavor=%s", s.ClusterFlavor),
 	)
 
 	o, err := helm.InstallRelease(filepath.Join(dir, cliArgs.NrChartPath), cliArgs.Context, logger, options...)

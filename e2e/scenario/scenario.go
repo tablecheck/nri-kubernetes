@@ -17,6 +17,7 @@ type Scenario struct {
 	integrationImageRepository string
 	integrationImageTag        string
 	optionalNetworkSchema      bool
+	ClusterFlavor              string
 }
 
 // New returns a new Scenario
@@ -28,6 +29,7 @@ func New(
 	ksmVersion string,
 	twoKSMInstances bool,
 	k8sServerInfo *version.Info,
+	clusterFlavor string,
 ) Scenario {
 	return Scenario{
 		unprivileged:               unprivileged,
@@ -37,6 +39,7 @@ func New(
 		integrationImageRepository: integrationImageRepository,
 		integrationImageTag:        integrationImageTag,
 		optionalNetworkSchema:      optionalNetworkSchema(k8sServerInfo, unprivileged),
+		ClusterFlavor:              clusterFlavor,
 	}
 }
 
