@@ -28,6 +28,7 @@ jobs:
     - name: Compile and Build Image
       run: |
         make compile
+        eval $(minikube docker-env)
         docker build -t test_image_${{ matrix.priviledgeMode }}:test .
     - name: Setup Minikube
       uses: manusa/actions-setup-minikube@v2.0.1
@@ -41,5 +42,4 @@ jobs:
         else
           UNPRIVILEDGE=false
         fi
-        eval $(minikube docker-env)
         go run e2e/cmd/e2e.go --verbose --cluster_name=e2e --nr_license_key="fakeLicense" --rbac=true --integration_image_tag=test --integration_image_repository=test_image_${{ matrix.priviledgeMode }} --integration_image_repository= --unprivileged=$UNPRIVILEDGE
