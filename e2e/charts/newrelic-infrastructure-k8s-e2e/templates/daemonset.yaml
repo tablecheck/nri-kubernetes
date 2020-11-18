@@ -24,7 +24,7 @@ spec:
       containers:
         - name: {{ .Values.daemonset.name }}
           image: "{{ .Values.daemonset.image.repository }}:{{ .Values.daemonset.image.tag }}"
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           resources:
 {{ toYaml .Values.daemonset.resources | indent 12 }}
           {{- if .Values.daemonset.unprivileged }}
