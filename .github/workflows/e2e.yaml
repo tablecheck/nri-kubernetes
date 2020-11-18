@@ -27,7 +27,7 @@ jobs:
         sudo apt-get install -y socat
     - name: Build Image
       run: |
-        docker build -t test_image_{{ matrix.priviledgeMode }}:test .
+        docker build -t test_image_${{ matrix.priviledgeMode }}:test .
     - name: Setup Minikube
       uses: manusa/actions-setup-minikube@v2.0.1
       with:
@@ -35,10 +35,10 @@ jobs:
         kubernetes version: 'v1.19.2'
     - name: Interact with the cluster
       run: |
-        if [ "{{ matrix.priviledgeMode }}" = "unprivileged" ]; then
+        if [ "${{ matrix.priviledgeMode }}" = "unprivileged" ]; then
           UNPRIVILEDGE=true
         else
           UNPRIVILEDGE=false
         fi
         eval $(minikube docker-env)
-        go run e2e/cmd/e2e.go --verbose --cluster_name=e2e nr_license_key="fakeLicense" --rbac=true --integration_image_tag=test --integration_image_repository=test_image_{{ matrix.priviledgeMode }} --integration_image_repository= --unprivileged=$UNPRIVILEDGE
+        go run e2e/cmd/e2e.go --verbose --cluster_name=e2e nr_license_key="fakeLicense" --rbac=true --integration_image_tag=test --integration_image_repository=test_image_${{ matrix.priviledgeMode }} --integration_image_repository= --unprivileged=$UNPRIVILEDGE
