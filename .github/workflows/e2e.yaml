@@ -25,8 +25,9 @@ jobs:
         tar -zxvf helm.tar.gz
         sudo apt-get update -y
         sudo apt-get install -y socat
-    - name: Build Image
+    - name: Compile and Build Image
       run: |
+        make compile
         docker build -t test_image_${{ matrix.priviledgeMode }}:test .
     - name: Setup Minikube
       uses: manusa/actions-setup-minikube@v2.0.1
