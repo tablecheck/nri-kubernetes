@@ -33,7 +33,6 @@ jobs:
       with:
         minikube version: 'v1.14.2'
         kubernetes version: '${{ matrix.k8sVersion }}'
-        start args: --nodes=3
     - name: Compile and Build Image
       run: |
         make compile
