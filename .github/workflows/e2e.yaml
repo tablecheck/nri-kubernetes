@@ -14,7 +14,7 @@ jobs:
         ## we could run priviledgeMode this in serie instead of in //
         ## PRO less total time, less expensive CONTRA slower to get results
         priviledgeMode: [ "normal", "unprivileged" ]
-        k8sVersion: [ "v1.15.7", "v1.16.7", "v1.17.9", "v1.18.6", "v1.19.2" ]
+        k8sVersion: [ "v1.15.7", "v1.16.7"]#, "v1.17.9", "v1.18.6", "v1.19.2" ]
     steps:
     - name: Checkout Code
       uses: actions/checkout@v2.3.4
@@ -37,7 +37,7 @@ jobs:
       run: |
         make compile
         eval $(minikube docker-env)
-        docker build -t test_image_${{ matrix.priviledgeMode }}:test .
+        docker build -t test_image_${{ matrix.priviledgeMode }}:test --build-arg 'MODE=${{ matrix.priviledgeMode }}' .
         docker  run --rm -i test_image_${{ matrix.priviledgeMode }}:test whoami
     - name: Interact with the cluster
       run: |
