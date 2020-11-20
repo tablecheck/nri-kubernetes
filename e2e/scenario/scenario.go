@@ -18,6 +18,7 @@ type Scenario struct {
 	integrationImageTag        string
 	optionalNetworkSchema      bool
 	ClusterFlavor              string
+	K8sVersion                 string
 }
 
 // New returns a new Scenario
@@ -30,6 +31,7 @@ func New(
 	twoKSMInstances bool,
 	k8sServerInfo *version.Info,
 	clusterFlavor string,
+	K8sVersion string,
 ) Scenario {
 	return Scenario{
 		unprivileged:               unprivileged,
@@ -40,18 +42,21 @@ func New(
 		integrationImageTag:        integrationImageTag,
 		optionalNetworkSchema:      optionalNetworkSchema(k8sServerInfo, unprivileged),
 		ClusterFlavor:              clusterFlavor,
+		K8sVersion:                 K8sVersion,
 	}
 }
 
 func (s Scenario) String() string {
 	str := fmt.Sprintf(
-		"rbac=%v,ksm-instance-one.rbac.create=%v,ksm-instance-one.image.tag=%s,daemonset.unprivileged=%v,daemonset.image.repository=%s,daemonset.image.tag=%s",
+		"rbac=%v,ksm-instance-one.rbac.create=%v,ksm-instance-one.image.tag=%s,daemonset.unprivileged=%v,daemonset.image.repository=%s,daemonset.image.tag=%s,daemonset.clusterFlavor=%s, k8sversion=%s",
 		s.rbac,
 		s.rbac,
 		s.ksmVersion,
 		s.unprivileged,
 		s.integrationImageRepository,
 		s.integrationImageTag,
+		s.ClusterFlavor,
+		s.K8sVersion,
 	)
 	if s.twoKSMInstances {
 		return fmt.Sprintf(

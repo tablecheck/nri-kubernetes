@@ -14,7 +14,7 @@ jobs:
         ## we could run priviledgeMode this in serie instead of in //
         ## PRO less total time, less expensive CONTRA slower to get results
         priviledgeMode: [ "normal", "unprivileged" ]
-        k8sVersion: [ "v1.15.7", "v1.16.7"]#, "v1.17.9", "v1.18.6", "v1.19.2" ]
+        k8sVersion: [ "v1.15.7", "v1.16.7", "v1.17.9", "v1.18.6", "v1.19.2" ]
     steps:
     - name: Checkout Code
       uses: actions/checkout@v2.3.4
@@ -46,4 +46,4 @@ jobs:
         else
           UNPRIVILEDGE=false
         fi
-        go run e2e/cmd/e2e.go --verbose --cluster_name=e2e --nr_license_key="fakeLicense" --rbac=true --integration_image_tag=test --integration_image_repository=test_image_${{ matrix.priviledgeMode }} --unprivileged=$UNPRIVILEDGE
+        go run e2e/cmd/e2e.go --verbose --cluster_name=e2e --nr_license_key="fakeLicense" --rbac=true --integration_image_tag=test --integration_image_repository=test_image_${{ matrix.priviledgeMode }} --k8s_version=${{ matrix.k8sVersion }} --unprivileged=$UNPRIVILEDGE

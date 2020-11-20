@@ -43,6 +43,7 @@ var cliArgs = struct {
 	CleanBeforeRun             bool   `default:"true" help:"Clean the cluster before running the tests"`
 	FailFast                   bool   `default:"false" help:"Fail the whole suit on the first failure"`
 	Unprivileged               bool   `default:"false" help:"Deploy and run the integration in unprivileged mode"`
+	K8sVersion                 string `default:"v1.19.3" help:"SetK8s version, currently used for endpoints"`
 }{}
 
 const (
@@ -79,16 +80,17 @@ func generateScenarios(
 	unprivileged bool,
 	serverInfo *version.Info,
 	clusterFlavor string,
+	k8sVersion string,
 ) []scenario.Scenario {
 	return []scenario.Scenario{
 		// 4 latest versions, single KSM instance
-		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.7.1", false, serverInfo, clusterFlavor),
-		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.8.0", false, serverInfo, clusterFlavor),
-		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.9.0", false, serverInfo, clusterFlavor),
+		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.7.1", false, serverInfo, clusterFlavor, k8sVersion),
+		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.8.0", false, serverInfo, clusterFlavor, k8sVersion),
+		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.9.0", false, serverInfo, clusterFlavor, k8sVersion),
 
 		// the behaviour for multiple KSMs only has to be tested for one version, because it's testing our logic,
 		// not the logic of KSM. This might change if KSM sharding becomes enabled by default.
-		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.9.0", true, serverInfo, clusterFlavor),
+		scenario.New(rbac, unprivileged, integrationImageRepository, integrationImageTag, "v1.9.0", true, serverInfo, clusterFlavor, k8sVersion),
 	}
 }
 
@@ -203,6 +205,7 @@ func main() {
 		cliArgs.Unprivileged,
 		c.ServerVersionInfo,
 		clusterFlavor,
+		cliArgs.K8sVersion,
 	)
 	for _, s := range scenarios {
 		logger.Infof("Scenario: %q", s)
@@ -557,6 +560,8 @@ func installRelease(_ context.Context, s scenario.Scenario, logger *logrus.Logge
 		return "", err
 	}
 
+	versionSplitted := strings.Split(s.K8sVersion, ".")
+
 	options := strings.Split(s.String(), ",")
 	options = append(options,
 		fmt.Sprintf("integration.k8sClusterName=%s", cliArgs.ClusterName),
@@ -564,6 +569,7 @@ func installRelease(_ context.Context, s scenario.Scenario, logger *logrus.Logge
 		"integration.verbose=true",
 		fmt.Sprintf("integration.collectorURL=%s", cliArgs.CollectorURL),
 		fmt.Sprintf("daemonset.clusterFlavor=%s", s.ClusterFlavor),
+		fmt.Sprintf("daemonset.clusterVersion=%s.%s.x", versionSplitted[0], versionSplitted[1]),
 	)
 
 	o, err := helm.InstallRelease(filepath.Join(dir, cliArgs.NrChartPath), cliArgs.Context, logger, options...)
