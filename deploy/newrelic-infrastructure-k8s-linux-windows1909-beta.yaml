@@ -62,6 +62,8 @@ spec:
       serviceAccountName: newrelic
       hostNetwork: true # This option is a requirement for the Infrastructure Agent to report the proper hostname in New Relic.
       dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector:
+        kubernetes.io/os: linux
       containers:
         - name: newrelic-infra
           image: newrelic/infrastructure-k8s:1.16.0
