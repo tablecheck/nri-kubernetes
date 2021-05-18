@@ -5,8 +5,20 @@ TOOLS_DIR := $(BIN_DIR)/dev-tools
 BINARY_NAME = nri-kubernetes
 E2E_BINARY_NAME := $(BINARY_NAME)-e2e
 
-GOVENDOR_VERSION = 1.0.8
-GOLANGCILINT_VERSION = 1.31.0
+# GOOS and GOARCH will likely come from env
+GOOS ?=
+GOARCH ?=
+CGO_ENABLED ?= 0
+
+ifneq ($(strip $(GOOS)), )
+BINARY_NAME := $(BINARY_NAME)-$(GOOS)
+endif
+
+ifneq ($(strip $(GOARCH)), )
+BINARY_NAME := $(BINARY_NAME)-$(GOARCH)
+endif
+
+GOLANGCILINT_VERSION = 1.36.0
 
 .PHONY: all
 all: build
@@ -34,12 +46,12 @@ lint: $(TOOLS_DIR)/golangci-lint
 .PHONY: lint-all
 lint-all: $(TOOLS_DIR)/golangci-lint
 	@echo "[validate] Validating source code running golangci-lint"
-	@$(TOOLS_DIR)/golangci-lint run --enable=interfacer --enable=gosimple
+	@$(TOOLS_DIR)/golangci-lint run
 
 .PHONY: compile
 compile:
 	@echo "[compile] Building $(BINARY_NAME)"
-	@go build -o $(BIN_DIR)/$(BINARY_NAME) ./src
+	CGO_ENABLED=$(CGO_ENABLED) go build -o $(BIN_DIR)/$(BINARY_NAME) ./src
 
 .PHONY: compile-dev
 compile-dev:

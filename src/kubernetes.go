@@ -70,7 +70,7 @@ const (
 	defaultDiscoveryCacheTTL           = time.Hour
 
 	integrationName    = "com.newrelic.kubernetes"
-	integrationVersion = "2.0.0"
+	integrationVersion = "2.4.0"
 	nodeNameEnvVar     = "NRK8S_NODE_NAME"
 )
 
@@ -369,7 +369,7 @@ func main() {
 		logger.Debugf("Running job: %s", job.Name)
 		start := time.Now()
 		result := job.Populate(integration, args.ClusterName, logger, k8sVersion)
-		measured := time.Now().Sub(start)
+		measured := time.Since(start)
 		logger.Debugf("Job %s took %s", job.Name, measured.Round(time.Millisecond))
 
 		if result.Populated {
@@ -399,12 +399,10 @@ func getKSMDiscoverer(logger *logrus.Logger) (client.Discoverer, error) {
 
 	// It's important this one is before the NodeLabel selector, for backwards compatibility.
 	if args.KubeStateMetricsURL != "" {
-		// checking to see if KubeStateMetricsURL contains the /metrics path already.
-		if strings.Contains(args.KubeStateMetricsURL, "/metrics") {
-			args.KubeStateMetricsURL = strings.Trim(args.KubeStateMetricsURL, "/metrics")
-		}
+		// Remove /metrics suffix if present
+		args.KubeStateMetricsURL = strings.TrimSuffix(args.KubeStateMetricsURL, "/metrics")
 
-		logger.Debugf("Discovering KSM using static endpoint (KUBE_STATE_METRICS_URL)")
+		logger.Debugf("Discovering KSM using static endpoint (KUBE_STATE_METRICS_URL=%s)", args.KubeStateMetricsURL)
 		return clientKsm.NewStaticEndpointDiscoverer(args.KubeStateMetricsURL, logger, k8sClient), nil
 	}
 

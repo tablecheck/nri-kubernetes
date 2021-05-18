@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+---
+
+## 2.4.0
+
+### Added
+
+- Support for multiarch docker images
+
+## 2.3.1
+
+### Fixed
+
+- Correctly identifing k8s server version with characters (#81)
+
+## 2.3.0
+
+### Changed
+
+- The base image of `newrelic/infrastructure-k8s` has been updated to `2.2.3`. 
+  More info regarding all the integrations upgraded can be found in the [release notes of the base image](https://github.com/newrelic/infrastructure-bundle/releases/tag/2.2.3).
+- Changed scale of node `cpuRequestedCores` to cores from millis
+  
+### Added
+
+- Added metrics pertaining to Horizontal Pod Autoscaler. More information about the collected metrics can be found in the [official documentation](https://docs.newrelic.com/docs/integrations/kubernetes-integration/understand-use-data/find-use-your-kubernetes-data)
+
+### Fixed
+
+- LoadBalancerIP was not being collected properly. It is now fetched from KSM metric `kube_service_status_load_balancer_ingress`
+
+## 2.2.0
+
+### Changed
+
+- The base image of `newrelic/infrastructure-k8s` has been updated to `2.2.1`. 
+  This base image has fixed an issue where `nrjmx` was not properly running due to the bundled java version.
+  More info regarding all the integration upgraded can be found in the [release notes of the base image](https://github.com/newrelic/infrastructure-bundle/releases/tag/2.2.1).
+
+## 2.1.0
+
+### Changed
+
+- Added aggregate cpu and memory requests for nodes
+
 ## 2.0.0
 
 ### Changed
